@@ -26,6 +26,7 @@ from persona.cognitive_modules.plan import *
 from persona.cognitive_modules.reflect import *
 from persona.cognitive_modules.execute import *
 from persona.cognitive_modules.converse import *
+from persona.prompt_template import llm_trace
 
 class Persona: 
   def __init__(self, name, folder_mem_saved=False):
@@ -216,19 +217,26 @@ class Persona:
       new_day = "New day"
     self.scratch.curr_time = curr_time
 
-    # Main cognitive sequence begins here. 
-    perceived = self.perceive(maze)
-    retrieved = self.retrieve(perceived)
-    plan = self.plan(maze, personas, new_day, retrieved)
-    self.reflect()
+    # Main cognitive sequence begins here. The llm_trace scopes only label
+    # the calls made inside each module; they do not change the sequence.
+    with llm_trace.persona_scope(self.name):
+      with llm_trace.phase_scope("perceive"):
+        perceived = self.perceive(maze)
+      with llm_trace.phase_scope("retrieve"):
+        retrieved = self.retrieve(perceived)
+      with llm_trace.phase_scope("plan"):
+        plan = self.plan(maze, personas, new_day, retrieved)
+      with llm_trace.phase_scope("reflect"):
+        self.reflect()
 
-    # <execution> is a triple set that contains the following components: 
-    # <next_tile> is a x,y coordinate. e.g., (58, 9)
-    # <pronunciatio> is an emoji. e.g., "\ud83d\udca4"
-    # <description> is a string description of the movement. e.g., 
-    #   writing her next novel (editing her novel) 
-    #   @ double studio:double studio:common room:sofa
-    return self.execute(maze, personas, plan)
+      # <execution> is a triple set that contains the following components:
+      # <next_tile> is a x,y coordinate. e.g., (58, 9)
+      # <pronunciatio> is an emoji. e.g., "\ud83d\udca4"
+      # <description> is a string description of the movement. e.g.,
+      #   writing her next novel (editing her novel)
+      #   @ double studio:double studio:common room:sofa
+      with llm_trace.phase_scope("execute"):
+        return self.execute(maze, personas, plan)
 
 
   def open_convo_session(self, convo_mode, safe_mode=True, direct=False, question=None): 

@@ -12,6 +12,7 @@ from openai import AzureOpenAI, OpenAI
 from utils import *
 from openai_cost_logger import DEFAULT_LOG_PATH
 from persona.prompt_template.openai_logger_singleton import OpenAICostLogger_Singleton
+from persona.prompt_template import llm_trace
 
 config_path = Path("../../openai_config.json")
 with open(config_path, "r") as f:
@@ -103,10 +104,18 @@ def temp_sleep(seconds=0.1):
 
 def ChatGPT_single_request(prompt): 
   temp_sleep()
-  completion = client.chat.completions.create(
-    model=openai_config["model"],
-    messages=[{"role": "user", "content": prompt}]
-  )
+  started = time.time()
+  try:
+    completion = client.chat.completions.create(
+      model=openai_config["model"],
+      messages=[{"role": "user", "content": prompt}]
+    )
+  except Exception as e:
+    llm_trace.record_call("ChatGPT_single_request", openai_config["model"],
+                          prompt, latency=time.time() - started, error=e)
+    raise
+  llm_trace.record_call("ChatGPT_single_request", openai_config["model"], prompt,
+                        response=completion, latency=time.time() - started)
   cost_logger.update_cost(completion, input_cost=openai_config["model-costs"]["input"], output_cost=openai_config["model-costs"]["output"])
   return completion.choices[0].message.content
 
@@ -124,15 +133,20 @@ def ChatGPT_request(prompt):
     a str of GPT-3's response. 
   """
   # temp_sleep()
+  started = time.time()
   try: 
     completion = client.chat.completions.create(
     model=openai_config["model"],
     messages=[{"role": "user", "content": prompt}]
     )
+    llm_trace.record_call("ChatGPT_request", openai_config["model"], prompt,
+                          response=completion, latency=time.time() - started)
     cost_logger.update_cost(completion, input_cost=openai_config["model-costs"]["input"], output_cost=openai_config["model-costs"]["output"])
     return completion.choices[0].message.content
   
   except Exception as e: 
+    llm_trace.record_call("ChatGPT_request", openai_config["model"], prompt,
+                          latency=time.time() - started, error=e)
     print(f"Error: {e}")
     return "ChatGPT ERROR"
 
@@ -155,8 +169,12 @@ def ChatGPT_safe_generate_response(prompt,
     print ("CHAT GPT PROMPT")
     print (prompt)
 
+  label = llm_trace.caller_label()
+  started = time.time()
   for i in range(repeat): 
 
+    curr_gpt_response = None
+    llm_trace.set_attempt(i + 1)
     try: 
       curr_gpt_response = ChatGPT_request(prompt).strip()
       end_index = curr_gpt_response.rfind('}') + 1
@@ -164,16 +182,25 @@ def ChatGPT_safe_generate_response(prompt,
       curr_gpt_response = json.loads(curr_gpt_response)["output"]
       
       if func_validate(curr_gpt_response, prompt=prompt): 
-        return func_clean_up(curr_gpt_response, prompt=prompt)
+        cleaned_response = func_clean_up(curr_gpt_response, prompt=prompt)
+        llm_trace.record_outcome("ChatGPT_safe_generate_response", i + 1,
+                                 False, True, latency=time.time() - started,
+                                 label=label)
+        return cleaned_response
       
+      llm_trace.record_reject("validate_false", curr_gpt_response, label=label)
       if verbose: 
         print ("---- repeat count: \n", i, curr_gpt_response)
         print (curr_gpt_response)
         print ("~~~~")
 
     except: 
+      llm_trace.record_reject(llm_trace.reject_reason_from_exception(),
+                              curr_gpt_response, label=label)
       pass
 
+  llm_trace.record_outcome("ChatGPT_safe_generate_response", repeat, True,
+                           False, latency=time.time() - started, label=label)
   return False
 
 
@@ -187,18 +214,31 @@ def ChatGPT_safe_generate_response_OLD(prompt,
     print ("CHAT GPT PROMPT")
     print (prompt)
 
+  label = llm_trace.caller_label()
+  started = time.time()
   for i in range(repeat): 
+    curr_gpt_response = None
+    llm_trace.set_attempt(i + 1)
     try: 
       curr_gpt_response = ChatGPT_request(prompt).strip()
       if func_validate(curr_gpt_response, prompt=prompt): 
-        return func_clean_up(curr_gpt_response, prompt=prompt)
+        cleaned_response = func_clean_up(curr_gpt_response, prompt=prompt)
+        llm_trace.record_outcome("ChatGPT_safe_generate_response_OLD", i + 1,
+                                 False, True, latency=time.time() - started,
+                                 label=label)
+        return cleaned_response
+      llm_trace.record_reject("validate_false", curr_gpt_response, label=label)
       if verbose: 
         print (f"---- repeat count: {i}")
         print (curr_gpt_response)
         print ("~~~~")
 
     except: 
+      llm_trace.record_reject(llm_trace.reject_reason_from_exception(),
+                              curr_gpt_response, label=label)
       pass
+  llm_trace.record_outcome("ChatGPT_safe_generate_response_OLD", repeat, True,
+                           False, latency=time.time() - started, label=label)
   print ("FAIL SAFE TRIGGERED") 
   return fail_safe_response
 
@@ -216,6 +256,7 @@ def GPT_request(prompt, gpt_parameter):
     a str of GPT-3's response. 
   """
   temp_sleep()
+  started = time.time()
   try: 
     # The prompt goes as "user" (a system-only conversation makes llama3.1 echo
     # the role token "assistant"); the completion-engine instruction goes as
@@ -237,9 +278,13 @@ def GPT_request(prompt, gpt_parameter):
                 presence_penalty=gpt_parameter["presence_penalty"],
                 stream=gpt_parameter["stream"],
                 stop=gpt_parameter["stop"],)
+    llm_trace.record_call("GPT_request", openai_config["model"], prompt,
+                          response=response, latency=time.time() - started)
     cost_logger.update_cost(response=response, input_cost=openai_config["model-costs"]["input"], output_cost=openai_config["model-costs"]["output"])
     return response.choices[0].message.content
   except Exception as e:
+    llm_trace.record_call("GPT_request", openai_config["model"], prompt,
+                          latency=time.time() - started, error=e)
     print(f"Error: {e}")
     return "TOKEN LIMIT EXCEEDED"
 
@@ -282,17 +327,30 @@ def safe_generate_response(prompt,
   if verbose: 
     print (prompt)
 
+  label = llm_trace.caller_label()
+  started = time.time()
   for i in range(repeat): 
+    llm_trace.set_attempt(i + 1)
     curr_gpt_response = GPT_request(prompt, gpt_parameter)
     try:
       if func_validate(curr_gpt_response, prompt=prompt): 
-        return func_clean_up(curr_gpt_response, prompt=prompt)
+        cleaned_response = func_clean_up(curr_gpt_response, prompt=prompt)
+        llm_trace.record_outcome("safe_generate_response", i + 1, False, True,
+                                 latency=time.time() - started, label=label)
+        return cleaned_response
+      llm_trace.record_reject("validate_false", curr_gpt_response, label=label)
       if verbose: 
         print ("---- repeat count: ", i, curr_gpt_response)
         print (curr_gpt_response)
         print ("~~~~")
     except:
+      llm_trace.record_reject(llm_trace.reject_reason_from_exception(),
+                              curr_gpt_response, label=label)
       pass
+  # The fail-safe is what makes a broken LLM look like a live simulation
+  # (a plausible "yes" or 4), so every activation has to show up in the trace.
+  llm_trace.record_outcome("safe_generate_response", repeat, True, False,
+                           latency=time.time() - started, label=label)
   return fail_safe_response
 
 
@@ -300,7 +358,15 @@ def get_embedding(text, model=openai_config["embeddings"]):
   text = text.replace("\n", " ")
   if not text: 
     text = "this is blank"
-  response = embeddings_client.embeddings.create(input=[text], model=model)
+  started = time.time()
+  try:
+    response = embeddings_client.embeddings.create(input=[text], model=model)
+  except Exception as e:
+    llm_trace.record_call("embedding", model, text,
+                          latency=time.time() - started, error=e)
+    raise
+  llm_trace.record_call("embedding", model, text, response=response,
+                        latency=time.time() - started)
   cost_logger.update_cost(response=response, input_cost=openai_config["embeddings-costs"]["input"], output_cost=openai_config["embeddings-costs"]["output"])
   return response.data[0].embedding
 

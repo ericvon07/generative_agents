@@ -15,6 +15,7 @@ from global_methods import *
 from persona.prompt_template.run_gpt_prompt import *
 from persona.cognitive_modules.retrieve import *
 from persona.cognitive_modules.converse import *
+from persona.prompt_template import llm_trace
 
 ##############################################################################
 # CHAPTER 2: Generate
@@ -279,7 +280,8 @@ def generate_convo(maze, init_persona, target_persona):
 
   # convo = run_gpt_prompt_create_conversation(init_persona, target_persona, curr_loc)[0]
   # convo = agent_chat_v1(maze, init_persona, target_persona)
-  convo = agent_chat_v2(maze, init_persona, target_persona)
+  with llm_trace.phase_scope("converse"):
+    convo = agent_chat_v2(maze, init_persona, target_persona)
   all_utt = ""
 
   for row in convo: 
@@ -952,7 +954,8 @@ def plan(persona, maze, personas, new_day, retrieved):
   """ 
   # PART 1: Generate the hourly schedule. 
   if new_day: 
-    _long_term_planning(persona, new_day)
+    with llm_trace.phase_scope("bootstrap"):
+      _long_term_planning(persona, new_day)
 
   # PART 2: If the current action has expired, we want to create a new plan.
   if persona.scratch.act_check_finished(): 

@@ -34,6 +34,7 @@ from selenium import webdriver
 from global_methods import *
 from utils import *
 from maze import *
+from persona.prompt_template import llm_trace
 from persona.persona import *
 
 current_file = os.path.abspath(__file__)
@@ -70,6 +71,9 @@ class ReverieServer:
     # copy everything that's in <fork_sim_code>, but edit its 
     # reverie/meta/json's fork variable. 
     self.sim_code = sim_code
+    # Name the LLM trace after this simulation, so its per-call log can be
+    # matched against the step files it produced.
+    llm_trace.set_simulation(self.sim_code)
     sim_folder = f"{fs_storage}/{self.sim_code}"
     copyanything(fork_folder, sim_folder)
 
@@ -396,6 +400,7 @@ class ReverieServer:
           # This is where the core brains of the personas are invoked. 
           movements = {"persona": dict(), 
                        "meta": dict()}
+          llm_trace.set_step(self.step, self.curr_time)
           for persona_name, persona in self.personas.items(): 
             # <next_tile> is a x,y coordinate. e.g., (58, 9)
             # <pronunciatio> is an emoji. e.g., "\ud83d\udca4"
