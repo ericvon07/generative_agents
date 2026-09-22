@@ -101,10 +101,29 @@ class Condition(object):
     self.decisions = [r for r in self.records if r.get("event") == "decision"]
     self.outcomes = [r for r in self.records if r.get("event") == "outcome"]
     self.rejects = [r for r in self.records if r.get("event") == "reject"]
+    self.guards = [r for r in self.records if r.get("event") == "guard"]
+    self.manifests = [r for r in self.records if r.get("event") == "manifest"]
     self.steps = sorted(set(r["step"] for r in self.records
                             if r.get("step") is not None))
     backends = set(r.get("backend") for r in self.decisions if r.get("backend"))
     self.backend = "/".join(sorted(backends)) or "-"
+
+  def provenance(self, *path):
+    """A field of this condition's run manifest, or None for a trace written
+    before manifests existed. A condition is several stage files, so the
+    value is only reported when every stage agrees -- a run whose code or
+    seed changed halfway through is not one condition."""
+    values = []
+    for m in self.manifests:
+      node = m
+      for key in path:
+        node = (node or {}).get(key) if isinstance(node, dict) else None
+      values.append(json.dumps(node, sort_keys=True, default=str))
+    if not values:
+      return None
+    if len(set(values)) > 1:
+      return "MIXED"
+    return json.loads(values[0])
 
   @property
   def decision_calls(self):
@@ -193,10 +212,30 @@ def share(count, total):
   return "-" if not total else "%.1f%%" % (100.0 * count / total)
 
 
+def fmt_code(condition):
+  code = condition.provenance("code")
+  if code in (None, "MIXED"):
+    return "unrecorded" if code is None else "MIXED"
+  sha = (code.get("sha") or "?")[:8]
+  return "%s%s" % (sha, "+dirty" if code.get("dirty") else "")
+
+
+def fmt_seed(condition):
+  if not condition.manifests:
+    return "unrecorded"
+  seed = condition.provenance("seed")
+  return "UNSEEDED" if seed is None else str(seed)
+
+
 def summary(conditions, price_by_backend):
   rows = [
       ("trace files", lambda c: "%d" % len(c.files)),
       ("backend", lambda c: c.backend),
+      ("code", fmt_code),
+      ("seed", fmt_seed),
+      ("config", lambda c: str(c.provenance("config_sha1") or "unrecorded")),
+      ("domain guard", lambda c: {True: "on", False: "off", None: "unrecorded"}
+       .get(c.provenance("domain_guard"), "MIXED")),
       ("steps with activity", lambda c: (
           "%d..%d (%d)" % (c.steps[0], c.steps[-1], len(c.steps))
           if c.steps else "none")),
@@ -221,6 +260,24 @@ def summary(conditions, price_by_backend):
       ("out of domain", lambda c: share(
           sum(1 for r in c.decisions if r.get("in_domain") is False),
           sum(1 for r in c.decisions if r.get("in_domain") is not None))),
+      # The rate above is two different findings added together, and they
+      # point at different culprits: an answer the model invented, and the
+      # paper's own get_fail_safe() literal handed back after the retry loop
+      # rejected every attempt. On the 22 Sep window the second was three
+      # quarters of the total, so reporting only the sum reads as a model
+      # result when most of it is architectural.
+      ("  ... the model's answer", lambda c: share(
+          sum(1 for r in c.decisions
+              if r.get("in_domain") is False and not gave_up(r)),
+          sum(1 for r in c.decisions if r.get("in_domain") is not None))),
+      ("  ... the code's fail-safe", lambda c: share(
+          sum(1 for r in c.decisions
+              if r.get("in_domain") is False and gave_up(r)),
+          sum(1 for r in c.decisions if r.get("in_domain") is not None))),
+      # What the restored guard had to put in their place. Measured apart
+      # from the rate above on purpose: one says how often the contract
+      # broke, the other how often the simulation had to be steered.
+      ("guard substitutions", lambda c: "%d" % len(c.guards)),
       ("answer == fail-safe", lambda c: share(
           sum(1 for r in c.decisions if r.get("is_fail_safe")),
           len(c.decisions))),
@@ -306,6 +363,37 @@ def answers(conditions, label):
   print("")
 
 
+def provenance_warnings(conditions):
+  """Everything that would make the table above a comparison of two things
+  that are not the same experiment. Printed rather than raised: an old trace
+  is still worth reading, as long as nobody reads it as a controlled one."""
+  out = []
+  if any(not c.manifests for c in conditions):
+    out.append("a condition has no run manifest -- trace written before "
+               "22 Sep 2026; its code, seed and config are unknown")
+  seeds = set(fmt_seed(c) for c in conditions)
+  if "UNSEEDED" in seeds:
+    out.append("a condition ran unseeded: its trajectory is not reproducible")
+  codes = set(fmt_code(c) for c in conditions if c.manifests)
+  if len(codes) > 1:
+    out.append("the conditions ran different code: %s" % ", ".join(sorted(codes)))
+  if any(c.provenance("code", "dirty") for c in conditions):
+    out.append("a condition ran from a dirty tree: the commit does not "
+               "describe what produced these numbers")
+  configs = set(str(c.provenance("config_sha1")) for c in conditions
+                if c.manifests)
+  if len(configs) > 1:
+    out.append("the conditions ran different configuration (%s) -- expected "
+               "when the backend flag lives in the file, not when it is the "
+               "environment that differs" % ", ".join(sorted(configs)))
+  guards = set(str(c.provenance("domain_guard")) for c in conditions
+               if c.manifests)
+  if len(guards) > 1:
+    out.append("the domain guard was on in one condition and off in the "
+               "other: the runs are not comparable")
+  return out
+
+
 def main():
   parser = argparse.ArgumentParser(
       description=__doc__,
@@ -327,6 +415,10 @@ def main():
   print("CONDITIONS: %s" % "  vs  ".join(c.prefix for c in conditions))
   print("=" * 78)
   summary(conditions, prices())
+  for warning in provenance_warnings(conditions):
+    print("  !! %s" % warning)
+  if any(provenance_warnings(conditions)):
+    print("")
   per_decision(conditions, args.decision)
   print('  "= failsafe" counts answers equal to the decision\'s fail-safe '
         'value. For a 1-10')
