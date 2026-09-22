@@ -879,6 +879,10 @@ def run_gpt_prompt_pronunciatio(action_description, persona, verbose=False):
                                           __chat_func_validate, __chat_func_clean_up, True)
   if output != False: 
     return output, [output, prompt, gpt_param, prompt_input, fail_safe]
+  # Deviation D1: hand back the fail-safe this function already built, instead
+  # of falling off the end as None. ChatGPT_safe_generate_response answers False
+  # when it runs out of retries and every caller here subscripts the result.
+  return fail_safe, [fail_safe, prompt, gpt_param, prompt_input, fail_safe]
   # ChatGPT Plugin ===========================================================
 
 
@@ -1055,6 +1059,10 @@ def run_gpt_prompt_act_obj_desc(act_game_object, act_desp, persona, verbose=Fals
                                           __chat_func_validate, __chat_func_clean_up, True)
   if output != False: 
     return output, [output, prompt, gpt_param, prompt_input, fail_safe]
+  # Deviation D1: hand back the fail-safe this function already built, instead
+  # of falling off the end as None. ChatGPT_safe_generate_response answers False
+  # when it runs out of retries and every caller here subscripts the result.
+  return fail_safe, [fail_safe, prompt, gpt_param, prompt_input, fail_safe]
   # ChatGPT Plugin ===========================================================
 
 
@@ -1680,6 +1688,10 @@ def run_gpt_prompt_summarize_conversation(persona, conversation, test_input=None
                                           __chat_func_validate, __chat_func_clean_up, True)
   if output != False: 
     return output, [output, prompt, gpt_param, prompt_input, fail_safe]
+  # Deviation D1: hand back the fail-safe this function already built, instead
+  # of falling off the end as None. ChatGPT_safe_generate_response answers False
+  # when it runs out of retries and every caller here subscripts the result.
+  return fail_safe, [fail_safe, prompt, gpt_param, prompt_input, fail_safe]
   # ChatGPT Plugin ===========================================================
 
 
@@ -1933,6 +1945,10 @@ def run_gpt_prompt_event_poignancy(persona, event_description, test_input=None, 
                                           __chat_func_validate, __chat_func_clean_up, True)
   if output != False: 
     return output, [output, prompt, gpt_param, prompt_input, fail_safe]
+  # Deviation D1: hand back the fail-safe this function already built, instead
+  # of falling off the end as None. ChatGPT_safe_generate_response answers False
+  # when it runs out of retries and every caller here subscripts the result.
+  return fail_safe, [fail_safe, prompt, gpt_param, prompt_input, fail_safe]
   # ChatGPT Plugin ===========================================================
 
 
@@ -2004,6 +2020,10 @@ def run_gpt_prompt_thought_poignancy(persona, event_description, test_input=None
                                           __chat_func_validate, __chat_func_clean_up, True)
   if output != False: 
     return output, [output, prompt, gpt_param, prompt_input, fail_safe]
+  # Deviation D1: hand back the fail-safe this function already built, instead
+  # of falling off the end as None. ChatGPT_safe_generate_response answers False
+  # when it runs out of retries and every caller here subscripts the result.
+  return fail_safe, [fail_safe, prompt, gpt_param, prompt_input, fail_safe]
   # ChatGPT Plugin ===========================================================
 
 
@@ -2076,6 +2096,10 @@ def run_gpt_prompt_chat_poignancy(persona, event_description, test_input=None, v
                                           __chat_func_validate, __chat_func_clean_up, True)
   if output != False: 
     return output, [output, prompt, gpt_param, prompt_input, fail_safe]
+  # Deviation D1: hand back the fail-safe this function already built, instead
+  # of falling off the end as None. ChatGPT_safe_generate_response answers False
+  # when it runs out of retries and every caller here subscripts the result.
+  return fail_safe, [fail_safe, prompt, gpt_param, prompt_input, fail_safe]
   # ChatGPT Plugin ===========================================================
 
 
@@ -2279,6 +2303,10 @@ def run_gpt_prompt_agent_chat_summarize_ideas(persona, target_persona, statement
                                           __chat_func_validate, __chat_func_clean_up, True)
   if output != False: 
     return output, [output, prompt, gpt_param, prompt_input, fail_safe]
+  # Deviation D1: hand back the fail-safe this function already built, instead
+  # of falling off the end as None. ChatGPT_safe_generate_response answers False
+  # when it runs out of retries and every caller here subscripts the result.
+  return fail_safe, [fail_safe, prompt, gpt_param, prompt_input, fail_safe]
   # ChatGPT Plugin ===========================================================
 
 
@@ -2347,6 +2375,10 @@ def run_gpt_prompt_agent_chat_summarize_relationship(persona, target_persona, st
                                           __chat_func_validate, __chat_func_clean_up, True)
   if output != False: 
     return output, [output, prompt, gpt_param, prompt_input, fail_safe]
+  # Deviation D1: hand back the fail-safe this function already built, instead
+  # of falling off the end as None. ChatGPT_safe_generate_response answers False
+  # when it runs out of retries and every caller here subscripts the result.
+  return fail_safe, [fail_safe, prompt, gpt_param, prompt_input, fail_safe]
   # ChatGPT Plugin ===========================================================
 
 
@@ -2476,6 +2508,10 @@ def run_gpt_prompt_agent_chat(maze, persona, target_persona,
   # print ("HERE END JULY 23 -- ----- ") ########
   if output != False: 
     return output, [output, prompt, gpt_param, prompt_input, fail_safe]
+  # Deviation D1: hand back the fail-safe this function already built, instead
+  # of falling off the end as None. ChatGPT_safe_generate_response answers False
+  # when it runs out of retries and every caller here subscripts the result.
+  return fail_safe, [fail_safe, prompt, gpt_param, prompt_input, fail_safe]
   # ChatGPT Plugin ===========================================================
 
 
@@ -2556,6 +2592,10 @@ def run_gpt_prompt_summarize_ideas(persona, statements, question, test_input=Non
                                           __chat_func_validate, __chat_func_clean_up, True)
   if output != False: 
     return output, [output, prompt, gpt_param, prompt_input, fail_safe]
+  # Deviation D1: hand back the fail-safe this function already built, instead
+  # of falling off the end as None. ChatGPT_safe_generate_response answers False
+  # when it runs out of retries and every caller here subscripts the result.
+  return fail_safe, [fail_safe, prompt, gpt_param, prompt_input, fail_safe]
   # ChatGPT Plugin ===========================================================
 
 
