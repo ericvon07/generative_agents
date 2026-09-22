@@ -3,8 +3,11 @@ File: llm_trace.py
 Description: Per-call instrumentation for every LLM/embedding request.
 
 Writes one JSONL record per event to <log dir>/<sim_code>_<timestamp>.jsonl.
-Five event kinds:
+Six event kinds:
 
+  "manifest"-- the first line of every trace file: the seed, the commit, the
+               models and the backend that produced everything below it.
+               Written by run_manifest.py at boot; see there for why.
   "call"    -- one HTTP request actually sent to the model backend, with
                latency, token usage and a hash/preview of the payload.
   "reject"  -- a response that came back but was thrown away by the retry
@@ -248,6 +251,19 @@ def _caller_label():
 _writer = None
 _writer_lock = threading.Lock()
 _writer_broken = False
+_manifest = None
+
+
+def set_manifest(fields):
+  """What produced this run: seed, commit, models, backend. Written as the
+  first line of every trace file this process opens, including each stage
+  file the automatic runner rotates through, because a stage file is the
+  unit someone reads back later and it has to identify itself."""
+  global _manifest
+  try:
+    _manifest = dict(fields) if fields else None
+  except Exception:
+    _manifest = None
 
 
 def _close_writer():
@@ -260,6 +276,22 @@ def _close_writer():
     _writer = None
 
 
+def _write_manifest(writer):
+  """First line of a freshly opened file. Written straight to the handle
+  rather than through _emit, which would re-enter the writer lock this runs
+  under."""
+  if _manifest is None:
+    return
+  try:
+    record = dict(_manifest)
+    record["ts"] = datetime.datetime.now().isoformat(timespec="milliseconds")
+    record["sim"] = _sim_code
+    record["step"] = _step
+    writer.write(json.dumps(record, ensure_ascii=False, default=str) + "\n")
+  except Exception:
+    pass
+
+
 def _get_writer():
   """Open the trace file lazily, so a run with no LLM calls leaves no file."""
   global _writer, _writer_broken
@@ -270,6 +302,7 @@ def _get_writer():
     stamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     path = os.path.join(_config["dir"], "%s_%s.jsonl" % (_sim_code, stamp))
     _writer = open(path, "a", buffering=1, encoding="utf-8")
+    _write_manifest(_writer)
   except Exception as e:
     _writer_broken = True
     print("llm_trace: disabled, could not open trace file (%s)" % e)

@@ -32,5 +32,8 @@
     },
     "domain-guard": {
         "enabled": true
+    },
+    "run": {
+        "seed": 20260922
     }
 }

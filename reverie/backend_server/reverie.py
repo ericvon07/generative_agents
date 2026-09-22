@@ -38,6 +38,7 @@ from persona.persona import *
 from persona.prompt_template import llm_trace
 from persona.prompt_template import decision
 from persona.prompt_template import domain_guard
+from persona.prompt_template import run_manifest
 
 current_file = os.path.abspath(__file__)
 
@@ -79,6 +80,12 @@ class ReverieServer:
     # Name the LLM trace after this simulation, so its per-call log can be
     # matched against the step files it produced.
     llm_trace.set_simulation(self.sim_code)
+
+    # Seed the generators and pin down what this run is, before a persona is
+    # loaded or a trace file is opened -- both of which draw. The manifest
+    # becomes the first line of every trace file this process writes.
+    run_manifest.apply(fork_sim_code=self.fork_sim_code,
+                       sim_code=self.sim_code)
 
     with open(f"{sim_folder}/reverie/meta.json") as json_file:  
       reverie_meta = json.load(json_file)
@@ -476,6 +483,9 @@ class ReverieServer:
     # Whether an out-of-domain answer ends the run or is replaced, said before
     # the first step rather than inferred from the trace afterwards.
     print (domain_guard.status())
+    # The commit and the seed, so the log of a run says what the run was
+    # without anyone having to open the trace.
+    print (run_manifest.status())
 
     # <sim_folder> points to the current simulation folder.
     sim_folder = f"{fs_storage}/{self.sim_code}"
