@@ -318,6 +318,15 @@ class ReverieServer:
     # <game_obj_cleanup> is used for that. 
     game_obj_cleanup = dict()
 
+    # How long to wait for the frontend before giving up. The loop below only
+    # waits here when it has nothing to do: while the personas think, control
+    # is inside the persona loop, not here. So a long silence at this point
+    # means the browser tab stopped posting steps (a dead or never-started
+    # headless Chrome), and waiting forever just hides that -- a stalled run
+    # printed nothing for 44 minutes on 22 Sep 2026.
+    frontend_timeout = float(os.environ.get("REVERIE_FRONTEND_TIMEOUT", 180))
+    waiting_since = time.time()
+
     # The main while loop of Reverie. 
     while (True): 
       
@@ -427,6 +436,13 @@ class ReverieServer:
           self.curr_time += datetime.timedelta(seconds=self.sec_per_step)
 
           int_counter -= 1
+          waiting_since = time.time()
+      elif frontend_timeout > 0 and time.time() - waiting_since > frontend_timeout:
+        raise Exception(
+            f"no environment file from the frontend for {frontend_timeout:.0f}s "
+            f"(waiting for {curr_env_file}). Is the simulator page open and "
+            f"running? Set REVERIE_FRONTEND_TIMEOUT=0 to wait forever.",
+            self.step)
       # Sleep so we don't burn our machines. 
       time.sleep(self.server_sleep)
 

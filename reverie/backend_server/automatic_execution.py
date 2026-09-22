@@ -2,6 +2,7 @@
 
 import gc
 import os
+import signal
 import sys
 import time
 import shutil
@@ -43,7 +44,11 @@ def parse_args() -> Tuple[str, str, int, bool]:
         '--steps',
         type=str,
         default="8640", # 24 hours
-        help='Total steps to run'
+        help=('The step number to stop AT, counted from the start of the '
+              'simulated day -- NOT how many steps to run. Forking a '
+              'checkpoint that already sits at step 2360 and asking for '
+              '--steps 30 runs nothing at all. 1 step = 10 simulated seconds, '
+              'so the default 8640 is a full 24 h day.')
     )
     parser.add_argument(
         '--ui',
@@ -90,6 +95,22 @@ def get_starting_step(exp_name: str) -> int:
     return current_step
 
 
+def _find_chrome_binary() -> str:
+    """Return a Chrome/Chromium executable for headless mode (Linux or macOS)."""
+    candidates = [
+        "google-chrome", "google-chrome-stable", "chromium", "chromium-browser",
+        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+        "/Applications/Chromium.app/Contents/MacOS/Chromium",
+    ]
+    for c in candidates:
+        if os.path.isabs(c) and os.path.exists(c):
+            return c
+        found = shutil.which(c)
+        if found:
+            return found
+    raise FileNotFoundError("No Chrome/Chromium binary found for headless mode; install Google Chrome or run with --ui True")
+
+
 def start_web_tab(ui: bool, browser_path: str, port: str) -> int:
     """Open a new tab in the browser with the simulator home page
     
@@ -107,10 +128,14 @@ def start_web_tab(ui: bool, browser_path: str, port: str) -> int:
     pid = None
     try:
         if ui:
-            webbrowser.get(browser_path).open(url, new=2)
+            try:
+                webbrowser.get(browser_path).open(url, new=2)
+            except webbrowser.Error:
+                # browser_path not registered on this OS (e.g. macOS): use the system default browser.
+                webbrowser.open(url, new=2)
         else:
             command = [
-                "google-chrome",
+                _find_chrome_binary(),
                 "--headless=new",
                 "--no-sandbox",
                 "--disable-dev-shm-usage",
@@ -123,7 +148,10 @@ def start_web_tab(ui: bool, browser_path: str, port: str) -> int:
                 url
             ]
 
-            process = subprocess.Popen(command)
+            # Own session, so the whole browser (Chrome spawns helpers even
+            # with --single-process) can be killed as a group below. Five
+            # orphaned headless Chromes were found alive on 22 Sep 2026.
+            process = subprocess.Popen(command, start_new_session=True)
             pid = process.pid
             print(f"(Auto-Exec): Web tab process started with pid {pid}", flush=True)
         return pid
@@ -176,13 +204,34 @@ if __name__ == '__main__':
     tot_steps = int(tot_steps)
     curr_checkpoint = get_new_checkpoint(current_step, tot_steps, checkpoint_freq)
 
+    # A failing step fails again at the same step: the prompts run at
+    # temperature 0, so the retry is bit-identical. Without a limit the runner
+    # re-forks the whole simulation forever -- 13 identical retries and 346 MB
+    # of copies on 22 Sep 2026, with no way to tell from the log.
+    max_stalls = int(os.environ.get("AUTO_EXEC_MAX_STALLS", 2))
+    stalls = 0
+
     print("(Auto-Exec): STARTING THE EXPERIMENT", flush=True)
     print(f"(Auto-Exec): Origin: {origin}", flush=True)
     print(f"(Auto-Exec): Target: {target}", flush=True)
     print(f"(Auto-Exec): Total steps: {tot_steps}", flush=True)
-    print(f"(Auto-Exec): Checkpoint Freq: {checkpoint_freq}", flush=True)    
-        
+    print(f"(Auto-Exec): Checkpoint Freq: {checkpoint_freq}", flush=True)
+    print(f"(Auto-Exec): Origin is at step {current_step}; running to "
+          f"{tot_steps} ({tot_steps - current_step} steps)", flush=True)
+
+    # --steps is an absolute end step, not a count. Forking a checkpoint that
+    # is already past it used to skip the loop and exit 0 in 7 ms, which reads
+    # exactly like a finished run -- on 22 Sep 2026 that cost a "completed"
+    # baseline that had run nothing. Say so and fail.
+    if current_step >= tot_steps:
+        print(f"(Auto-Exec): NOTHING TO RUN: origin '{origin}' is already at "
+              f"step {current_step}, and --steps is the step to stop AT, not "
+              f"how many to run. For N more steps, pass "
+              f"--steps {current_step + 100} for 100, etc.", flush=True)
+        sys.exit(2)
+
     while current_step < tot_steps:
+        step_before_stage = current_step
         try:
             steps_to_run = curr_checkpoint - current_step
             target = f"{exp_name}-s-{idx}-{current_step}-{curr_checkpoint}"
@@ -221,9 +270,25 @@ if __name__ == '__main__':
                 gc.collect()
         
             if pid:
-                os.system(f"kill -9 {pid}")
-                print(f"(Auto-Exec): Killed web tab process with pid {pid}", flush=True)
+                try:
+                    os.killpg(os.getpgid(pid), signal.SIGKILL)
+                except OSError:
+                    pass  # already gone
+                print(f"(Auto-Exec): Killed web tab process group with pid {pid}", flush=True)
                 pid = None
+
+        if current_step > step_before_stage:
+            stalls = 0
+        else:
+            stalls += 1
+            print(f"(Auto-Exec): STAGE MADE NO PROGRESS (still at step "
+                  f"{current_step}), {stalls} of {max_stalls} allowed", flush=True)
+            if stalls >= max_stalls:
+                print(f"(Auto-Exec): GIVING UP at step {current_step} after "
+                      f"{stalls} stages with no progress. The error above "
+                      f"repeats every time; fix it and resume with "
+                      f"--origin {origin}", flush=True)
+                sys.exit(1)
 
     print(f"(Auto-Exec): EXPERIMENT FINISHED: {exp_name}")
     OpenAICostLoggerViz.print_experiment_cost(experiment=exp_name, path=log_path)
