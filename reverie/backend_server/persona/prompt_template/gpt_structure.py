@@ -37,8 +37,11 @@ def setup_client(type: str, config: dict):
         api_version=config["api-version"],
     )
   elif type == "openai":
+    # base_url is optional: None -> api.openai.com. Set it to point at any
+    # OpenAI-compatible server (Ollama: http://localhost:11434/v1, vLLM, ...).
     client = OpenAI(
         api_key=config["key"],
+        base_url=config.get("base_url"),
     )
   else:
     raise ValueError("Invalid client")
@@ -51,7 +54,12 @@ if openai_config["client"] == "azure":
       "api-version": openai_config["model-api-version"],
   })
 elif openai_config["client"] == "openai":
-  client = setup_client("openai", { "key": openai_config["model-key"] })
+  client = setup_client("openai", {
+      "key": openai_config["model-key"],
+      "base_url": openai_config.get("model-base-url"),
+  })
+else:
+  raise ValueError("Invalid client")
 
 if openai_config["embeddings-client"] == "azure":  
   embeddings_client = setup_client("azure", {
@@ -60,7 +68,10 @@ if openai_config["embeddings-client"] == "azure":
       "api-version": openai_config["embeddings-api-version"],
   })
 elif openai_config["embeddings-client"] == "openai":
-  embeddings_client = setup_client("openai", { "key": openai_config["embeddings-key"] })
+  embeddings_client = setup_client("openai", {
+      "key": openai_config["embeddings-key"],
+      "base_url": openai_config.get("embeddings-base-url"),
+  })
 else:
   raise ValueError("Invalid embeddings client")
 
@@ -69,6 +80,21 @@ cost_logger = OpenAICostLogger_Singleton(
   log_folder = DEFAULT_LOG_PATH,
   cost_upperbound = openai_config["cost-upperbound"]
 )
+
+
+# The prompts sent through GPT_request were written for the legacy Completions
+# API (they end mid-sentence: "... Activity: Isabella is"). Chat models, and
+# open models in particular (llama3.1 via Ollama), answer them as a chatbot
+# ("Here is the completed schedule:") unless told to behave as a completion
+# engine. Override with the optional "completion-system-prompt" key in
+# openai_config.json (set it to "" to disable).
+DEFAULT_COMPLETION_SYSTEM_PROMPT = (
+  "You are a text-completion engine, not a chat assistant. The user message is "
+  "the beginning of a document. Continue it from exactly where it stops. Output "
+  "only the continuation text, with no preamble, no explanation, no quotes and "
+  "no restating of the input."
+)
+completion_system_prompt = openai_config.get("completion-system-prompt", DEFAULT_COMPLETION_SYSTEM_PROMPT)
 
 
 def temp_sleep(seconds=0.1):
@@ -191,11 +217,18 @@ def GPT_request(prompt, gpt_parameter):
   """
   temp_sleep()
   try: 
-    messages = [{
-      "role": "system", "content": prompt
-    }]
+    # The prompt goes as "user" (a system-only conversation makes llama3.1 echo
+    # the role token "assistant"); the completion-engine instruction goes as
+    # "system" so the model continues the text instead of chatting about it.
+    messages = []
+    if completion_system_prompt:
+      messages.append({"role": "system", "content": completion_system_prompt})
+    messages.append({"role": "user", "content": prompt})
+    # The "engine" in gpt_parameter is a legacy hardcoded name
+    # ("gpt-35-turbo-0125" in run_gpt_prompt.py); the model actually used is
+    # always the one from openai_config.json so any backend works.
     response = client.chat.completions.create(
-                model=gpt_parameter["engine"],
+                model=openai_config["model"],
                 messages=messages,
                 temperature=gpt_parameter["temperature"],
                 max_tokens=gpt_parameter["max_tokens"],

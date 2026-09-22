@@ -67,3 +67,5 @@ yarl==1.8.2
 yellowbrick==1.5
 zipp==3.6.0
 openai-cost-logger==0.4.1
+# openai==1.13.3 breaks with httpx>=0.28 (TypeError: unexpected keyword argument "proxies")
+httpx==0.27.2

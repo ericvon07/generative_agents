@@ -1,0 +1,31 @@
+{
+    "client": "openai",
+    "model": "gpt-4o-mini",
+    "model-key": "<OPENAI-API-KEY>",
+    "model-costs": { "input": 0.15, "output": 0.60 },
+    "embeddings-client": "openai",
+    "embeddings": "text-embedding-3-small",
+    "embeddings-key": "<OPENAI-API-KEY>",
+    "embeddings-costs": { "input": 0.02, "output": 0.0 },
+    "experiment-name": "simulacra-openai",
+    "cost-upperbound": 10,
+    "decision-backend": "llm",
+    "decision": {
+        "noul-threshold": 0.5,
+        "on-error": "failsafe"
+    },
+    "jev": {
+        "model": "jev-latest",
+        "base-url": "https://api.typesafe.ai/v1",
+        "api-key-env": "TYPESAFE_API_KEY",
+        "api-key": "<JEV-API-KEY>",
+        "timeout": 30.0,
+        "max-retries": 3,
+        "costs": { "input": 0.042, "output": 0.0 }
+    },
+    "llm-trace": {
+        "enabled": true,
+        "dir": "../../logs/llm_trace",
+        "head-chars": 200
+    }
+}
