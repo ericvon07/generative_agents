@@ -15,6 +15,7 @@ sys.path.append('../../')
 from global_methods import *
 from persona.prompt_template.gpt_structure import *
 from persona.prompt_template.print_prompt import *
+from persona.prompt_template import decision
 
 def get_random_alphanumeric(i=6, j=6): 
   """
@@ -531,6 +532,24 @@ def run_gpt_prompt_task_decomp(persona,
 
 
 
+def accessible_sectors(persona, maze): 
+  """The closed set of sectors this persona may pick from.
+
+  create_prompt_input flattens this into a comma-separated string for the
+  prompt; the decision seam keeps the list, so an answer can be checked
+  against it (see decision.py).
+  """
+  act_world = f"{maze.access_tile(persona.scratch.curr_tile)['world']}"
+  fin_accessible_sectors = []
+  for i in persona.s_mem.get_str_accessible_sectors(act_world).split(", "): 
+    if "'s house" in i: 
+      if persona.scratch.last_name in i: 
+        fin_accessible_sectors += [i]
+    else: 
+      fin_accessible_sectors += [i]
+  return fin_accessible_sectors
+
+
 def run_gpt_prompt_action_sector(action_description, 
                                 persona, 
                                 maze, 
@@ -559,16 +578,7 @@ def run_gpt_prompt_action_sector(action_description,
 
 
     # MAR 11 TEMP
-    accessible_sector_str = persona.s_mem.get_str_accessible_sectors(act_world)
-    curr = accessible_sector_str.split(", ")
-    fin_accessible_sectors = []
-    for i in curr: 
-      if "'s house" in i: 
-        if persona.scratch.last_name in i: 
-          fin_accessible_sectors += [i]
-      else: 
-        fin_accessible_sectors += [i]
-    accessible_sector_str = ", ".join(fin_accessible_sectors)
+    accessible_sector_str = ", ".join(accessible_sectors(persona, maze))
     # END MAR 11 TEMP
 
     prompt_input += [accessible_sector_str]
@@ -651,8 +661,26 @@ def run_gpt_prompt_action_sector(action_description,
   prompt = generate_prompt(prompt_input, prompt_template)
 
   fail_safe = get_fail_safe()
-  output = safe_generate_response(prompt, gpt_param, 5, fail_safe,
-                                   __func_validate, __func_clean_up)
+  # Closed-set choice: same prompt, same answer, but the domain is declared
+  # instead of surviving only as text inside the prompt (see decision.py).
+  # The state is read out of prompt_input rather than rebuilt, so the typed
+  # backend is shown exactly the facts the template interpolates -- no more,
+  # no less. The index comments are the template's own !<INPUT n>! slots.
+  output = decision.choose("action_sector", accessible_sectors(persona, maze),
+                           lambda: safe_generate_response(
+                               prompt, gpt_param, 5, fail_safe,
+                               __func_validate, __func_clean_up),
+                           fail_safe=fail_safe,
+                           state={
+                               "persona": prompt_input[0],
+                               "lives_in": prompt_input[1],
+                               "areas_where_they_live": prompt_input[2],
+                               "currently_in": prompt_input[4],
+                               "areas_where_they_are": prompt_input[5],
+                               "daily_plan_requirement": prompt_input[6].strip(),
+                               "current_action": prompt_input[9],
+                               "task": prompt_input[10],
+                           })
   y = f"{maze.access_tile(persona.scratch.curr_tile)['world']}"
   x = [i.strip() for i in persona.s_mem.get_str_accessible_sectors(y).split(",")]
   if output not in x: 
@@ -667,6 +695,19 @@ def run_gpt_prompt_action_sector(action_description,
 
   return output, [output, prompt, gpt_param, prompt_input, fail_safe]
 
+
+
+def accessible_arenas(persona, act_world, act_sector): 
+  """The closed set of arenas inside <act_sector> this persona may pick from."""
+  x = f"{act_world}:{act_sector}"
+  fin_accessible_arenas = []
+  for i in persona.s_mem.get_str_accessible_sector_arenas(x).split(", "): 
+    if "'s room" in i: 
+      if persona.scratch.last_name in i: 
+        fin_accessible_arenas += [i]
+    else: 
+      fin_accessible_arenas += [i]
+  return fin_accessible_arenas
 
 
 def run_gpt_prompt_action_arena(action_description, 
@@ -684,16 +725,8 @@ def run_gpt_prompt_action_arena(action_description,
     prompt_input += [act_sector]
 
     # MAR 11 TEMP
-    accessible_arena_str = persona.s_mem.get_str_accessible_sector_arenas(x)
-    curr = accessible_arena_str.split(", ")
-    fin_accessible_arenas = []
-    for i in curr: 
-      if "'s room" in i: 
-        if persona.scratch.last_name in i: 
-          fin_accessible_arenas += [i]
-      else: 
-        fin_accessible_arenas += [i]
-    accessible_arena_str = ", ".join(fin_accessible_arenas)
+    accessible_arena_str = ", ".join(accessible_arenas(persona, act_world,
+                                                       act_sector))
     # END MAR 11 TEMP
 
 
@@ -748,8 +781,20 @@ def run_gpt_prompt_action_arena(action_description,
   prompt = generate_prompt(prompt_input, prompt_template)
 
   fail_safe = get_fail_safe()
-  output = safe_generate_response(prompt, gpt_param, 5, fail_safe,
-                                   __func_validate, __func_clean_up)
+  # Closed-set choice: same prompt, same answer, but the domain is declared
+  # instead of surviving only as text inside the prompt (see decision.py).
+  output = decision.choose("action_arena", accessible_arenas(persona, act_world, act_sector),
+                           lambda: safe_generate_response(
+                               prompt, gpt_param, 5, fail_safe,
+                               __func_validate, __func_clean_up),
+                           fail_safe=fail_safe,
+                           state={
+                               "persona": prompt_input[0],
+                               "going_to": prompt_input[1],
+                               "areas_there": prompt_input[2],
+                               "current_action": prompt_input[4],
+                               "task": prompt_input[5],
+                           })
   print (output)
   # y = f"{act_world}:{act_sector}"
   # x = [i.strip() for i in persona.s_mem.get_str_accessible_sector_arenas(y).split(",")]
@@ -807,8 +852,17 @@ def run_gpt_prompt_action_game_object(action_description,
   prompt = generate_prompt(prompt_input, prompt_template)
 
   fail_safe = get_fail_safe()
-  output = safe_generate_response(prompt, gpt_param, 5, fail_safe,
-                                   __func_validate, __func_clean_up)
+  # Closed-set choice: same prompt, same answer, but the domain is declared
+  # instead of surviving only as text inside the prompt (see decision.py).
+  output = decision.choose("action_game_object", persona.s_mem.get_str_accessible_arena_game_objects(temp_address).split(", "),
+                           lambda: safe_generate_response(
+                               prompt, gpt_param, 5, fail_safe,
+                               __func_validate, __func_clean_up),
+                           fail_safe=fail_safe,
+                           state={
+                               "current_activity": prompt_input[0],
+                               "objects_available": prompt_input[1],
+                           })
 
   x = [i.strip() for i in persona.s_mem.get_str_accessible_arena_game_objects(temp_address).split(",")]
   if output not in x: 
@@ -1378,8 +1432,23 @@ def run_gpt_prompt_decide_to_talk(persona, target_persona, retrieved,test_input=
   prompt = generate_prompt(prompt_input, prompt_template)
 
   fail_safe = get_fail_safe()
-  output = safe_generate_response(prompt, gpt_param, 5, fail_safe,
-                                   __func_validate, __func_clean_up)
+  # Closed-set choice: same prompt, same answer, but the domain is declared
+  # instead of surviving only as text inside the prompt (see decision.py).
+  output = decision.choose("decide_to_talk", ["yes", "no"],
+                           lambda: safe_generate_response(
+                               prompt, gpt_param, 5, fail_safe,
+                               __func_validate, __func_clean_up),
+                           fail_safe=fail_safe,
+                           state={
+                               "subject": prompt_input[2],
+                               "other": prompt_input[3],
+                               "context": prompt_input[0],
+                               "now": prompt_input[1],
+                               "last_chatted_at": prompt_input[4],
+                               "last_chatted_about": prompt_input[5],
+                               "subject_is": prompt_input[6],
+                               "other_is": prompt_input[7],
+                           })
 
   if debug or verbose: 
     print_run_prompts(prompt_template, persona, gpt_param, 
@@ -1476,8 +1545,27 @@ def run_gpt_prompt_decide_to_react(persona, target_persona, retrieved,test_input
   prompt = generate_prompt(prompt_input, prompt_template)
 
   fail_safe = get_fail_safe()
-  output = safe_generate_response(prompt, gpt_param, 5, fail_safe,
-                                   __func_validate, __func_clean_up)
+  # Closed-set choice: same prompt, same answer, but the domain is declared
+  # instead of surviving only as text inside the prompt (see decision.py).
+  output = decision.choose("decide_to_react", ["1", "2", "3"],
+                           lambda: safe_generate_response(
+                               prompt, gpt_param, 5, fail_safe,
+                               __func_validate, __func_clean_up),
+                           fail_safe=fail_safe,
+                           criteria={
+                               "1": "Wait on %s until %s is done %s"
+                                    % (prompt_input[5], prompt_input[6],
+                                       prompt_input[7]),
+                               "2": "Continue on to %s now" % prompt_input[8],
+                           },
+                           state={
+                               "subject": prompt_input[4],
+                               "other": prompt_input[6],
+                               "context": prompt_input[0],
+                               "now": prompt_input[1],
+                               "subject_is": prompt_input[2],
+                               "other_is": prompt_input[3],
+                           })
 
   if debug or verbose: 
     print_run_prompts(prompt_template, persona, gpt_param, 
@@ -1941,8 +2029,20 @@ def run_gpt_prompt_event_poignancy(persona, event_description, test_input=None, 
   example_output = "5" ########
   special_instruction = "The output should ONLY contain ONE integer value on the scale of 1 to 10." ########
   fail_safe = get_fail_safe() ########
-  output = ChatGPT_safe_generate_response(prompt, example_output, special_instruction, 3, fail_safe,
-                                          __chat_func_validate, __chat_func_clean_up, True)
+  # The paper's 1-10 rubric, resolved by whichever backend this run is
+  # measuring. Under "llm" the call below is the one that was here;
+  # under "jev" it is a Score over the same scale (jev_questions.py).
+  output = decision.score(
+      "event_poignancy",
+      lambda: ChatGPT_safe_generate_response(
+          prompt, example_output, special_instruction, 3, fail_safe,
+          __chat_func_validate, __chat_func_clean_up, True),
+      fail_safe=fail_safe,
+      state={
+          "persona": prompt_input[0],
+          "identity": prompt_input[1],
+          "event": prompt_input[3],
+      })
   if output != False: 
     return output, [output, prompt, gpt_param, prompt_input, fail_safe]
   # Deviation D1: hand back the fail-safe this function already built, instead
@@ -2016,8 +2116,20 @@ def run_gpt_prompt_thought_poignancy(persona, event_description, test_input=None
   example_output = "5" ########
   special_instruction = "The output should ONLY contain ONE integer value on the scale of 1 to 10." ########
   fail_safe = get_fail_safe() ########
-  output = ChatGPT_safe_generate_response(prompt, example_output, special_instruction, 3, fail_safe,
-                                          __chat_func_validate, __chat_func_clean_up, True)
+  # The paper's 1-10 rubric, resolved by whichever backend this run is
+  # measuring. Under "llm" the call below is the one that was here;
+  # under "jev" it is a Score over the same scale (jev_questions.py).
+  output = decision.score(
+      "thought_poignancy",
+      lambda: ChatGPT_safe_generate_response(
+          prompt, example_output, special_instruction, 3, fail_safe,
+          __chat_func_validate, __chat_func_clean_up, True),
+      fail_safe=fail_safe,
+      state={
+          "persona": prompt_input[0],
+          "identity": prompt_input[1],
+          "thought": prompt_input[3],
+      })
   if output != False: 
     return output, [output, prompt, gpt_param, prompt_input, fail_safe]
   # Deviation D1: hand back the fail-safe this function already built, instead
@@ -2092,8 +2204,20 @@ def run_gpt_prompt_chat_poignancy(persona, event_description, test_input=None, v
   example_output = "5" ########
   special_instruction = "The output should ONLY contain ONE integer value on the scale of 1 to 10." ########
   fail_safe = get_fail_safe() ########
-  output = ChatGPT_safe_generate_response(prompt, example_output, special_instruction, 3, fail_safe,
-                                          __chat_func_validate, __chat_func_clean_up, True)
+  # The paper's 1-10 rubric, resolved by whichever backend this run is
+  # measuring. Under "llm" the call below is the one that was here;
+  # under "jev" it is a Score over the same scale (jev_questions.py).
+  output = decision.score(
+      "chat_poignancy",
+      lambda: ChatGPT_safe_generate_response(
+          prompt, example_output, special_instruction, 3, fail_safe,
+          __chat_func_validate, __chat_func_clean_up, True),
+      fail_safe=fail_safe,
+      state={
+          "persona": prompt_input[0],
+          "identity": prompt_input[1],
+          "conversation": prompt_input[3],
+      })
   if output != False: 
     return output, [output, prompt, gpt_param, prompt_input, fail_safe]
   # Deviation D1: hand back the fail-safe this function already built, instead

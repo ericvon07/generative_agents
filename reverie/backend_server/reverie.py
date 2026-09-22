@@ -34,8 +34,9 @@ from selenium import webdriver
 from global_methods import *
 from utils import *
 from maze import *
-from persona.prompt_template import llm_trace
 from persona.persona import *
+from persona.prompt_template import llm_trace
+from persona.prompt_template import decision
 
 current_file = os.path.abspath(__file__)
 
@@ -71,11 +72,12 @@ class ReverieServer:
     # copy everything that's in <fork_sim_code>, but edit its 
     # reverie/meta/json's fork variable. 
     self.sim_code = sim_code
+    sim_folder = f"{fs_storage}/{self.sim_code}"
+    copyanything(fork_folder, sim_folder)
+
     # Name the LLM trace after this simulation, so its per-call log can be
     # matched against the step files it produced.
     llm_trace.set_simulation(self.sim_code)
-    sim_folder = f"{fs_storage}/{self.sim_code}"
-    copyanything(fork_folder, sim_folder)
 
     with open(f"{sim_folder}/reverie/meta.json") as json_file:  
       reverie_meta = json.load(json_file)
@@ -466,6 +468,10 @@ class ReverieServer:
     print ("constructs powered by generative agents architecture and LLM. We")
     print ("clarify that these agents lack human-like agency, consciousness,")
     print ("and independent decision-making.\n---")
+    # Which condition is being measured, said out loud before the first step.
+    # check_ready raises here rather than three hundred steps in, and the line
+    # it prints is the one to copy into the run's notes.
+    print (decision.check_ready())
 
     # <sim_folder> points to the current simulation folder.
     sim_folder = f"{fs_storage}/{self.sim_code}"
