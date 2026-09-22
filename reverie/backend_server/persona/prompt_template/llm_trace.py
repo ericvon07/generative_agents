@@ -3,7 +3,7 @@ File: llm_trace.py
 Description: Per-call instrumentation for every LLM/embedding request.
 
 Writes one JSONL record per event to <log dir>/<sim_code>_<timestamp>.jsonl.
-Three event kinds:
+Five event kinds:
 
   "call"    -- one HTTP request actually sent to the model backend, with
                latency, token usage and a hash/preview of the payload.
@@ -11,6 +11,10 @@ Three event kinds:
                loop (unparseable JSON, failed validation, cleanup crash).
   "outcome" -- the end of a logical prompt: how many attempts it took and
                whether it ended in the fail-safe value.
+  "decision"-- one closed-set choice or rubric score, with the domain it was
+               offered and whether the answer stayed inside it.
+  "guard"   -- an out-of-domain answer that a call site's domain guard
+               replaced, written after the decision it corrects.
 
 The point is to answer, per prompt template: how many calls, how many
 attempts per call, how much of the budget goes to format compliance rather
@@ -459,6 +463,31 @@ def record_decision(label, domain, answer, backend=None, fail_safe=None,
     if extra:
       record.update(extra)
     _emit(record)
+  except Exception:
+    pass
+
+
+def record_guard(label, answer, replacement, domain=None):
+  """A closed-set answer that the call site's domain guard replaced.
+
+  This is deliberately not a field on the decision event. That event is
+  written first and says what the model answered, with in_domain measured on
+  it; this one says what the simulation went on to act on. Keeping them apart
+  keeps the two rates apart: how often the answer left the set, and how often
+  something had to be put in its place.
+  """
+  if not _config["enabled"]:
+    return
+  try:
+    domain = list(domain) if domain else []
+    _emit({
+        "event": "guard",
+        "label": label,
+        "answer": _head(answer),
+        "replacement": _head(replacement),
+        "domain_size": len(domain),
+        "domain": domain if len(domain) <= 40 else domain[:40] + ["..."],
+    })
   except Exception:
     pass
 

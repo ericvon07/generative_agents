@@ -29,5 +29,8 @@
         "enabled": true,
         "dir": "../../logs/llm_trace",
         "head-chars": 200
+    },
+    "domain-guard": {
+        "enabled": true
     }
 }

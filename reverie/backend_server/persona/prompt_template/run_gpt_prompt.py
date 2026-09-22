@@ -16,6 +16,7 @@ from global_methods import *
 from persona.prompt_template.gpt_structure import *
 from persona.prompt_template.print_prompt import *
 from persona.prompt_template import decision
+from persona.prompt_template import domain_guard
 
 def get_random_alphanumeric(i=6, j=6): 
   """
@@ -781,9 +782,12 @@ def run_gpt_prompt_action_arena(action_description,
   prompt = generate_prompt(prompt_input, prompt_template)
 
   fail_safe = get_fail_safe()
+  # The same list create_prompt_input interpolated into the prompt, held in a
+  # name so the choice and the guard below cannot drift apart.
+  arenas = accessible_arenas(persona, act_world, act_sector)
   # Closed-set choice: same prompt, same answer, but the domain is declared
   # instead of surviving only as text inside the prompt (see decision.py).
-  output = decision.choose("action_arena", accessible_arenas(persona, act_world, act_sector),
+  output = decision.choose("action_arena", arenas,
                            lambda: safe_generate_response(
                                prompt, gpt_param, 5, fail_safe,
                                __func_validate, __func_clean_up),
@@ -796,10 +800,20 @@ def run_gpt_prompt_action_arena(action_description,
                                "task": prompt_input[5],
                            })
   print (output)
-  # y = f"{act_world}:{act_sector}"
-  # x = [i.strip() for i in persona.s_mem.get_str_accessible_sector_arenas(y).split(",")]
-  # if output not in x: 
-  #   output = random.choice(x)
+  # The authors' domain guard, restored (deviation D4). It stood here, live,
+  # in defunct_run_gpt_prompt.py:612-615 and was commented out when the MAR 11
+  # filter above made the prompt offer a smaller set than the guard checked:
+  #
+  #   y = f"{act_world}:{act_sector}"
+  #   x = [i.strip() for i in persona.s_mem.get_str_accessible_sector_arenas(y).split(",")]
+  #   if output not in x:
+  #     output = random.choice(x)
+  #
+  # Same mechanism, checked against the filtered list the prompt actually
+  # offered -- which restores the invariant the filter broke, rather than
+  # sending a persona into another persona's bedroom. The out-of-domain answer
+  # is already recorded above; the substitution is recorded separately.
+  output = domain_guard.keep_in_domain("action_arena", output, arenas)
 
   if debug or verbose: 
     print_run_prompts(prompt_template, persona, gpt_param, 

@@ -37,6 +37,7 @@ from maze import *
 from persona.persona import *
 from persona.prompt_template import llm_trace
 from persona.prompt_template import decision
+from persona.prompt_template import domain_guard
 
 current_file = os.path.abspath(__file__)
 
@@ -472,6 +473,9 @@ class ReverieServer:
     # check_ready raises here rather than three hundred steps in, and the line
     # it prints is the one to copy into the run's notes.
     print (decision.check_ready())
+    # Whether an out-of-domain answer ends the run or is replaced, said before
+    # the first step rather than inferred from the trace afterwards.
+    print (domain_guard.status())
 
     # <sim_folder> points to the current simulation folder.
     sim_folder = f"{fs_storage}/{self.sim_code}"
