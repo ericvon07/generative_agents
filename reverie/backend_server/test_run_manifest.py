@@ -75,6 +75,23 @@ class RunManifest(unittest.TestCase):
     run_manifest.apply(sim_code=self.sim)
     self.assertEqual(first, [random.choice(arenas) for _ in range(20)])
 
+  def test_each_stage_draws_its_own_stream(self):
+    """The runner builds a ReverieServer per 200-step stage inside one
+    process. Seeding the run's seed at each one would make every stage
+    repeat the same draws; the stage name is mixed in so they differ and
+    stay deterministic."""
+    a = run_manifest.apply(sim_code=self.sim + "-s-0-2360-2560")
+    first = [random.random() for _ in range(5)]
+    b = run_manifest.apply(sim_code=self.sim + "-s-1-2560-2760")
+    second = [random.random() for _ in range(5)]
+    self.assertEqual(a["seed"], b["seed"])
+    self.assertNotEqual(a["stage_seed"], b["stage_seed"])
+    self.assertNotEqual(first, second)
+
+    # ... and the same stage name replays exactly.
+    run_manifest.apply(sim_code=self.sim + "-s-0-2360-2560")
+    self.assertEqual(first, [random.random() for _ in range(5)])
+
   def test_env_overrides_the_configured_seed(self):
     os.environ["RUN_SEED"] = "7"
     self.assertEqual(run_manifest.apply(sim_code=self.sim)["seed"], 7)

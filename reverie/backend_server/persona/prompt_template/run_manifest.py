@@ -30,7 +30,17 @@ Environment override: RUN_SEED=<int>, or RUN_SEED=off to draw unseeded the
 way every run before 2026-09-22 did. An unseeded run is recorded as
 "seed": null, so no trace can quietly claim a reproducibility it does not
 have. Replicates of the same condition vary this and nothing else.
+
+One wrinkle from the automatic runner: it builds a fresh ReverieServer for
+every 200-step stage, in one process, so seeding the run's seed here would
+restart the same stream every stage and every stage's first draw would be
+the same draw. The generator is therefore seeded with the run's seed mixed
+with the stage's simulation name -- deterministic, since the stage names are
+a function of the window, and decorrelated across stages. Both numbers go in
+the manifest: "seed" is the run's, "stage_seed" is what was handed to
+random.seed().
 """
+import binascii
 import hashlib
 import json
 import os
@@ -49,6 +59,7 @@ _DEFAULT_SEED = 20260922
 
 _manifest = {}
 _seed = None
+_stage = None
 _seeded = []
 
 
@@ -83,6 +94,16 @@ def _load_seed(cfg):
     print("run_manifest: \"run\": {\"seed\": %r} is not an integer; "
           "using %d" % (seed, _DEFAULT_SEED))
     return _DEFAULT_SEED
+
+
+def _stage_seed(seed, sim_code):
+  """The run's seed, mixed with the stage this process is about to run."""
+  if seed is None:
+    return None
+  if not sim_code:
+    return seed
+  mix = binascii.crc32(str(sim_code).encode("utf-8")) & 0xffffffff
+  return (int(seed) ^ mix) & 0x7fffffff
 
 
 def _git(*args):
@@ -161,18 +182,19 @@ def apply(fork_sim_code=None, sim_code=None, steps=None):
     The manifest dict, also handed to llm_trace so every trace file this run
     opens begins with it.
   """
-  global _manifest, _seed, _seeded
+  global _manifest, _seed, _seeded, _stage
 
   cfg = _config()
   _seed = _load_seed(cfg)
+  _stage = _stage_seed(_seed, sim_code)
   _seeded = []
 
-  if _seed is not None:
-    random.seed(_seed)
+  if _stage is not None:
+    random.seed(_stage)
     _seeded.append("random")
     try:
       import numpy
-      numpy.random.seed(_seed % (2 ** 32))
+      numpy.random.seed(_stage % (2 ** 32))
       _seeded.append("numpy")
     except Exception:
       pass
@@ -180,6 +202,7 @@ def apply(fork_sim_code=None, sim_code=None, steps=None):
   _manifest = {
       "event": "manifest",
       "seed": _seed,
+      "stage_seed": _stage,
       "seeded": _seeded,
       "fork_sim_code": fork_sim_code,
       "steps_to": steps,
@@ -228,4 +251,5 @@ def status():
   if _seed is None:
     return ("run: %s, UNSEEDED -- this run is not reproducible "
             "(set RUN_SEED or \"run\": {\"seed\": N})" % where)
-  return "run: %s, seed %d (%s)" % (where, _seed, ", ".join(_seeded) or "none")
+  return ("run: %s, seed %d -> stage seed %d (%s)"
+          % (where, _seed, _stage, ", ".join(_seeded) or "none"))
