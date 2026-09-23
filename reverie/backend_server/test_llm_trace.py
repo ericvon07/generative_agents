@@ -1,8 +1,9 @@
 """
 File: test_llm_trace.py
 Description: The five cases that separate "the answer equals the fail-safe"
-             from "the decision actually fell back", plus the two that say
-             which rejected responses are kept whole.
+             from "the decision actually fell back", the two that say which
+             rejected responses are kept whole, and the five that say what
+             kind of failure a rejection was.
 
 Run from reverie/backend_server (the cwd the simulation uses):
 
@@ -36,6 +37,16 @@ arena and game object accept any non-empty string, so a dead backend read as
 a live simulation choosing badly. Two cases, deliberately side by side: the
 transport failure that raises and spends no attempt, and the bad answer that
 does neither.
+
+Truncation covers the fourth: a response the provider cut for the token
+budget is not a response the model got wrong. SR-1 found all 35 discarded
+social responses stopping mid-clause on a 20-token budget, and every one of
+them filed under validate_false. These three cases are that reading made a
+field rather than an afternoon.
+
+TransportFailure and Truncation share a stubbed client through Stubbed, which
+is deliberately not a TestCase: inheriting one re-runs its cases under the
+subclass's name, against the same trace file, and the counts double.
 """
 import json
 import os
@@ -253,15 +264,17 @@ class Stub(object):
                           "model": "stub"})()
 
 
-class TransportFailure(unittest.TestCase):
-  """A backend that did not answer is not a backend that answered badly."""
+class Stubbed(object):
+  """The machinery two suites below share: a stubbed client, a silenced cost
+  ledger, and a reader for the records this test wrote. Not a TestCase --
+  inheriting one would re-run its cases under every subclass's name."""
 
   PARAMS = {"engine": "stub", "max_tokens": 20, "temperature": 0, "top_p": 1,
             "stream": False, "frequency_penalty": 0, "presence_penalty": 0,
             "stop": None}
 
   def setUp(self):
-    llm_trace.set_simulation("test-%s" % self.id().rsplit(".", 1)[-1])
+    llm_trace.set_simulation(self.sim_prefix())
     self.real_client = gpt_structure.client
     self.real_logger = gpt_structure.cost_logger
     # The cost logger writes a JSON ledger per call; nothing here is about
@@ -288,7 +301,14 @@ class TransportFailure(unittest.TestCase):
     return out
 
   def sim_prefix(self):
-    return "test-%s" % self.id().rsplit(".", 1)[-1]
+    """Each test writes to its own trace file, named for its class as well
+    as its method: two suites share method names by inheritance and must not
+    share a file."""
+    return "test-%s" % self.id().rsplit(".", 2)[-2:][0] + "-" + \
+        self.id().rsplit(".", 1)[-1]
+
+class TransportFailure(Stubbed, unittest.TestCase):
+  """A backend that did not answer is not a backend that answered badly."""
 
   # --- case 8 (S2.1, S2.2): the transport fails and the run stops ----------
 
@@ -337,6 +357,66 @@ class TransportFailure(unittest.TestCase):
     reasons = [r["reason"] for r in self.records("reject")]
     self.assertEqual(["validate_false"] * 3, reasons)
     self.assertTrue(self.records("outcome")[-1]["failsafe"])
+
+
+class Truncation(Stubbed, unittest.TestCase):
+  """A response the provider cut for the token budget is not a response the
+  model got wrong.
+
+  SR-1 is what this is for. All 35 discarded social responses in the 22 Sep
+  window stop mid-clause, because decide_to_talk and decide_to_react set
+  max_tokens to 20 -- and every one of them was filed under validate_false,
+  which reads as a model that cannot follow a format. Reading that off the
+  trace took a person looking at the text by hand. It is now a field.
+
+  Inherits TransportFailure's stub, its client swap and its readers; nothing
+  here is about a transport failure.
+  """
+
+  # --- case 10 (S3.1): every call says why it stopped ----------------------
+
+  def test_every_call_records_why_generation_stopped(self):
+    gpt_structure.client = Stub(text="kitchen", finish_reason="stop")
+    gpt_structure.safe_generate_response(
+        "where is Isabella?", self.PARAMS, repeat=1,
+        fail_safe_response="kitchen",
+        func_validate=lambda r, prompt: True,
+        func_clean_up=lambda r, prompt: r)
+    self.assertEqual("stop", self.records("call")[-1]["finish_reason"])
+
+  # --- case 11 (S3.2): the 20-token budget reads as the budget -------------
+
+  def test_a_truncated_answer_is_not_a_wrong_answer(self):
+    # What decide_to_talk gets back from a model that reasons before it
+    # answers: 20 tokens of reasoning, cut before the "yes" or "no".
+    gpt_structure.client = Stub(
+        text="Let me think about this. Isabella and Klaus have been",
+        finish_reason="length")
+
+    gpt_structure.safe_generate_response(
+        "would Isabella talk to Klaus?", self.PARAMS, repeat=2,
+        fail_safe_response="no",
+        func_validate=lambda r, prompt: False,
+        func_clean_up=lambda r, prompt: r)
+
+    reasons = [r["reason"] for r in self.records("reject")]
+    self.assertEqual(["truncated", "truncated"], reasons)
+    self.assertNotIn("validate_false", reasons)
+
+  # --- case 12 (S3.2): half a JSON document is the budget, not the model ---
+
+  def test_a_truncated_json_keeps_the_exception_after_the_colon(self):
+    gpt_structure.client = Stub(text='{"output": "kit', finish_reason="length")
+
+    gpt_structure.ChatGPT_safe_generate_response(
+        "which sector?", example_output="kitchen", special_instruction="",
+        repeat=1, fail_safe_response="kitchen",
+        func_validate=lambda r, prompt: True,
+        func_clean_up=lambda r, prompt: r)
+
+    reason = self.records("reject")[-1]["reason"]
+    self.assertTrue(reason.startswith("truncated"), reason)
+    self.assertIn("JSONDecodeError", reason)
 
 
 class Backfill(unittest.TestCase):

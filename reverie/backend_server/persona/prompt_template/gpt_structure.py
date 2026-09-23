@@ -270,7 +270,8 @@ def ChatGPT_safe_generate_response(prompt,
                                  label=label)
         return cleaned_response
       
-      llm_trace.record_reject("validate_false", curr_gpt_response, label=label)
+      llm_trace.record_reject(llm_trace.reject_reason_for_validation(),
+                              curr_gpt_response, label=label)
       if verbose: 
         print ("---- repeat count: \n", i, curr_gpt_response)
         print (curr_gpt_response)
@@ -314,7 +315,8 @@ def ChatGPT_safe_generate_response_OLD(prompt,
                                  False, True, latency=time.time() - started,
                                  label=label)
         return cleaned_response
-      llm_trace.record_reject("validate_false", curr_gpt_response, label=label)
+      llm_trace.record_reject(llm_trace.reject_reason_for_validation(),
+                              curr_gpt_response, label=label)
       if verbose: 
         print (f"---- repeat count: {i}")
         print (curr_gpt_response)
@@ -437,7 +439,8 @@ def safe_generate_response(prompt,
         llm_trace.record_outcome("safe_generate_response", i + 1, False, True,
                                  latency=time.time() - started, label=label)
         return cleaned_response
-      llm_trace.record_reject("validate_false", curr_gpt_response, label=label)
+      llm_trace.record_reject(llm_trace.reject_reason_for_validation(),
+                              curr_gpt_response, label=label)
       if verbose: 
         print ("---- repeat count: ", i, curr_gpt_response)
         print (curr_gpt_response)

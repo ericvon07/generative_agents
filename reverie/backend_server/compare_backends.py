@@ -108,6 +108,11 @@ class Condition(object):
       self.records.extend(records)
 
     self.calls = [r for r in self.records if r.get("event") == "call"]
+    # A trace written before 006-IP has no finish_reason on any call, so it
+    # cannot say whether a rejection was a truncation. That is a question it
+    # was never asked, and the answer is "unknown" -- printing zero would be
+    # a finding about the model made out of a missing field.
+    self.knows_finish_reason = any("finish_reason" in r for r in self.calls)
     self.decisions = [r for r in self.records if r.get("event") == "decision"]
     self.outcomes = [r for r in self.records if r.get("event") == "outcome"]
     self.rejects = [r for r in self.records if r.get("event") == "reject"]
@@ -220,7 +225,7 @@ class Rejection(object):
   that decision was offered."""
 
   __slots__ = ("label", "persona", "step", "attempt", "reason", "text",
-               "whole", "matched", "verbatim")
+               "whole", "matched", "verbatim", "truncated")
 
   def __init__(self, record, domain):
     self.label = decision_label(record)
@@ -235,6 +240,10 @@ class Rejection(object):
     self.matched = members_named(self.text, domain)
     self.verbatim = normalise(self.text) in set(
         normalise(m) for m in domain if m != "...")
+    # "truncated" from the validate branch, "truncated:JSONDecodeError" and
+    # friends from the exception branch; both mean the provider stopped the
+    # answer for the token budget.
+    self.truncated = str(self.reason or "").startswith("truncated")
 
 
 def rejections_by_decision(condition):
@@ -300,7 +309,8 @@ def rejection_stats(condition):
 
   def blank(label):
     return stats.setdefault(label, {"n": 0, "recoverable": 0, "verbatim": 0,
-                                    "ambiguous": 0, "floor": 0, "unpaired": 0})
+                                    "ambiguous": 0, "floor": 0, "unpaired": 0,
+                                    "truncated": 0})
 
   for label, rejections in paired.items():
     row = blank(label)
@@ -310,6 +320,7 @@ def rejection_stats(condition):
     row["ambiguous"] = sum(1 for r in rejections
                            if len(set(normalise(m) for m in r.matched)) > 1)
     row["floor"] = sum(1 for r in rejections if not r.whole)
+    row["truncated"] = sum(1 for r in rejections if r.truncated)
   for label, n in unpaired.items():
     blank(label)["unpaired"] = n
   for label, n in scoreless.items():
@@ -519,10 +530,10 @@ def per_decision(conditions, only=None):
     print("no decisions recorded in either condition.\n")
     return
 
-  row_fmt = "%-20s  %-8s %6s %10s %10s %8s %9s %12s %9s %9s %9s %9s"
+  row_fmt = "%-20s  %-8s %6s %10s %10s %8s %9s %12s %9s %9s %9s %9s %9s"
   header = (row_fmt
             % ("decision", "cond", "n", "out of dom", "= failsafe", "gave up",
-               "rejected", "already valid", "verbatim",
+               "rejected", "already valid", "verbatim", "truncated",
                "ms/dec", "req/dec", "p50 conf"))
   stats = dict((id(c), rejection_stats(c)) for c in conditions)
   print("PER DECISION")
@@ -533,7 +544,7 @@ def per_decision(conditions, only=None):
       group = [r for r in c.decisions if r.get("label") == label]
       if not group:
         print(row_fmt % (label, c.prefix[-8:], "0", "-", "-", "-",
-                         "-", "-", "-", "-", "-", "-"))
+                         "-", "-", "-", "-", "-", "-", "-"))
         continue
       checked = [r for r in group if r.get("in_domain") is not None]
       lat = [r["latency_ms"] for r in c.calls
@@ -548,9 +559,9 @@ def per_decision(conditions, only=None):
         # No loop, so nothing was ever discarded: three dashes, not three
         # zeroes. A zero would read as a backend that discarded nothing on
         # its way to an answer; this backend has no way to discard.
-        rejected = recoverable = verbatim = "-"
+        rejected = recoverable = verbatim = truncated = "-"
       elif row is None:
-        rejected, recoverable, verbatim = "0", "-", "-"
+        rejected, recoverable, verbatim, truncated = "0", "-", "-", "-"
       else:
         rejected = "%d" % row["n"]
         if row["recoverable"] is None:
@@ -559,6 +570,11 @@ def per_decision(conditions, only=None):
           recoverable = "%d (%s)" % (row["recoverable"],
                                      share(row["recoverable"], row["n"]))
           verbatim = "%d" % row["verbatim"]
+        # A trace that never recorded finish_reason cannot answer this, and
+        # a zero here would read as "the budget was never the problem" --
+        # which is the opposite of what SR-1 found on exactly these rows.
+        truncated = ("%d" % row["truncated"] if c.knows_finish_reason
+                     else "unknown")
       print(row_fmt
             % (label, c.prefix[-8:], len(group),
                share(sum(1 for r in checked if r["in_domain"] is False),
@@ -566,7 +582,7 @@ def per_decision(conditions, only=None):
                share(sum(1 for r in group if r.get("is_fail_safe")),
                      len(group)),
                share(sum(1 for r in group if gave_up(r)), len(group)),
-               rejected, recoverable, verbatim,
+               rejected, recoverable, verbatim, truncated,
                "-" if per is None else "%.0f" % per,
                "-" if not lat else "%.2f" % (float(len(lat)) / len(group)),
                "-" if not conf else "%.3f" % statistics.median(conf)))
@@ -752,7 +768,14 @@ def main():
         'offered, and')
   print('  "verbatim" how many were one and nothing else. A high pair is '
         'the loop')
-  print('  rejecting right answers in the wrong shape.\n')
+  print('  rejecting right answers in the wrong shape.')
+  print('  "truncated" is how many of those the provider cut for the token '
+        'budget:')
+  print('  the model was answering and did not get to finish, which is not '
+        'the same')
+  print('  failure as answering something invalid. A trace written before '
+        '006-IP')
+  print('  recorded no finish_reason and reads "unknown" rather than 0.\n')
   if args.decision:
     rejected_responses(conditions, args.decision)
     answers(conditions, args.decision)

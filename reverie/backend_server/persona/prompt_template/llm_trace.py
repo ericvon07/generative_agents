@@ -11,7 +11,9 @@ Six event kinds:
   "call"    -- one HTTP request actually sent to the model backend, with
                latency, token usage and a hash/preview of the payload.
   "reject"  -- a response that came back but was thrown away by the retry
-               loop (unparseable JSON, failed validation, cleanup crash).
+               loop (unparseable JSON, failed validation, cleanup crash),
+               or a request that never came back at all ("transport:<Type>",
+               which is fatal and ends the run).
                Inside a decision_scope -- i.e. on one of the closed-set
                decisions -- it also carries "resp_full", the untruncated
                text, because the question "did the discarded answer already
@@ -479,6 +481,11 @@ def record_call(path, model, prompt, response=None, latency=None,
         "prompt_chars": None if prompt is None else len(str(prompt)),
         "prompt_head": _head(prompt),
         "resp_head": _head(text),
+        # Why generation stopped. "length" means the provider cut the answer
+        # for the token budget; a trace written before 006-IP has no such
+        # key at all, which is not the same as having it read None, and the
+        # readers keep the two apart.
+        "finish_reason": facts["finish_reason"],
     }
     if extra:
       record.update(extra)
@@ -525,12 +532,23 @@ def _in_decision():
 
 
 def reject_reason_from_exception():
-  """Classify the exception being handled, without re-raising it."""
+  """Classify the exception being handled, without re-raising it.
+
+  A response the provider cut for length is filed under "truncated" here as
+  well as in the validate branch, with the exception's type kept after the
+  colon: half a JSON document raises JSONDecodeError, and the cause of that
+  is the token budget, not the model's grasp of JSON. A reader that wants
+  every truncation asks for reason.startswith("truncated"); one that wants
+  the parse failures still has the type.
+  """
   try:
     exc = sys.exc_info()[1]
     if exc is None:
       return "unknown"
-    return "exception:%s" % type(exc).__name__
+    reason = "exception:%s" % type(exc).__name__
+    if (last_call() or {}).get("finish_reason") == "length":
+      return "truncated:%s" % type(exc).__name__
+    return reason
   except Exception:
     return "unknown"
 
