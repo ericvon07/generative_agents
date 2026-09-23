@@ -3,7 +3,7 @@ File: llm_trace.py
 Description: Per-call instrumentation for every LLM/embedding request.
 
 Writes one JSONL record per event to <log dir>/<sim_code>_<timestamp>.jsonl.
-Six event kinds:
+Seven event kinds:
 
   "manifest"-- the first line of every trace file: the seed, the commit, the
                models and the backend that produced everything below it.
@@ -28,6 +28,9 @@ Six event kinds:
                offered and whether the answer stayed inside it.
   "guard"   -- an out-of-domain answer that a call site's domain guard
                replaced, written after the decision it corrects.
+  "rate_limit" -- a provider answered 429 and the request is being made
+               again after a wait. Not a call: nothing was answered and no
+               tokens were spent. It is the wall clock the run lost, named.
 
 The point is to answer, per prompt template: how many calls, how many
 attempts per call, how much of the budget goes to format compliance rather
@@ -637,6 +640,43 @@ def record_decision(label, domain, answer, backend=None, fail_safe=None,
     if extra:
       record.update(extra)
     _emit(record)
+  except Exception:
+    pass
+
+
+def record_rate_limit(path, status, attempt, of, delay, error=None,
+                      label=None):
+  """A provider said 429, and the request is about to be made again.
+
+  Deliberately its own event rather than a failed "call". Nothing came back
+  that anyone could read, no tokens were spent, and a reader counting
+  requests -- which is how every wall-clock and cost figure in this lab is
+  built -- must not count this one. What it is, is the minute the run lost,
+  and 008-IP asks for exactly that figure.
+
+  The attempt that finally answers writes ONE call record with ok: true, and
+  its latency_ms is that request's, not the wait's: a ride-out that folded
+  into latency would turn a provider's bad minute into a model that got slow.
+
+  <attempt> is which wait this is and <of> the budget it is spent from, so
+  the policy a run ran under is readable off any one of these records. When
+  the budget runs out the call raises instead, and the reject beside it says
+  "transport:RateLimitError" -- RB-C is not weakened by this event, it is
+  given the bounded wait its reopening clause asked for.
+  """
+  if not _config["enabled"]:
+    return
+  try:
+    _emit({
+        "event": "rate_limit",
+        "label": label or _caller_label(),
+        "path": path,
+        "status": status,
+        "ride_attempt": attempt,
+        "ride_budget": of,
+        "delay_s": None if delay is None else round(float(delay), 3),
+        "error": _head(error),
+    })
   except Exception:
     pass
 
