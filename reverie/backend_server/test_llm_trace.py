@@ -27,6 +27,15 @@ RejectedText covers the second question the trace has to answer: of the
 responses the retry loop discarded on a closed-set decision, how many already
 named a member of the set? That cannot be read off a 200-character head, so
 those rejects -- and only those -- keep the whole text.
+
+TransportFailure covers the third, and it is the one with teeth: a backend
+that did not answer must not look like a backend that answered badly. Before
+006-IP, GPT_request turned any exception into the string "TOKEN LIMIT
+EXCEEDED" and handed it to the validator -- and the validators for sector,
+arena and game object accept any non-empty string, so a dead backend read as
+a live simulation choosing badly. Two cases, deliberately side by side: the
+transport failure that raises and spends no attempt, and the bad answer that
+does neither.
 """
 import json
 import os
@@ -42,7 +51,7 @@ os.environ["LLM_TRACE_ENABLED"] = "1"
 os.environ["DECISION_BACKEND"] = "llm"
 
 import compare_backends
-from persona.prompt_template import decision, llm_trace
+from persona.prompt_template import decision, gpt_structure, llm_trace
 
 SECTORS = ["kitchen", "main room", "bathroom", "common room"]
 
@@ -214,6 +223,122 @@ class RejectedText(unittest.TestCase):
     self.assertNotIn("resp_full", record)
 
 
+class Stub(object):
+  """Stands in for gpt_structure.client: answers, or fails to.
+
+  Shaped like the sliver of the OpenAI client the two request paths touch --
+  client.chat.completions.create(...) -- and nothing more."""
+
+  def __init__(self, error=None, text="kitchen", finish_reason="stop"):
+    self.error = error
+    self.text = text
+    self.finish_reason = finish_reason
+    self.calls = 0
+    self.chat = self
+
+  @property
+  def completions(self):
+    return self
+
+  def create(self, **kwargs):
+    self.calls += 1
+    if self.error is not None:
+      raise self.error
+    message = type("M", (), {"content": self.text})()
+    choice = type("C", (), {"message": message,
+                            "finish_reason": self.finish_reason})()
+    usage = type("U", (), {"prompt_tokens": 10, "completion_tokens": 2,
+                           "total_tokens": 12})()
+    return type("R", (), {"choices": [choice], "usage": usage,
+                          "model": "stub"})()
+
+
+class TransportFailure(unittest.TestCase):
+  """A backend that did not answer is not a backend that answered badly."""
+
+  PARAMS = {"engine": "stub", "max_tokens": 20, "temperature": 0, "top_p": 1,
+            "stream": False, "frequency_penalty": 0, "presence_penalty": 0,
+            "stop": None}
+
+  def setUp(self):
+    llm_trace.set_simulation("test-%s" % self.id().rsplit(".", 1)[-1])
+    self.real_client = gpt_structure.client
+    self.real_logger = gpt_structure.cost_logger
+    # The cost logger writes a JSON ledger per call; nothing here is about
+    # the ledger, and a test does not get to touch the run's cost logs.
+    gpt_structure.cost_logger = type(
+        "Silent", (), {"update_cost": lambda self, *a, **k: None})()
+
+  def tearDown(self):
+    gpt_structure.client = self.real_client
+    gpt_structure.cost_logger = self.real_logger
+
+  def records(self, event):
+    out = []
+    for name in sorted(os.listdir(_TRACE_DIR)):
+      if not name.startswith(self.sim_prefix()):
+        continue
+      with open(os.path.join(_TRACE_DIR, name), "r", encoding="utf-8") as f:
+        for line in f:
+          line = line.strip()
+          if line:
+            record = json.loads(line)
+            if record.get("event") == event:
+              out.append(record)
+    return out
+
+  def sim_prefix(self):
+    return "test-%s" % self.id().rsplit(".", 1)[-1]
+
+  # --- case 8 (S2.1, S2.2): the transport fails and the run stops ----------
+
+  def test_a_transport_failure_raises_and_spends_no_attempt(self):
+    gpt_structure.client = Stub(error=ConnectionError("connection refused"))
+
+    with self.assertRaises(gpt_structure.BackendTransportError):
+      gpt_structure.safe_generate_response(
+          "where is Isabella?", self.PARAMS, repeat=5,
+          fail_safe_response="kitchen",
+          func_validate=lambda r, prompt: True,
+          func_clean_up=lambda r, prompt: r)
+
+    # One request, not five: a failure that answered nothing has nothing for
+    # the next four attempts to learn from.
+    self.assertEqual(1, gpt_structure.client.calls)
+
+    calls = self.records("call")
+    self.assertTrue(calls)
+    self.assertFalse(calls[-1]["ok"])
+    self.assertIn("ConnectionError", calls[-1]["error"])
+
+    rejects = self.records("reject")
+    self.assertTrue(rejects)
+    self.assertEqual("transport:ConnectionError", rejects[-1]["reason"])
+    # The whole point: not one of them may read as the model answering.
+    self.assertNotIn("validate_false", [r["reason"] for r in rejects])
+
+    # And no fail-safe reached the world -- safe_generate_response never got
+    # to its last line.
+    self.assertEqual([], self.records("outcome"))
+
+  # --- case 9 (S2.2): a bad answer is still a bad answer -------------------
+
+  def test_a_bad_answer_does_not_raise(self):
+    gpt_structure.client = Stub(text="the Hobbs Cafe, probably")
+
+    answer = gpt_structure.safe_generate_response(
+        "where is Isabella?", self.PARAMS, repeat=3,
+        fail_safe_response="kitchen",
+        func_validate=lambda r, prompt: False,
+        func_clean_up=lambda r, prompt: r)
+
+    self.assertEqual("kitchen", answer)          # the fail-safe, as before
+    self.assertEqual(3, gpt_structure.client.calls)  # every attempt spent
+    reasons = [r["reason"] for r in self.records("reject")]
+    self.assertEqual(["validate_false"] * 3, reasons)
+    self.assertTrue(self.records("outcome")[-1]["failsafe"])
+
+
 class Backfill(unittest.TestCase):
   """The readers have to recover the signal from traces written before the
   seam recorded it, which is every trace collected up to 22 Sep 2026."""
@@ -243,3 +368,12 @@ if __name__ == "__main__":
     unittest.main(exit=False, verbosity=2)
   finally:
     shutil.rmtree(_TRACE_DIR, ignore_errors=True)
+    # Importing gpt_structure builds the run's cost logger, which opens a
+    # ledger file under cost-logs/ the moment it is constructed. This suite
+    # spends nothing; it does not get to leave a ledger behind claiming it
+    # did.
+    try:
+      ledger = gpt_structure.cost_logger._OpenAICostLogger_Singleton__cost_logger.filepath
+      os.remove(ledger)
+    except Exception:
+      pass

@@ -40,6 +40,13 @@ class BackendTransportError(Exception):
   retry loops re-raise it rather than spend an attempt on it (RB-C).
   """
 
+  @property
+  def reason(self):
+    """What the trace files this under. The wrapper's own type says nothing;
+    the type underneath says whether it was a 402, a 429 or a DNS error."""
+    cause = self.__cause__ or self.__context__
+    return "transport:%s" % (type(cause).__name__ if cause else "unknown")
+
 
 def _resolve_key(config, key_field, env_field):
   """The key for one client: from the environment when the config names a
@@ -183,7 +190,8 @@ def ChatGPT_single_request(prompt):
   except Exception as e:
     llm_trace.record_call("ChatGPT_single_request", openai_config["model"],
                           prompt, latency=time.time() - started, error=e)
-    raise
+    raise BackendTransportError(
+        "%s: %s" % (type(e).__name__, e)) from e
   llm_trace.record_call("ChatGPT_single_request", openai_config["model"], prompt,
                         response=completion, latency=time.time() - started)
   cost_logger.update_cost(completion, input_cost=openai_config["model-costs"]["input"], output_cost=openai_config["model-costs"]["output"])
@@ -219,7 +227,10 @@ def ChatGPT_request(prompt):
     llm_trace.record_call("ChatGPT_request", openai_config["model"], prompt,
                           latency=time.time() - started, error=e)
     print(f"Error: {e}")
-    return "ChatGPT ERROR"
+    # Was: return "ChatGPT ERROR". A string is an answer, and the closed-set
+    # validators accept any non-empty one (RB-C).
+    raise BackendTransportError(
+        "%s: %s" % (type(e).__name__, e)) from e
 
 
 def ChatGPT_safe_generate_response(prompt, 
@@ -265,6 +276,11 @@ def ChatGPT_safe_generate_response(prompt,
         print (curr_gpt_response)
         print ("~~~~")
 
+    except BackendTransportError as e:
+      # Not an attempt: nothing was answered, so there is nothing to retry
+      # against and nothing the next two attempts would learn (RB-C).
+      llm_trace.record_reject(e.reason, curr_gpt_response, label=label)
+      raise
     except: 
       llm_trace.record_reject(llm_trace.reject_reason_from_exception(),
                               curr_gpt_response, label=label)
@@ -304,6 +320,9 @@ def ChatGPT_safe_generate_response_OLD(prompt,
         print (curr_gpt_response)
         print ("~~~~")
 
+    except BackendTransportError as e:
+      llm_trace.record_reject(e.reason, curr_gpt_response, label=label)
+      raise
     except: 
       llm_trace.record_reject(llm_trace.reject_reason_from_exception(),
                               curr_gpt_response, label=label)
@@ -358,7 +377,11 @@ def GPT_request(prompt, gpt_parameter):
     llm_trace.record_call("GPT_request", openai_config["model"], prompt,
                           latency=time.time() - started, error=e)
     print(f"Error: {e}")
-    return "TOKEN LIMIT EXCEEDED"
+    # Was: return "TOKEN LIMIT EXCEEDED" -- a string the retry loop spent an
+    # attempt on and the validator, in five of the paper's closed-set
+    # prompts, accepted (RB-C).
+    raise BackendTransportError(
+        "%s: %s" % (type(e).__name__, e)) from e
 
 
 def generate_prompt(curr_input, prompt_lib_file): 
@@ -403,7 +426,11 @@ def safe_generate_response(prompt,
   started = time.time()
   for i in range(repeat): 
     llm_trace.set_attempt(i + 1)
-    curr_gpt_response = GPT_request(prompt, gpt_parameter)
+    try:
+      curr_gpt_response = GPT_request(prompt, gpt_parameter)
+    except BackendTransportError as e:
+      llm_trace.record_reject(e.reason, None, label=label)
+      raise
     try:
       if func_validate(curr_gpt_response, prompt=prompt): 
         cleaned_response = func_clean_up(curr_gpt_response, prompt=prompt)
