@@ -174,6 +174,36 @@ DEFAULT_COMPLETION_SYSTEM_PROMPT = (
 completion_system_prompt = openai_config.get("completion-system-prompt", DEFAULT_COMPLETION_SYSTEM_PROMPT)
 
 
+def _charge(response, costs=None):
+  """Book one response against the run's budget.
+
+  RB-B: when the backend reports what the call actually cost -- OpenRouter
+  puts it in usage.cost, at the provider that actually served it, after
+  whatever discount applied -- that number is the ledger's, and the price
+  table is not consulted. "model-costs" stays for a backend that reports
+  nothing, which is every local one, and there it is correctly 0.
+
+  The ledger prices per million tokens, so a reported cost goes in as the
+  blended rate that reproduces it exactly (cost = rate x total / 1e6). That
+  rate is not a guess: it is what this call was charged at, which is the
+  honest thing for the breakdown to show.
+
+  Deliberately outside the try that wraps the request. update_cost raises
+  when the run passes its cost-upperbound, and the bill guard firing is not
+  a transport failure -- wrapping it would stop the run under the wrong name
+  and write a second call record saying the backend errored when it did not.
+  """
+  costs = costs or openai_config["model-costs"]
+  reported = llm_trace.response_facts(response).get("cost")
+  total = getattr(getattr(response, "usage", None), "total_tokens", None)
+  if reported is not None and total:
+    rate = reported * 1e6 / total
+    cost_logger.update_cost(response, input_cost=rate, output_cost=rate)
+    return
+  cost_logger.update_cost(response, input_cost=costs["input"],
+                          output_cost=costs["output"])
+
+
 def temp_sleep(seconds=0.1):
   time.sleep(seconds)
 
@@ -194,7 +224,7 @@ def ChatGPT_single_request(prompt):
         "%s: %s" % (type(e).__name__, e)) from e
   llm_trace.record_call("ChatGPT_single_request", openai_config["model"], prompt,
                         response=completion, latency=time.time() - started)
-  cost_logger.update_cost(completion, input_cost=openai_config["model-costs"]["input"], output_cost=openai_config["model-costs"]["output"])
+  _charge(completion)
   return completion.choices[0].message.content
 
 
@@ -212,17 +242,16 @@ def ChatGPT_request(prompt):
   """
   # temp_sleep()
   started = time.time()
+  # Only the request is inside the try. Anything after it -- the ledger, the
+  # bill guard, reading the text off the response -- is this process's
+  # business, not the backend's, and must not be reported as the backend
+  # having errored.
   try: 
     completion = client.chat.completions.create(
     model=openai_config["model"],
     messages=[{"role": "user", "content": prompt}],
     extra_body=_extra_body(),
     )
-    llm_trace.record_call("ChatGPT_request", openai_config["model"], prompt,
-                          response=completion, latency=time.time() - started)
-    cost_logger.update_cost(completion, input_cost=openai_config["model-costs"]["input"], output_cost=openai_config["model-costs"]["output"])
-    return completion.choices[0].message.content
-  
   except Exception as e: 
     llm_trace.record_call("ChatGPT_request", openai_config["model"], prompt,
                           latency=time.time() - started, error=e)
@@ -231,6 +260,10 @@ def ChatGPT_request(prompt):
     # validators accept any non-empty one (RB-C).
     raise BackendTransportError(
         "%s: %s" % (type(e).__name__, e)) from e
+  llm_trace.record_call("ChatGPT_request", openai_config["model"], prompt,
+                        response=completion, latency=time.time() - started)
+  _charge(completion)
+  return completion.choices[0].message.content
 
 
 def ChatGPT_safe_generate_response(prompt, 
@@ -349,14 +382,15 @@ def GPT_request(prompt, gpt_parameter):
   """
   temp_sleep()
   started = time.time()
+  # The prompt goes as "user" (a system-only conversation makes llama3.1 echo
+  # the role token "assistant"); the completion-engine instruction goes as
+  # "system" so the model continues the text instead of chatting about it.
+  messages = []
+  if completion_system_prompt:
+    messages.append({"role": "system", "content": completion_system_prompt})
+  messages.append({"role": "user", "content": prompt})
+  # Only the request is inside the try: see ChatGPT_request.
   try: 
-    # The prompt goes as "user" (a system-only conversation makes llama3.1 echo
-    # the role token "assistant"); the completion-engine instruction goes as
-    # "system" so the model continues the text instead of chatting about it.
-    messages = []
-    if completion_system_prompt:
-      messages.append({"role": "system", "content": completion_system_prompt})
-    messages.append({"role": "user", "content": prompt})
     # The "engine" in gpt_parameter is a legacy hardcoded name
     # ("gpt-35-turbo-0125" in run_gpt_prompt.py); the model actually used is
     # always the one from openai_config.json so any backend works.
@@ -371,10 +405,6 @@ def GPT_request(prompt, gpt_parameter):
                 stream=gpt_parameter["stream"],
                 stop=gpt_parameter["stop"],
                 extra_body=_extra_body(),)
-    llm_trace.record_call("GPT_request", openai_config["model"], prompt,
-                          response=response, latency=time.time() - started)
-    cost_logger.update_cost(response=response, input_cost=openai_config["model-costs"]["input"], output_cost=openai_config["model-costs"]["output"])
-    return response.choices[0].message.content
   except Exception as e:
     llm_trace.record_call("GPT_request", openai_config["model"], prompt,
                           latency=time.time() - started, error=e)
@@ -384,6 +414,10 @@ def GPT_request(prompt, gpt_parameter):
     # prompts, accepted (RB-C).
     raise BackendTransportError(
         "%s: %s" % (type(e).__name__, e)) from e
+  llm_trace.record_call("GPT_request", openai_config["model"], prompt,
+                        response=response, latency=time.time() - started)
+  _charge(response)
+  return response.choices[0].message.content
 
 
 def generate_prompt(curr_input, prompt_lib_file): 
@@ -469,7 +503,7 @@ def get_embedding(text, model=openai_config["embeddings"]):
     raise
   llm_trace.record_call("embedding", model, text, response=response,
                         latency=time.time() - started)
-  cost_logger.update_cost(response=response, input_cost=openai_config["embeddings-costs"]["input"], output_cost=openai_config["embeddings-costs"]["output"])
+  _charge(response, openai_config["embeddings-costs"])
   return response.data[0].embedding
 
 

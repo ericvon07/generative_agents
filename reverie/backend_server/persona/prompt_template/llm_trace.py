@@ -367,7 +367,7 @@ def _usage(response):
 _last_call = contextvars.ContextVar("llm_trace_last_call", default=None)
 
 
-def _response_facts(response):
+def response_facts(response):
   """What the response says about itself, beyond its text.
 
   Three facts, none of which the paper's code ever looked at, and all three
@@ -387,7 +387,9 @@ def _response_facts(response):
                    without telling us (RB-B).
 
   Every one is optional: Ollama reports none of them but finish_reason, and
-  a backend that reports nothing reads None rather than zero. The OpenAI
+  a backend that reports nothing reads None rather than zero -- which is the
+  distinction the cost ledger turns on, since a cost of None means "ask the
+  price table" and a cost of 0.0 means "this call was free". The OpenAI
   client keeps unknown response fields, so all three are read by attribute.
   """
   facts = {"finish_reason": None, "provider": None, "cost": None}
@@ -451,7 +453,7 @@ def record_call(path, model, prompt, response=None, latency=None,
                 error=None, label=None, extra=None):
   """One request sent to the backend. <path> is the code path taken:
   "GPT_request", "ChatGPT_request", "ChatGPT_single_request", "embedding"."""
-  facts = _response_facts(response)
+  facts = response_facts(response)
   try:
     _last_call.set(facts)
   except Exception:
