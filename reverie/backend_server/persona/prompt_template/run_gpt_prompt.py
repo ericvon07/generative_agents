@@ -1453,6 +1453,9 @@ def run_gpt_prompt_decide_to_talk(persona, target_persona, retrieved,test_input=
                                prompt, gpt_param, 5, fail_safe,
                                __func_validate, __func_clean_up),
                            fail_safe=fail_safe,
+                           # Who the decision is about. Recorded, never read
+                           # back: the answer is the same with it (SV-B).
+                           counterparty=target_persona.name,
                            state={
                                "subject": prompt_input[2],
                                "other": prompt_input[3],
@@ -1566,6 +1569,10 @@ def run_gpt_prompt_decide_to_react(persona, target_persona, retrieved,test_input
                                prompt, gpt_param, 5, fail_safe,
                                __func_validate, __func_clean_up),
                            fail_safe=fail_safe,
+                           # Same encounter, same episode as decide_to_talk:
+                           # _should_react asks this one only when that one
+                           # said no (SV-B).
+                           counterparty=target_persona.name,
                            criteria={
                                "1": "Wait on %s until %s is done %s"
                                     % (prompt_input[5], prompt_input[6],

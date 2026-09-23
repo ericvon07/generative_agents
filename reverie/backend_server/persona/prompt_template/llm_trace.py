@@ -129,6 +129,24 @@ def set_step(step, sim_time=None):
     pass
 
 
+def current_step():
+  """Which simulation step the caller is inside, or None.
+
+  Exposed for the seam: an episode of co-presence is a run of consecutive
+  asks about the same pair, and "consecutive" is measured in steps. Reading
+  it off the trace's own clock keeps one notion of "now" in the process.
+  """
+  return _step
+
+
+def current_persona():
+  """The agent the calls in this scope belong to, or None."""
+  try:
+    return _persona.get()
+  except Exception:
+    return None
+
+
 @contextlib.contextmanager
 def persona_scope(name):
   """Attribute the calls made inside the block to one agent."""
