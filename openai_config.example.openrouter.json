@@ -1,0 +1,44 @@
+{
+    "client": "openai",
+    "model": "meta-llama/llama-3.1-8b-instruct",
+    "model-key-env": "OPEN_ROUTER_API",
+    "model-base-url": "https://openrouter.ai/api/v1",
+    "model-provider": {
+        "order": ["deepinfra"],
+        "allow_fallbacks": false,
+        "quantizations": ["fp8"]
+    },
+    "model-costs": { "input": 0.02, "output": 0.04 },
+    "embeddings-client": "openai",
+    "embeddings": "nomic-embed-text",
+    "embeddings-key": "ollama",
+    "embeddings-base-url": "http://localhost:11434/v1",
+    "embeddings-costs": { "input": 0.0, "output": 0.0 },
+    "experiment-name": "openrouter-llama31-8b",
+    "cost-upperbound": 0.5,
+    "decision-backend": "llm",
+    "decision": {
+        "noul-threshold": 0.5,
+        "on-error": "failsafe"
+    },
+    "jev": {
+        "model": "jev-latest",
+        "base-url": "https://api.typesafe.ai/v1",
+        "api-key-env": "TYPESAFE_API_KEY",
+        "api-key": "<JEV-API-KEY>",
+        "timeout": 30.0,
+        "max-retries": 3,
+        "costs": { "input": 0.042, "output": 0.0 }
+    },
+    "llm-trace": {
+        "enabled": true,
+        "dir": "../../logs/llm_trace",
+        "head-chars": 200
+    },
+    "domain-guard": {
+        "enabled": true
+    },
+    "run": {
+        "seed": 20260922
+    }
+}

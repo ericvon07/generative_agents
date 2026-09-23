@@ -4,6 +4,8 @@ Author: Joon Sung Park (joonspk@stanford.edu)
 File: gpt_structure.py
 Description: Wrapper functions for calling OpenAI APIs.
 """
+import os
+import re
 import time 
 import json
 from pathlib import Path
@@ -12,11 +14,77 @@ from openai import AzureOpenAI, OpenAI
 from utils import *
 from openai_cost_logger import DEFAULT_LOG_PATH
 from persona.prompt_template.openai_logger_singleton import OpenAICostLogger_Singleton
+from persona.prompt_template import env_file
 from persona.prompt_template import llm_trace
 
 config_path = Path("../../openai_config.json")
 with open(config_path, "r") as f:
     openai_config = json.load(f) 
+
+# The routed remote model's key lives in an environment variable named by the
+# config, never in the config (RB-A of 006-IP). Read the .env before anything
+# asks for a key; an already-set variable is left alone.
+env_file.load()
+
+
+class BackendTransportError(Exception):
+  """The backend did not answer: a 402, a 429, a timeout, a refused
+  connection. Deliberately NOT the same thing as a model answering badly.
+
+  Before 006-IP, GPT_request answered a transport failure with the string
+  "TOKEN LIMIT EXCEEDED" and ChatGPT_request with "ChatGPT ERROR", and handed
+  it to the caller's validator. The validators for the closed-set decisions
+  accept any non-empty string, so on the sector and arena prompts that string
+  was a well-formed answer: a dead backend read as a live simulation making
+  bad choices. This exception is what makes the two distinguishable, and the
+  retry loops re-raise it rather than spend an attempt on it (RB-C).
+  """
+
+
+def _resolve_key(config, key_field, env_field):
+  """The key for one client: from the environment when the config names a
+  variable, from the config otherwise.
+
+  Naming a variable is a commitment: if it is unset, this raises rather than
+  fall through to `key_field` and send an unauthenticated request whose 401
+  the caller would read as an answer.
+  """
+  env_name = str(config.get(env_field) or "").strip()
+  if not env_name:
+    return config.get(key_field)
+  if not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", env_name):
+    raise ValueError(
+        'openai_config.json: "%s" should be the NAME of an environment '
+        "variable (e.g. OPEN_ROUTER_API), not the key itself. The key goes "
+        'in "%s", or better, in the environment.' % (env_field, key_field))
+  value = os.environ.get(env_name, "").strip()
+  if not value:
+    raise ValueError(
+        'openai_config.json names "%s": "%s", and %s is not set in the '
+        "environment%s. Set it, or put it in a .env beside the fork or the "
+        "lab." % (env_field, env_name, env_name,
+                  " (read: %s)" % ", ".join(env_file.loaded())
+                  if env_file.loaded() else " (no .env was found)"))
+  return value
+
+
+def provider_pin():
+  """The `provider` block sent with every request to the router, or None.
+
+  One entry in `order` with `allow_fallbacks: false` is what makes a remote
+  run one condition rather than an average over whoever was cheapest that
+  minute: the weights, the quantization and the serving stack all move when
+  the provider does. It is sent only when configured, so the Ollama path
+  keeps sending exactly the body it sent before this plan (law 2).
+  """
+  pin = openai_config.get("model-provider")
+  return pin if isinstance(pin, dict) and pin else None
+
+
+def _extra_body():
+  """What goes beside the OpenAI-shaped fields, or None when nothing does."""
+  pin = provider_pin()
+  return {"provider": pin} if pin else None
 
 def setup_client(type: str, config: dict):
   """Setup the OpenAI client.
@@ -56,7 +124,7 @@ if openai_config["client"] == "azure":
   })
 elif openai_config["client"] == "openai":
   client = setup_client("openai", {
-      "key": openai_config["model-key"],
+      "key": _resolve_key(openai_config, "model-key", "model-key-env"),
       "base_url": openai_config.get("model-base-url"),
   })
 else:
@@ -70,7 +138,8 @@ if openai_config["embeddings-client"] == "azure":
   })
 elif openai_config["embeddings-client"] == "openai":
   embeddings_client = setup_client("openai", {
-      "key": openai_config["embeddings-key"],
+      "key": _resolve_key(openai_config, "embeddings-key",
+                          "embeddings-key-env"),
       "base_url": openai_config.get("embeddings-base-url"),
   })
 else:
@@ -108,7 +177,8 @@ def ChatGPT_single_request(prompt):
   try:
     completion = client.chat.completions.create(
       model=openai_config["model"],
-      messages=[{"role": "user", "content": prompt}]
+      messages=[{"role": "user", "content": prompt}],
+      extra_body=_extra_body(),
     )
   except Exception as e:
     llm_trace.record_call("ChatGPT_single_request", openai_config["model"],
@@ -137,7 +207,8 @@ def ChatGPT_request(prompt):
   try: 
     completion = client.chat.completions.create(
     model=openai_config["model"],
-    messages=[{"role": "user", "content": prompt}]
+    messages=[{"role": "user", "content": prompt}],
+    extra_body=_extra_body(),
     )
     llm_trace.record_call("ChatGPT_request", openai_config["model"], prompt,
                           response=completion, latency=time.time() - started)
@@ -277,7 +348,8 @@ def GPT_request(prompt, gpt_parameter):
                 frequency_penalty=gpt_parameter["frequency_penalty"],
                 presence_penalty=gpt_parameter["presence_penalty"],
                 stream=gpt_parameter["stream"],
-                stop=gpt_parameter["stop"],)
+                stop=gpt_parameter["stop"],
+                extra_body=_extra_body(),)
     llm_trace.record_call("GPT_request", openai_config["model"], prompt,
                           response=response, latency=time.time() - started)
     cost_logger.update_cost(response=response, input_cost=openai_config["model-costs"]["input"], output_cost=openai_config["model-costs"]["output"])

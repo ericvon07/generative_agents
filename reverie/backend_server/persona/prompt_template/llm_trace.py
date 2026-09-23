@@ -362,12 +362,98 @@ def _usage(response):
           getattr(usage, "completion_tokens", None))
 
 
+_last_call = contextvars.ContextVar("llm_trace_last_call", default=None)
+
+
+def _response_facts(response):
+  """What the response says about itself, beyond its text.
+
+  Three facts, none of which the paper's code ever looked at, and all three
+  of which a routed remote backend answers differently from a local one:
+
+    finish_reason  why generation stopped. "length" means the provider cut
+                   the answer for the token budget -- the model was
+                   answering and did not get to finish, which is not the
+                   same failure as answering something invalid (RB-D).
+    provider       which provider actually served the request. OpenRouter
+                   returns it as a top-level field; it is ground truth about
+                   which weights ran, and the pin sent with the request is
+                   only a request (RB-E).
+    cost           what this call actually cost, at the provider that
+                   actually served it, in USD. The router reports it; a
+                   price table is a second copy of a number that moves
+                   without telling us (RB-B).
+
+  Every one is optional: Ollama reports none of them but finish_reason, and
+  a backend that reports nothing reads None rather than zero. The OpenAI
+  client keeps unknown response fields, so all three are read by attribute.
+  """
+  facts = {"finish_reason": None, "provider": None, "cost": None}
+  if response is None:
+    return facts
+  try:
+    choice = (getattr(response, "choices", None) or [None])[0]
+    facts["finish_reason"] = getattr(choice, "finish_reason", None)
+  except Exception:
+    pass
+  try:
+    facts["provider"] = getattr(response, "provider", None)
+  except Exception:
+    pass
+  try:
+    cost = getattr(getattr(response, "usage", None), "cost", None)
+    facts["cost"] = None if cost is None else float(cost)
+  except Exception:
+    pass
+  return facts
+
+
+def last_call():
+  """The facts of the most recent call on this thread, or None.
+
+  Exists because two readers need them after the response object is gone:
+  the retry loops, which have to tell a truncation from a bad answer without
+  being handed the response, and the smoke test, which reports what the
+  router said. Set by record_call, so it is set whether or not the trace is
+  switched on.
+  """
+  try:
+    facts = _last_call.get()
+    return dict(facts) if facts else None
+  except Exception:
+    return None
+
+
+def reject_reason_for_validation():
+  """Why a response that arrived was thrown away: "truncated" when the
+  provider cut it for length, "validate_false" otherwise.
+
+  The two share a symptom -- a validator saying no -- and have nothing else
+  in common. SR-1 is the case in point: all 35 discarded social responses
+  stop mid-clause because decide_to_talk sets max_tokens to 20, and every
+  one of them was filed under validate_false, which reads as a model that
+  cannot follow the format. This is the field that separates them, and it is
+  read from the call rather than guessed from the text.
+  """
+  facts = last_call()
+  if not facts:
+    return "validate_false"
+  if facts.get("finish_reason") == "length":
+    return "truncated"
+  return "validate_false"
+
+
 # --- public recording API ---------------------------------------------------
 
 def record_call(path, model, prompt, response=None, latency=None,
                 error=None, label=None, extra=None):
   """One request sent to the backend. <path> is the code path taken:
   "GPT_request", "ChatGPT_request", "ChatGPT_single_request", "embedding"."""
+  facts = _response_facts(response)
+  try:
+    _last_call.set(facts)
+  except Exception:
+    pass
   if not _config["enabled"]:
     return
   try:
