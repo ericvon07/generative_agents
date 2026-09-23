@@ -1395,10 +1395,25 @@ def run_gpt_prompt_decide_to_talk(persona, target_persona, retrieved,test_input=
     if "(" in target_act_desc: 
       target_act_desc = target_act_desc.split("(")[-1][:-1]
     
-    if len(target_persona.scratch.planned_path) == 0 and "waiting" not in init_act_desc: 
+    # D8 (011-IP, TS-D): the target's sentence describes the TARGET.
+    #
+    # The paper built this branch by testing the INITIATOR's activity for
+    # "waiting", and in the middle branch wrote the initiator's name and the
+    # initiator's activity where the target's belong. Whenever the initiator
+    # was waiting, prompt_input[7] therefore said what the initiator was
+    # doing -- a second time -- and the prompt never said what the target was
+    # doing at all. Compare the initiator's own block above, which this now
+    # mirrors line for line. run_gpt_prompt_decide_to_react's builder does
+    # not have the slip (inspected 2026-09-23).
+    #
+    # The repair lands in BOTH arms: law 2 says both conditions receive the
+    # same information, and this is information. The control's prompt text
+    # moves, so a control run after D8 is a NEW CONDITION and never a rerun
+    # of cmpD2-llm.
+    if len(target_persona.scratch.planned_path) == 0 and "waiting" not in target_act_desc: 
       target_p_desc = f"{target_persona.name} is already {target_act_desc}"
-    elif "waiting" in init_act_desc:
-      target_p_desc = f"{init_persona.name} is {init_act_desc}"
+    elif "waiting" in target_act_desc:
+      target_p_desc = f"{target_persona.name} is {target_act_desc}"
     else: 
       target_p_desc = f"{target_persona.name} is on the way to {target_act_desc}"
 

@@ -244,5 +244,92 @@ class DescriptiveCriteria(unittest.TestCase):
                        "%s: ORPHAN_KEYS disagrees with the call site" % label)
 
 
+# --- D8: the target's sentence ----------------------------------------------
+
+class _Scratch(object):
+  def __init__(self, act_description, planned_path):
+    self.act_description = act_description
+    self.planned_path = planned_path
+    self.curr_time = datetime.datetime(2023, 2, 13, 9, 30, 0)
+
+
+class _Memory(object):
+  def get_last_chat(self, name):
+    return None
+
+
+class _Persona(object):
+  def __init__(self, name, act_description, planned_path):
+    self.name = name
+    self.scratch = _Scratch(act_description, planned_path)
+    self.a_mem = _Memory()
+
+
+class TargetSentence(unittest.TestCase):
+  """S3.1, S3.2, S3.3 -- D8. The paper tested the INITIATOR's activity for
+  "waiting" when building the TARGET's sentence, and in that branch wrote the
+  initiator's name and activity where the target's belong.
+
+  Run through the real call site: the state's `other_is` IS prompt_input[7],
+  so capturing what decision.choose is handed is the same as reading the
+  slot the prompt interpolates.
+  """
+
+  def setUp(self):
+    self.captured = {}
+    self._choose = run_gpt_prompt.decision.choose
+    self._debug = run_gpt_prompt.debug
+
+    def _capture(label, domain, resolve, **kwargs):
+      self.captured["label"] = label
+      self.captured.update(kwargs)
+      return "no"
+
+    run_gpt_prompt.decision.choose = _capture
+    run_gpt_prompt.debug = False
+
+  def tearDown(self):
+    run_gpt_prompt.decision.choose = self._choose
+    run_gpt_prompt.debug = self._debug
+
+  def _other_is(self, init_act, init_path, target_act, target_path):
+    run_gpt_prompt.run_gpt_prompt_decide_to_talk(
+        _Persona("Klaus Mueller", init_act, init_path),
+        _Persona("Maria Lopez", target_act, target_path),
+        {"events": [], "thoughts": []})
+    return self.captured["state"]["other_is"]
+
+  def test_an_initiator_who_is_waiting_does_not_take_over_the_sentence(self):
+    # S3.1. Before D8 this read "Klaus Mueller is waiting for the bus".
+    sentence = self._other_is("waiting for the bus", [], "reading a book",
+                              [(1, 2)])
+    self.assertEqual(sentence, "Maria Lopez is on the way to reading a book")
+    self.assertNotIn("Klaus", sentence)
+
+  def test_an_empty_target_path_reads_already_whatever_the_initiator_does(self):
+    # S3.2. Before D8 this read "Klaus Mueller is waiting in line".
+    sentence = self._other_is("waiting in line", [(3, 4)], "cooking dinner",
+                              [])
+    self.assertEqual(sentence, "Maria Lopez is already cooking dinner")
+
+  def test_a_target_who_is_waiting_is_the_one_described_as_waiting(self):
+    sentence = self._other_is("reading a book", [], "waiting for the bus", [])
+    self.assertEqual(sentence, "Maria Lopez is waiting for the bus")
+
+  def test_the_common_case_did_not_move(self):
+    # Neither is waiting: D8 must change nothing here, or it is not a repair.
+    self.assertEqual(self._other_is("reading a book", [], "cooking dinner",
+                                    []),
+                     "Maria Lopez is already cooking dinner")
+    self.assertEqual(self._other_is("reading a book", [], "cooking dinner",
+                                    [(1, 1)]),
+                     "Maria Lopez is on the way to cooking dinner")
+
+  def test_the_initiators_own_sentence_is_untouched(self):
+    self._other_is("waiting for the bus", [], "reading a book", [(1, 2)])
+    self.assertEqual(self.captured["state"]["subject_is"],
+                     "Klaus Mueller is waiting for the bus")
+
+
 if __name__ == "__main__":
   unittest.main(verbosity=2)
