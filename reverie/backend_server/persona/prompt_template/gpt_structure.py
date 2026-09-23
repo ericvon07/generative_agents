@@ -9,7 +9,7 @@ import re
 import time 
 import json
 from pathlib import Path
-from openai import AzureOpenAI, OpenAI
+from openai import AzureOpenAI, OpenAI, RateLimitError
 
 from utils import *
 from openai_cost_logger import DEFAULT_LOG_PATH
@@ -216,26 +216,155 @@ def _charge(response, costs=None):
                           output_cost=costs["output"])
 
 
+# --- the ride-out -----------------------------------------------------------
+# SV-A of 008-IP. RB-C says a transport failure raises rather than become a
+# fail-safe, and rtrA-llm showed what that costs when the failure is transient:
+# two 429s from DeepInfra, 24 seconds apart, ended two stages of a 32-minute
+# run, and only the automatic runner's own restart carried the window to its
+# end. RB-C's reopening clause named the successor, and this is it -- a bounded
+# wait, every wait in the trace, and the SAME exception at the end of it.
+#
+# Deliberately not the paper's retry loop. That loop retries the PARSING of an
+# answer that arrived, five times, and spends an attempt each time. This
+# retries a request that was never served, spends no attempt, and is invisible
+# to every validator.
+
+_RATE_LIMIT_DEFAULTS = {"attempts": 5, "base-delay": 2.0, "max-delay": 60.0}
+
+
+def _rate_limit_policy(config):
+  """How long the run is willing to wait out a provider's bad minute.
+
+  Five waits of 2, 4, 8, 16 and 32 seconds is just over a minute of patience,
+  against a provider whose own message says "please retry shortly". Past that
+  the limit is not a bad minute and the run should stop and say so.
+  """
+  policy = dict(_RATE_LIMIT_DEFAULTS)
+  policy.update({k: v for k, v in (config.get("rate-limit") or {}).items()
+                 if v is not None})
+  return {"attempts": int(policy["attempts"]),
+          "base_delay": float(policy["base-delay"]),
+          "max_delay": float(policy["max-delay"])}
+
+
+rate_limit_policy = _rate_limit_policy(openai_config)
+
+# Swapped by the tests. The wait is the whole point of this code, so it cannot
+# be tested by waiting.
+_sleep = time.sleep
+
+
+def _status_of(e):
+  """The HTTP status behind an exception, or None. The OpenAI client puts it
+  on the exception; anything else is asked for its response."""
+  status = getattr(e, "status_code", None)
+  if status is None:
+    status = getattr(getattr(e, "response", None), "status_code", None)
+  try:
+    return None if status is None else int(status)
+  except Exception:
+    return None
+
+
+def _is_rate_limit(e):
+  """A 429, by the client's type or by the status underneath it. Both, because
+  the type is the client's reading of the status and a router that answers 429
+  through some other path is still a router saying wait."""
+  return isinstance(e, RateLimitError) or _status_of(e) == 429
+
+
+def _retry_after(e):
+  """The provider's own instruction, when it sends one. Preferred over the
+  backoff: a number the provider chose beats a number we guessed."""
+  try:
+    headers = getattr(getattr(e, "response", None), "headers", None) or {}
+    value = headers.get("retry-after", headers.get("Retry-After"))
+    return None if value is None else max(0.0, float(value))
+  except Exception:
+    return None
+
+
+class _Attempt(object):
+  """How long the request that finally answered actually took.
+
+  The ride-out can put a minute of sleeping between the first request and the
+  one that answers. A latency_ms that included it would turn a provider's bad
+  minute into a model that got slow -- and the mean latency of a call is the
+  unit every wall-clock estimate in this lab is built from (rtrA-llm: 1.17 s
+  over 1,218 calls). The waits are their own records; this is the request
+  alone.
+  """
+
+  def __init__(self):
+    self.latency = None
+    self._started = None
+
+  def start(self):
+    self._started = time.time()
+
+  def stop(self):
+    if self._started is not None:
+      self.latency = time.time() - self._started
+
+
+def _send(path, attempt, create):
+  """Make one request, riding out a rate limit.
+
+  Returns whatever <create> returns. Raises whatever it raised, unchanged,
+  once the ride-out's budget is spent -- so the caller's BackendTransportError
+  and the reject that reads "transport:RateLimitError" are exactly the ones
+  006-IP wrote, and no fail-safe reaches the world on any path (RB-C, S1.3).
+
+  The backoff is deterministic: no jitter, because the run seeds `random` for
+  reproducibility and a wait is not allowed to draw from that stream.
+  """
+  policy = rate_limit_policy
+  waits = 0
+  while True:
+    attempt.start()
+    try:
+      response = create()
+      attempt.stop()
+      return response
+    except Exception as e:
+      attempt.stop()
+      if not _is_rate_limit(e) or waits >= policy["attempts"]:
+        raise
+      waits += 1
+      delay = _retry_after(e)
+      if delay is None:
+        delay = min(policy["max_delay"],
+                    policy["base_delay"] * (2 ** (waits - 1)))
+      llm_trace.record_rate_limit(path, status=_status_of(e) or 429,
+                                  attempt=waits, of=policy["attempts"],
+                                  delay=delay, error=e)
+      print("rate limit on %s: waiting %.1fs (%d of %d)"
+            % (path, delay, waits, policy["attempts"]))
+      _sleep(delay)
+
+
 def temp_sleep(seconds=0.1):
   time.sleep(seconds)
 
 
 def ChatGPT_single_request(prompt): 
   temp_sleep()
-  started = time.time()
+  attempt = _Attempt()
   try:
-    completion = client.chat.completions.create(
-      model=openai_config["model"],
-      messages=[{"role": "user", "content": prompt}],
-      extra_body=_extra_body(),
-    )
+    completion = _send(
+        "ChatGPT_single_request", attempt,
+        lambda: client.chat.completions.create(
+            model=openai_config["model"],
+            messages=[{"role": "user", "content": prompt}],
+            extra_body=_extra_body(),
+        ))
   except Exception as e:
     llm_trace.record_call("ChatGPT_single_request", openai_config["model"],
-                          prompt, latency=time.time() - started, error=e)
+                          prompt, latency=attempt.latency, error=e)
     raise BackendTransportError(
         "%s: %s" % (type(e).__name__, e)) from e
   llm_trace.record_call("ChatGPT_single_request", openai_config["model"], prompt,
-                        response=completion, latency=time.time() - started,
+                        response=completion, latency=attempt.latency,
                         extra=_traced_pin())
   _charge(completion)
   return completion.choices[0].message.content
@@ -254,27 +383,29 @@ def ChatGPT_request(prompt):
     a str of GPT-3's response. 
   """
   # temp_sleep()
-  started = time.time()
+  attempt = _Attempt()
   # Only the request is inside the try. Anything after it -- the ledger, the
   # bill guard, reading the text off the response -- is this process's
   # business, not the backend's, and must not be reported as the backend
   # having errored.
   try: 
-    completion = client.chat.completions.create(
-    model=openai_config["model"],
-    messages=[{"role": "user", "content": prompt}],
-    extra_body=_extra_body(),
-    )
+    completion = _send(
+        "ChatGPT_request", attempt,
+        lambda: client.chat.completions.create(
+            model=openai_config["model"],
+            messages=[{"role": "user", "content": prompt}],
+            extra_body=_extra_body(),
+        ))
   except Exception as e: 
     llm_trace.record_call("ChatGPT_request", openai_config["model"], prompt,
-                          latency=time.time() - started, error=e)
+                          latency=attempt.latency, error=e)
     print(f"Error: {e}")
     # Was: return "ChatGPT ERROR". A string is an answer, and the closed-set
     # validators accept any non-empty one (RB-C).
     raise BackendTransportError(
         "%s: %s" % (type(e).__name__, e)) from e
   llm_trace.record_call("ChatGPT_request", openai_config["model"], prompt,
-                        response=completion, latency=time.time() - started,
+                        response=completion, latency=attempt.latency,
                         extra=_traced_pin())
   _charge(completion)
   return completion.choices[0].message.content
@@ -395,7 +526,7 @@ def GPT_request(prompt, gpt_parameter):
     a str of GPT-3's response. 
   """
   temp_sleep()
-  started = time.time()
+  attempt = _Attempt()
   # The prompt goes as "user" (a system-only conversation makes llama3.1 echo
   # the role token "assistant"); the completion-engine instruction goes as
   # "system" so the model continues the text instead of chatting about it.
@@ -408,20 +539,22 @@ def GPT_request(prompt, gpt_parameter):
     # The "engine" in gpt_parameter is a legacy hardcoded name
     # ("gpt-35-turbo-0125" in run_gpt_prompt.py); the model actually used is
     # always the one from openai_config.json so any backend works.
-    response = client.chat.completions.create(
-                model=openai_config["model"],
-                messages=messages,
-                temperature=gpt_parameter["temperature"],
-                max_tokens=gpt_parameter["max_tokens"],
-                top_p=gpt_parameter["top_p"],
-                frequency_penalty=gpt_parameter["frequency_penalty"],
-                presence_penalty=gpt_parameter["presence_penalty"],
-                stream=gpt_parameter["stream"],
-                stop=gpt_parameter["stop"],
-                extra_body=_extra_body(),)
+    response = _send(
+        "GPT_request", attempt,
+        lambda: client.chat.completions.create(
+            model=openai_config["model"],
+            messages=messages,
+            temperature=gpt_parameter["temperature"],
+            max_tokens=gpt_parameter["max_tokens"],
+            top_p=gpt_parameter["top_p"],
+            frequency_penalty=gpt_parameter["frequency_penalty"],
+            presence_penalty=gpt_parameter["presence_penalty"],
+            stream=gpt_parameter["stream"],
+            stop=gpt_parameter["stop"],
+            extra_body=_extra_body(),))
   except Exception as e:
     llm_trace.record_call("GPT_request", openai_config["model"], prompt,
-                          latency=time.time() - started, error=e)
+                          latency=attempt.latency, error=e)
     print(f"Error: {e}")
     # Was: return "TOKEN LIMIT EXCEEDED" -- a string the retry loop spent an
     # attempt on and the validator, in five of the paper's closed-set
@@ -429,7 +562,7 @@ def GPT_request(prompt, gpt_parameter):
     raise BackendTransportError(
         "%s: %s" % (type(e).__name__, e)) from e
   llm_trace.record_call("GPT_request", openai_config["model"], prompt,
-                        response=response, latency=time.time() - started,
+                        response=response, latency=attempt.latency,
                         extra=_traced_pin())
   _charge(response)
   return response.choices[0].message.content

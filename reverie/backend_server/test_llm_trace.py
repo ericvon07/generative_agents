@@ -44,15 +44,33 @@ social responses stopping mid-clause on a 20-token budget, and every one of
 them filed under validate_false. These three cases are that reading made a
 field rather than an afternoon.
 
-TransportFailure and Truncation share a stubbed client through Stubbed, which
-is deliberately not a TestCase: inheriting one re-runs its cases under the
-subclass's name, against the same trace file, and the counts double.
+RideOut covers the fifth, and it is the one that decides whether a routed run
+finishes. rtrA-llm took two upstream 429s from DeepInfra 24 seconds apart and
+each of them ended a stage, because RB-C makes a transport failure raise. SV-A
+of 008-IP gives RB-C the bounded wait its reopening clause asked for: a 429 is
+ridden out, every wait is a record, and when the budget is spent the SAME
+exception still propagates. The two cases are deliberately side by side -- the
+limit that passes and the limit that does not.
+
+TransportFailure, Truncation and RideOut share a stubbed client through
+Stubbed, which is deliberately not a TestCase: inheriting one re-runs its cases
+under the subclass's name, against the same trace file, and the counts double.
+Episodes covers the sixth: a social decision says who it was about and which
+run of consecutive asks it belongs to. 007-ST had to recover both by joining
+each decision back to its call event on a timestamp, which succeeded on 76 of
+cmpD2-jev's 98 asks and left 22 with no counterparty at all. Four cases: the
+counterparty is there, one encounter is one episode, a pair that meets again
+after a gap gets a second one, and the two social decisions of the same
+encounter share it.
 """
 import json
 import os
 import shutil
 import tempfile
 import unittest
+
+import httpx
+from openai import RateLimitError
 
 # The trace and the seam read their configuration at import time, so the
 # environment has to be set before the imports below.
@@ -88,21 +106,42 @@ def succeeded(answer, label=None):
   return resolve
 
 
-class FailSafeTrace(unittest.TestCase):
+class OwnTrace(object):
+  """Every suite reads its own trace file and nobody else's.
 
-  def setUp(self):
-    llm_trace.set_simulation("test-%s" % self.id().rsplit(".", 1)[-1])
+  The readers used to concatenate every file in the directory and take the
+  last record, which held only while the suites that did it happened to sort
+  last. Adding one suite whose method names sort later silently moved four
+  cases' "last decision" into a file they never wrote. The file is named for
+  the class as well as the method, and the reader filters on that name.
+  """
 
-  def decision_record(self):
-    """The last decision written to the trace."""
-    records = []
+  def sim_prefix(self):
+    return "test-%s-%s" % (type(self).__name__, self.id().rsplit(".", 1)[-1])
+
+  def records(self, event):
+    out = []
     for name in sorted(os.listdir(_TRACE_DIR)):
+      if not name.startswith(self.sim_prefix()):
+        continue
       with open(os.path.join(_TRACE_DIR, name), "r", encoding="utf-8") as f:
         for line in f:
           line = line.strip()
           if line:
-            records.append(json.loads(line))
-    decisions = [r for r in records if r.get("event") == "decision"]
+            record = json.loads(line)
+            if record.get("event") == event:
+              out.append(record)
+    return out
+
+
+class FailSafeTrace(OwnTrace, unittest.TestCase):
+
+  def setUp(self):
+    llm_trace.set_simulation(self.sim_prefix())
+
+  def decision_record(self):
+    """The last decision written to the trace."""
+    decisions = self.records("decision")
     self.assertTrue(decisions, "no decision was written to the trace")
     return decisions[-1]
 
@@ -174,7 +213,7 @@ class FailSafeTrace(unittest.TestCase):
     self.assertTrue(record["gave_up"])
 
 
-class RejectedText(unittest.TestCase):
+class RejectedText(OwnTrace, unittest.TestCase):
   """A rejection inside a closed-set decision keeps its whole text; every
   other rejection keeps the 200-character head and nothing more.
 
@@ -185,18 +224,11 @@ class RejectedText(unittest.TestCase):
   pay for the wrong thing."""
 
   def setUp(self):
-    llm_trace.set_simulation("test-%s" % self.id().rsplit(".", 1)[-1])
+    llm_trace.set_simulation(self.sim_prefix())
 
   def reject_record(self):
     """The last reject written to the trace."""
-    records = []
-    for name in sorted(os.listdir(_TRACE_DIR)):
-      with open(os.path.join(_TRACE_DIR, name), "r", encoding="utf-8") as f:
-        for line in f:
-          line = line.strip()
-          if line:
-            records.append(json.loads(line))
-    rejects = [r for r in records if r.get("event") == "reject"]
+    rejects = self.records("reject")
     self.assertTrue(rejects, "no reject was written to the trace")
     return rejects[-1]
 
@@ -240,10 +272,15 @@ class Stub(object):
   Shaped like the sliver of the OpenAI client the two request paths touch --
   client.chat.completions.create(...) -- and nothing more."""
 
-  def __init__(self, error=None, text="kitchen", finish_reason="stop"):
+  def __init__(self, error=None, text="kitchen", finish_reason="stop",
+               fails=None):
     self.error = error
     self.text = text
     self.finish_reason = finish_reason
+    # How many of the first requests <error> is raised for. None means every
+    # one of them, which is what a dead backend looks like; a number is what a
+    # provider's bad minute looks like.
+    self.fails = fails
     self.calls = 0
     self.chat = self
 
@@ -253,7 +290,8 @@ class Stub(object):
 
   def create(self, **kwargs):
     self.calls += 1
-    if self.error is not None:
+    if self.error is not None and (self.fails is None
+                                   or self.calls <= self.fails):
       raise self.error
     message = type("M", (), {"content": self.text})()
     choice = type("C", (), {"message": message,
@@ -264,8 +302,8 @@ class Stub(object):
                           "model": "stub"})()
 
 
-class Stubbed(object):
-  """The machinery two suites below share: a stubbed client, a silenced cost
+class Stubbed(OwnTrace):
+  """The machinery the suites below share: a stubbed client, a silenced cost
   ledger, and a reader for the records this test wrote. Not a TestCase --
   inheriting one would re-run its cases under every subclass's name."""
 
@@ -285,27 +323,6 @@ class Stubbed(object):
   def tearDown(self):
     gpt_structure.client = self.real_client
     gpt_structure.cost_logger = self.real_logger
-
-  def records(self, event):
-    out = []
-    for name in sorted(os.listdir(_TRACE_DIR)):
-      if not name.startswith(self.sim_prefix()):
-        continue
-      with open(os.path.join(_TRACE_DIR, name), "r", encoding="utf-8") as f:
-        for line in f:
-          line = line.strip()
-          if line:
-            record = json.loads(line)
-            if record.get("event") == event:
-              out.append(record)
-    return out
-
-  def sim_prefix(self):
-    """Each test writes to its own trace file, named for its class as well
-    as its method: two suites share method names by inheritance and must not
-    share a file."""
-    return "test-%s" % self.id().rsplit(".", 2)[-2:][0] + "-" + \
-        self.id().rsplit(".", 1)[-1]
 
 class TransportFailure(Stubbed, unittest.TestCase):
   """A backend that did not answer is not a backend that answered badly."""
@@ -417,6 +434,225 @@ class Truncation(Stubbed, unittest.TestCase):
     reason = self.records("reject")[-1]["reason"]
     self.assertTrue(reason.startswith("truncated"), reason)
     self.assertIn("JSONDecodeError", reason)
+
+
+def rate_limited(retry_after=None):
+  """What OpenRouter raises when the provider behind it is overloaded.
+
+  A real openai.RateLimitError, not a stand-in: the ride-out has to recognise
+  the exception the client actually constructs, and the reject that follows an
+  exhausted ride-out has to read "transport:RateLimitError" -- the type is the
+  field, so a stub type would test the stub."""
+  request = httpx.Request("POST",
+                          "https://openrouter.ai/api/v1/chat/completions")
+  headers = {} if retry_after is None else {"retry-after": str(retry_after)}
+  response = httpx.Response(429, headers=headers, request=request)
+  return RateLimitError(
+      "Error code: 429 - {'error': {'message': 'Provider returned error', "
+      "'code': 429, 'metadata': {'provider_name': 'DeepInfra', "
+      "'provider_error_code': 'engine_overloaded'}}}",
+      response=response, body=None)
+
+
+class RideOut(Stubbed, unittest.TestCase):
+  """A provider's rate limit costs time, never a stage and never an answer."""
+
+  POLICY = {"attempts": 3, "base_delay": 2.0, "max_delay": 60.0}
+
+  def setUp(self):
+    Stubbed.setUp(self)
+    self.slept = []
+    self.real_sleep = gpt_structure._sleep
+    self.real_policy = gpt_structure.rate_limit_policy
+    # The wait is what this code is for, so it cannot be tested by waiting.
+    gpt_structure._sleep = self.slept.append
+    gpt_structure.rate_limit_policy = dict(self.POLICY)
+
+  def tearDown(self):
+    gpt_structure._sleep = self.real_sleep
+    gpt_structure.rate_limit_policy = self.real_policy
+    Stubbed.tearDown(self)
+
+  # --- case 13 (S1.1, S1.2): the limit passes and the run does not notice ---
+
+  def test_a_rate_limit_is_ridden_out(self):
+    gpt_structure.client = Stub(error=rate_limited(), text="kitchen", fails=2)
+
+    answer = gpt_structure.safe_generate_response(
+        "where is Isabella?", self.PARAMS, repeat=5,
+        fail_safe_response="bed",
+        func_validate=lambda r, prompt: True,
+        func_clean_up=lambda r, prompt: r)
+
+    self.assertEqual("kitchen", answer)
+    # Three requests, one attempt: the ride-out is not the retry loop, and it
+    # spends nothing the validators can see.
+    self.assertEqual(3, gpt_structure.client.calls)
+    self.assertEqual([2.0, 4.0], self.slept)
+
+    waits = self.records("rate_limit")
+    self.assertEqual(2, len(waits))
+    self.assertEqual([429, 429], [w["status"] for w in waits])
+    self.assertEqual([1, 2], [w["ride_attempt"] for w in waits])
+    self.assertEqual([3, 3], [w["ride_budget"] for w in waits])
+    self.assertEqual([2.0, 4.0], [w["delay_s"] for w in waits])
+    self.assertEqual(["GPT_request", "GPT_request"],
+                     [w["path"] for w in waits])
+
+    # And exactly one call record, for the request that answered. A wait is
+    # not a call: nothing was served and no tokens were spent, and every
+    # wall-clock figure in the lab is a count of these.
+    calls = self.records("call")
+    self.assertEqual(1, len(calls))
+    self.assertTrue(calls[0]["ok"])
+    # The waits are 6 seconds; the latency is the answering request's alone.
+    self.assertLess(calls[0]["latency_ms"], 1000)
+
+    self.assertEqual([], self.records("reject"))
+    self.assertFalse(self.records("outcome")[-1]["failsafe"])
+
+  # --- case 14 (S1.3): the budget runs out and RB-C is still RB-C -----------
+
+  def test_a_persistent_rate_limit_exhausts_the_ride_and_raises(self):
+    gpt_structure.client = Stub(error=rate_limited())
+
+    with self.assertRaises(gpt_structure.BackendTransportError):
+      gpt_structure.safe_generate_response(
+          "where is Isabella?", self.PARAMS, repeat=5,
+          fail_safe_response="kitchen",
+          func_validate=lambda r, prompt: True,
+          func_clean_up=lambda r, prompt: r)
+
+    # One request plus the three the budget paid for.
+    self.assertEqual(4, gpt_structure.client.calls)
+    self.assertEqual([2.0, 4.0, 8.0], self.slept)
+    self.assertEqual(3, len(self.records("rate_limit")))
+
+    rejects = self.records("reject")
+    self.assertEqual(["transport:RateLimitError"],
+                     [r["reason"] for r in rejects])
+
+    # The whole of RB-C in two assertions: the fail-safe never reached the
+    # world, and the loop never got to its last line.
+    self.assertEqual([], self.records("outcome"))
+
+  # --- case 15 (S1.2): the provider's own number beats our backoff ----------
+
+  def test_the_provider_s_retry_after_is_obeyed(self):
+    gpt_structure.client = Stub(error=rate_limited(retry_after=1.5),
+                                text="kitchen", fails=1)
+
+    gpt_structure.safe_generate_response(
+        "where is Isabella?", self.PARAMS, repeat=5,
+        fail_safe_response="bed",
+        func_validate=lambda r, prompt: True,
+        func_clean_up=lambda r, prompt: r)
+
+    self.assertEqual([1.5], self.slept)
+    self.assertEqual(1.5, self.records("rate_limit")[-1]["delay_s"])
+
+
+class Episodes(OwnTrace, unittest.TestCase):
+  """A social decision says who it was about, and which encounter it was part
+  of.
+
+  What this replaces: in cmpD2-jev Isabella asked about Klaus 14 times between
+  11:26 and 11:36 while Klaus asked about her 8 times in the same cafe, and
+  the trace called that 22 decisions with no counterparty on any of them. The
+  denominator of every social rate in 007-ST had to be reconstructed by
+  joining on timestamps, and the join failed on 22 of 98.
+
+  The backend here is "llm" (the suite sets DECISION_BACKEND before its
+  imports), which is the arm law 2 binds: the counterparty and the episode are
+  written into the trace and the answer that comes back is untouched."""
+
+  def setUp(self):
+    llm_trace.set_simulation(self.sim_prefix())
+    decision._episodes.clear()
+
+  def tearDown(self):
+    llm_trace.set_step(None)
+    decision._episodes.clear()
+
+  def ask(self, subject, other, step, label="decide_to_talk", answer="yes"):
+    """One social decision at one step, resolved by the paper's path."""
+    llm_trace.set_step(step)
+    return decision.choose(
+        label, ["yes", "no"],
+        succeeded(answer, "run_gpt_prompt_" + label),
+        fail_safe="yes", counterparty=other,
+        state={"subject": subject, "other": other})
+
+  def decisions(self):
+    return self.records("decision")
+
+  # --- case 16 (S2.1): the decision names the other agent ------------------
+
+  def test_a_social_decision_names_the_other_agent(self):
+    answer = self.ask("Isabella Rodriguez", "Klaus Mueller", 4000)
+    record = self.decisions()[-1]
+    # The answer is the paper's, untouched: this is a trace change (law 2).
+    self.assertEqual("yes", answer)
+    self.assertEqual("Klaus Mueller", record["other"])
+    self.assertEqual("Isabella Rodriguez", record["subject"])
+    self.assertTrue(record["episode"])
+
+  # --- case 17 (S2.2): one encounter is one episode ------------------------
+
+  def test_consecutive_asks_about_a_pair_share_an_episode(self):
+    # Isabella and Klaus in the cafe: the same question every step.
+    for step in range(4000, 4014):
+      self.ask("Isabella Rodriguez", "Klaus Mueller", step)
+    episodes = set(r["episode"] for r in self.decisions())
+    self.assertEqual(1, len(episodes))
+
+    # And the other direction is its own ordered pair, as 007-ST counted it.
+    self.ask("Klaus Mueller", "Isabella Rodriguez", 4005)
+    self.assertNotIn(self.decisions()[-1]["episode"], episodes)
+
+  # --- case 18 (S2.2): they part, they meet again, it is a second episode --
+
+  def test_a_pair_that_meets_again_opens_a_new_episode(self):
+    self.ask("Isabella Rodriguez", "Klaus Mueller", 4000)
+    first = self.decisions()[-1]["episode"]
+
+    # Ten steps of silence is still the same encounter (the default gap); the
+    # eleventh is not. The cut is the one 007-ST read the 98 asks under.
+    self.ask("Isabella Rodriguez", "Klaus Mueller", 4010)
+    self.assertEqual(first, self.decisions()[-1]["episode"])
+
+    self.ask("Isabella Rodriguez", "Klaus Mueller", 4030)
+    second = self.decisions()[-1]["episode"]
+    self.assertNotEqual(first, second)
+
+    # Still the same encounter as the one that just opened.
+    self.ask("Isabella Rodriguez", "Klaus Mueller", 4031)
+    self.assertEqual(second, self.decisions()[-1]["episode"])
+
+  # --- case 19 (S2.2): both social decisions of one encounter agree --------
+
+  def test_talk_and_react_share_the_encounter(self):
+    """_should_react asks decide_to_react only when decide_to_talk said no.
+    Two questions, one pair of agents standing in one room -- and the episode
+    is a fact about the room, not about the question."""
+    self.ask("Isabella Rodriguez", "Klaus Mueller", 4000, answer="no")
+    talk = self.decisions()[-1]["episode"]
+    self.ask("Isabella Rodriguez", "Klaus Mueller", 4000,
+             label="decide_to_react", answer="3")
+    self.assertEqual(talk, self.decisions()[-1]["episode"])
+
+  # --- case 20 (S2.3): a decision with no counterparty is untouched --------
+
+  def test_a_location_decision_gains_nothing(self):
+    """The five closed-set decisions that are not about another agent write
+    exactly the record they wrote before this field existed."""
+    llm_trace.set_step(4000)
+    decision.choose("action_sector", SECTORS,
+                    succeeded("kitchen", "run_gpt_prompt_action_sector"),
+                    fail_safe="kitchen")
+    record = self.decisions()[-1]
+    for field in ("other", "subject", "episode"):
+      self.assertNotIn(field, record)
 
 
 class Backfill(unittest.TestCase):
