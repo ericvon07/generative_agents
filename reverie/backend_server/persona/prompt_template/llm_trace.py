@@ -500,6 +500,26 @@ def record_decision(label, domain, answer, backend=None, fail_safe=None,
     pass
 
 
+def record_backend_down(backend, consecutive, error):
+  """The backend stopped answering and the run is giving up on it.
+
+  Its own event kind, because it is not a property of any one decision: it
+  says that every decision after it would have been a fallback. A trace that
+  contains one is a trace whose tail is not a measurement.
+  """
+  if not _config["enabled"]:
+    return
+  try:
+    _emit({
+        "event": "backend_down",
+        "backend": backend,
+        "consecutive_errors": consecutive,
+        "error": _head(error),
+    })
+  except Exception:
+    pass
+
+
 def record_guard(label, answer, replacement, domain=None):
   """A closed-set answer that the call site's domain guard replaced.
 

@@ -103,6 +103,12 @@ class Condition(object):
     self.rejects = [r for r in self.records if r.get("event") == "reject"]
     self.guards = [r for r in self.records if r.get("event") == "guard"]
     self.manifests = [r for r in self.records if r.get("event") == "manifest"]
+    self.backend_down = [r for r in self.records
+                         if r.get("event") == "backend_down"]
+    # A decision the backend could not answer at all. Counted separately from
+    # gave_up, which a healthy backend can also do: these are the ones where
+    # nothing was measured because nothing came back.
+    self.backend_errors = [r for r in self.decisions if r.get("backend_error")]
     self.steps = sorted(set(r["step"] for r in self.records
                             if r.get("step") is not None))
     backends = set(r.get("backend") for r in self.decisions if r.get("backend"))
@@ -278,6 +284,13 @@ def summary(conditions, price_by_backend):
       # from the rate above on purpose: one says how often the contract
       # broke, the other how often the simulation had to be steered.
       ("guard substitutions", lambda c: "%d" % len(c.guards)),
+      # The row that would have caught cmpD-jev on 22 Sep 2026 at a glance:
+      # 209 of its 636 decisions never reached the backend, and every one of
+      # them is a fail-safe standing where a measurement should be.
+      ("backend errors", lambda c: (
+          "%d (%s)" % (len(c.backend_errors),
+                       share(len(c.backend_errors), len(c.decisions)))
+          if c.backend_errors else "0")),
       ("answer == fail-safe", lambda c: share(
           sum(1 for r in c.decisions if r.get("is_fail_safe")),
           len(c.decisions))),
@@ -368,6 +381,17 @@ def provenance_warnings(conditions):
   that are not the same experiment. Printed rather than raised: an old trace
   is still worth reading, as long as nobody reads it as a controlled one."""
   out = []
+  for c in conditions:
+    if c.backend_errors:
+      first = min((r.get("step") for r in c.backend_errors
+                   if r.get("step") is not None), default="?")
+      out.append("%s: %d of %d decisions never reached the backend (from step "
+                 "%s on) -- those rows are fail-safes, not measurements, and "
+                 "every rate in this table is diluted by them"
+                 % (c.prefix, len(c.backend_errors), len(c.decisions), first))
+    if c.backend_down:
+      out.append("%s: the run stopped because the backend was down (%s)"
+                 % (c.prefix, c.backend_down[0].get("error")))
   if any(not c.manifests for c in conditions):
     out.append("a condition has no run manifest -- trace written before "
                "22 Sep 2026; its code, seed and config are unknown")

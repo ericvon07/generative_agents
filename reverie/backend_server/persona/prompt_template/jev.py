@@ -55,9 +55,35 @@ _DEFAULTS = {
     "api-key": "",
     "timeout": 30.0,
     "max-retries": 3,
+    # urllib's default User-Agent is "Python-urllib/3.9", which the API's
+    # edge bans by client signature: HTTP 403, "error code: 1010". It did
+    # not on 22 Sep at 14h and did at 18h31, in the middle of a window, so
+    # the client says who it is rather than leaving it to a default that can
+    # change meaning between two runs of the same experiment.
+    "user-agent": "generative-agents-jev/1.0 (research; python-urllib)",
+    # How many requests may fail in a row before the run stops. A backend
+    # that is down does not look like a backend that is down: every failed
+    # decision falls back to the paper's fail-safe and the tables fill up
+    # with plausible numbers. See the 22 Sep cmpD-jev run, where 209
+    # consecutive 403s produced a complete condition that had to be thrown
+    # away. 0 disables the check.
+    "abort-after-consecutive-errors": 10,
     # $ per 1M tokens, as published for jev-1.12 in Sep 2026. Output is free.
     "costs": {"input": 0.042, "output": 0.0},
 }
+
+
+class JevBackendDown(Exception):
+  """The backend has failed <abort-after-consecutive-errors> requests in a
+  row: the condition is no longer being measured and the run must stop.
+
+  Deliberately NOT a JevError. The seam catches JevError and substitutes the
+  paper's fail-safe, which is right for one bad request and catastrophic for
+  a backend that is simply gone -- the run keeps going and writes a full set
+  of tables in which every decision is a fallback wearing a plausible value.
+  That is what happened to cmpD-jev on 22 Sep 2026: 209 consecutive HTTP
+  403s over 748 steps, and nothing in the run said so.
+  """
 
 
 class JevError(Exception):
@@ -80,10 +106,18 @@ def _load_config():
                         or merged["base-url"]).rstrip("/")
   merged["timeout"] = float(merged["timeout"])
   merged["max-retries"] = int(merged["max-retries"])
+  merged["user-agent"] = (os.environ.get("JEV_USER_AGENT")
+                          or merged["user-agent"])
+  merged["abort-after-consecutive-errors"] = int(
+      os.environ.get("JEV_ABORT_AFTER")
+      or merged["abort-after-consecutive-errors"])
   return merged
 
 
 _config = _load_config()
+
+# How many requests have failed back to back. Reset by any success.
+_consecutive_errors = 0
 
 
 def model():
@@ -182,6 +216,7 @@ def _post(payload):
       headers={
           "Authorization": "Bearer %s" % api_key(),
           "Content-Type": "application/json",
+          "User-Agent": _config["user-agent"],
       },
       method="POST")
   with urllib.request.urlopen(request, timeout=_config["timeout"]) as response:
@@ -234,6 +269,8 @@ def ask_full(state, questions, label=None):
       if not isinstance(answers, dict):
         raise JevError("response carried no answers map")
       _trace(label, payload, latency, usage, answers, None)
+      global _consecutive_errors
+      _consecutive_errors = 0
       return {"answers": answers,
               "usage": usage,
               "model": response.get("model"),
@@ -246,7 +283,30 @@ def ask_full(state, questions, label=None):
         break
       time.sleep(min(2.0 ** (attempt - 1), 8.0))
 
+  _note_failure(last_error)
   raise JevError("%s: %s" % (type(last_error).__name__, last_error))
+
+
+def _note_failure(error):
+  """One more request that produced nothing, and the decision about whether
+  this run is still measuring anything."""
+  global _consecutive_errors
+  _consecutive_errors += 1
+  limit = _config["abort-after-consecutive-errors"]
+  if not limit or _consecutive_errors < limit:
+    return
+  message = ("jev: %d consecutive failures, last one %s: %s. Every decision "
+             "since the first is the paper's fail-safe, not a measurement, "
+             "so this run is stopping instead of filling its tables with "
+             "fallbacks." % (_consecutive_errors, type(error).__name__, error))
+  print("=" * 78)
+  print(message)
+  print("=" * 78)
+  try:
+    llm_trace.record_backend_down("jev", _consecutive_errors, str(error))
+  except Exception:
+    pass
+  raise JevBackendDown(message)
 
 
 def _retryable(error):
