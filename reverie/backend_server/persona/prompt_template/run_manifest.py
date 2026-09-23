@@ -19,8 +19,14 @@ trace itself, where the numbers are. Every trace file opens with one
 through, because a stage is the unit anyone actually reads back.
 
 What goes in it is what a reader needs to rerun the row: the commit, whether
-the tree was dirty, the models, the decision backend, whether the domain
-guard was on, the hash of the configuration, and the seed.
+the tree was dirty, the models, the provider the requests were pinned to,
+the decision backend, whether the domain guard was on, the hash of the
+configuration, and the seed.
+
+The pin is the condition; which provider actually ANSWERED is not here,
+because it is not a property of the run's setup -- it is a property of every
+individual call, and it lives on each "call" record. The registrar in the
+lab reads both and refuses a run where they ever disagree.
 
 Configuration, in openai_config.json:
 
@@ -227,6 +233,12 @@ def apply(fork_sim_code=None, sim_code=None, steps=None):
       "model": {
           "name": cfg.get("model"),
           "base_url": cfg.get("model-base-url"),
+          # The provider block sent with every request, when the run goes
+          # through a router. It is half of the run's identity there: the
+          # same model name at two providers is two sets of weights, two
+          # quantizations and two serving stacks (RB-E). Null on a run that
+          # does not route.
+          "provider_pin": cfg.get("model-provider"),
           "embeddings": cfg.get("embeddings"),
           "embeddings_base_url": cfg.get("embeddings-base-url"),
       },

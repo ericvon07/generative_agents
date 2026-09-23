@@ -9,7 +9,9 @@ Six event kinds:
                models and the backend that produced everything below it.
                Written by run_manifest.py at boot; see there for why.
   "call"    -- one HTTP request actually sent to the model backend, with
-               latency, token usage and a hash/preview of the payload.
+               latency, token usage, a hash/preview of the payload, why
+               generation stopped, and -- through a router -- the provider
+               that answered beside the pin that was asked for.
   "reject"  -- a response that came back but was thrown away by the retry
                loop (unparseable JSON, failed validation, cleanup crash),
                or a request that never came back at all ("transport:<Type>",
@@ -488,6 +490,12 @@ def record_call(path, model, prompt, response=None, latency=None,
         # key at all, which is not the same as having it read None, and the
         # readers keep the two apart.
         "finish_reason": facts["finish_reason"],
+        # WHICH provider served this request -- what the response says, not
+        # what the request asked for. The pin rides in <extra>, from the
+        # config; this is ground truth, and RB-E is the rule that the two
+        # must agree for the run to be one condition. None on any backend
+        # that does not route (every local one).
+        "provider": facts["provider"],
     }
     if extra:
       record.update(extra)

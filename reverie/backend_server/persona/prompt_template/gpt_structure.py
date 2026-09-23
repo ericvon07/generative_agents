@@ -93,6 +93,18 @@ def _extra_body():
   pin = provider_pin()
   return {"provider": pin} if pin else None
 
+
+def _traced_pin():
+  """The pin as the trace records it, or nothing at all.
+
+  A pin is what the request ASKED for; the provider on the response is what
+  answered. Both go on the call so a reader can see them disagree (RB-E).
+  When there is no pin the key is absent rather than null, so a trace from a
+  local run looks exactly as it did before this plan.
+  """
+  pin = provider_pin()
+  return {"provider_pin": pin} if pin else None
+
 def setup_client(type: str, config: dict):
   """Setup the OpenAI client.
 
@@ -223,7 +235,8 @@ def ChatGPT_single_request(prompt):
     raise BackendTransportError(
         "%s: %s" % (type(e).__name__, e)) from e
   llm_trace.record_call("ChatGPT_single_request", openai_config["model"], prompt,
-                        response=completion, latency=time.time() - started)
+                        response=completion, latency=time.time() - started,
+                        extra=_traced_pin())
   _charge(completion)
   return completion.choices[0].message.content
 
@@ -261,7 +274,8 @@ def ChatGPT_request(prompt):
     raise BackendTransportError(
         "%s: %s" % (type(e).__name__, e)) from e
   llm_trace.record_call("ChatGPT_request", openai_config["model"], prompt,
-                        response=completion, latency=time.time() - started)
+                        response=completion, latency=time.time() - started,
+                        extra=_traced_pin())
   _charge(completion)
   return completion.choices[0].message.content
 
@@ -415,7 +429,8 @@ def GPT_request(prompt, gpt_parameter):
     raise BackendTransportError(
         "%s: %s" % (type(e).__name__, e)) from e
   llm_trace.record_call("GPT_request", openai_config["model"], prompt,
-                        response=response, latency=time.time() - started)
+                        response=response, latency=time.time() - started,
+                        extra=_traced_pin())
   _charge(response)
   return response.choices[0].message.content
 

@@ -18,6 +18,13 @@ Nothing here touches a model. Two claims are under test:
 The third claim is negative and matters as much: RUN_SEED=off records
 "seed": null rather than omitting the field, so an unseeded run cannot be
 mistaken for a seeded one when the tables are read back.
+
+Since 006-IP there is a fourth: a run that goes through a router records the
+provider block it pinned, and every call records the provider that actually
+answered. They are two different facts -- what was asked for and what
+happened -- and the registrar in the lab invalidates a run where they ever
+disagree, because the same model name at two providers is two sets of
+weights and two serving stacks.
 """
 import json
 import os
@@ -54,6 +61,19 @@ class RunManifest(unittest.TestCase):
         for line in f:
           line = line.strip()
           if line and json.loads(line).get("event") == "manifest":
+            out.append(json.loads(line))
+    return out
+
+  def calls(self):
+    """Every call record this test's simulation wrote."""
+    out = []
+    for name in sorted(os.listdir(_TRACE_DIR)):
+      if not name.startswith(self.sim):
+        continue
+      with open(os.path.join(_TRACE_DIR, name), "r", encoding="utf-8") as f:
+        for line in f:
+          line = line.strip()
+          if line and json.loads(line).get("event") == "call":
             out.append(json.loads(line))
     return out
 
@@ -162,6 +182,69 @@ class RunManifest(unittest.TestCase):
     if code["sha"] is not None:  # a checkout without git still runs
       self.assertIsNotNone(code["tree"])
       self.assertNotEqual(code["tree"], code["sha"])
+
+  # --- the provider ---------------------------------------------------------
+
+  def test_the_manifest_carries_the_pin_it_was_configured_with(self):
+    """The pin is half a routed run's identity. The same model name at two
+    providers is two sets of weights, two quantizations and two serving
+    stacks, so a run that does not record what it asked for cannot say what
+    it measured (RB-E)."""
+    pin = {"order": ["deepinfra"], "allow_fallbacks": False,
+           "quantizations": ["fp8"]}
+    real = run_manifest._config
+    run_manifest._config = lambda: {
+        "model": "meta-llama/llama-3.1-8b-instruct",
+        "model-base-url": "https://openrouter.ai/api/v1",
+        "model-provider": pin,
+        "run": {"seed": 20260922},
+    }
+    try:
+      manifest = run_manifest.apply(sim_code=self.sim)
+    finally:
+      run_manifest._config = real
+    self.assertEqual(pin, manifest["model"]["provider_pin"])
+
+  def test_a_local_run_pins_nothing_and_says_so(self):
+    """Null, not absent and not a guess: a run that does not route asked for
+    no provider, and that is a fact about it rather than a gap."""
+    real = run_manifest._config
+    run_manifest._config = lambda: {"model": "llama3.1:8b",
+                                    "run": {"seed": 20260922}}
+    try:
+      manifest = run_manifest.apply(sim_code=self.sim)
+    finally:
+      run_manifest._config = real
+    self.assertIn("provider_pin", manifest["model"])
+    self.assertIsNone(manifest["model"]["provider_pin"])
+
+  def test_a_call_records_what_answered_beside_what_was_asked_for(self):
+    """The pin is what the request asked for; "provider" is what the response
+    says actually served it. They ride on the same record precisely so a
+    reader can watch them disagree -- the registrar invalidates a run where
+    they ever do."""
+    pin = {"order": ["deepinfra"], "allow_fallbacks": False}
+    run_manifest.apply(sim_code=self.sim)
+
+    message = type("M", (), {"content": "kitchen"})()
+    choice = type("C", (), {"message": message, "finish_reason": "stop"})()
+    usage = type("U", (), {"prompt_tokens": 9, "completion_tokens": 1,
+                           "total_tokens": 10, "cost": 0.00000064})()
+    response = type("R", (), {"choices": [choice], "usage": usage,
+                              "provider": "DeepInfra"})()
+
+    llm_trace.record_call("GPT_request", "meta-llama/llama-3.1-8b-instruct",
+                          "where is Isabella?", response=response,
+                          extra={"provider_pin": pin})
+
+    call = self.calls()[-1]
+    self.assertEqual("DeepInfra", call["provider"])
+    self.assertEqual(pin, call["provider_pin"])
+    self.assertEqual("stop", call["finish_reason"])
+    # And the router's own number for what the call cost, which is what the
+    # ledger books rather than a price table (RB-B).
+    self.assertEqual(0.00000064,
+                     llm_trace.response_facts(response)["cost"])
 
   def test_status_carries_the_commit_and_the_seed(self):
     run_manifest.apply(sim_code=self.sim)
