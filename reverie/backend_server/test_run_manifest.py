@@ -151,6 +151,18 @@ class RunManifest(unittest.TestCase):
     self.assertNotEqual(run_manifest._config_fingerprint(cfg),
                         run_manifest._config_fingerprint(changed))
 
+  def test_the_manifest_names_the_tree_as_well_as_the_commit(self):
+    """A commit moves for reasons that have nothing to do with the
+    simulator -- two documentation commits from another session split
+    cmpD2-llm's eight stages across two shas on 22 Sep 2026 while the code
+    was identical. The tree of reverie/backend_server is what the comparison
+    compares on."""
+    code = run_manifest.apply(sim_code=self.sim)["code"]
+    self.assertIn("tree", code)
+    if code["sha"] is not None:  # a checkout without git still runs
+      self.assertIsNotNone(code["tree"])
+      self.assertNotEqual(code["tree"], code["sha"])
+
   def test_status_carries_the_commit_and_the_seed(self):
     run_manifest.apply(sim_code=self.sim)
     line = run_manifest.status()

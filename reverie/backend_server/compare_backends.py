@@ -219,11 +219,39 @@ def share(count, total):
 
 
 def fmt_code(condition):
+  """What ran, named by its commit but judged by its tree.
+
+  A condition is several stage files, and a commit from another session can
+  land between two of them: on 22 Sep 2026 two documentation commits split
+  cmpD2-llm's eight stages across two shas while the code was byte for byte
+  identical. So the commit is only reported as MIXED when the tree moved
+  too; when the tree held, the stages ran the same code and the row says so,
+  naming the commit the run started on.
+  """
   code = condition.provenance("code")
-  if code in (None, "MIXED"):
-    return "unrecorded" if code is None else "MIXED"
-  sha = (code.get("sha") or "?")[:8]
-  return "%s%s" % (sha, "+dirty" if code.get("dirty") else "")
+  if code is None:
+    return "unrecorded"
+  if code != "MIXED":
+    sha = (code.get("sha") or "?")[:8]
+    return "%s%s" % (sha, "+dirty" if code.get("dirty") else "")
+
+  tree = condition.provenance("code", "tree")
+  if tree in (None, "MIXED"):
+    return "MIXED"
+  # Same code, different commits: report the first stage's commit and say
+  # the difference was outside the simulator.
+  shas = [(m.get("code") or {}).get("sha") for m in condition.manifests]
+  first = (shas[0] or "?")[:8] if shas else "?"
+  dirty = any((m.get("code") or {}).get("dirty") for m in condition.manifests)
+  return "%s%s (%d commits, same tree)" % (first, "+dirty" if dirty else "",
+                                           len(set(shas)))
+
+
+def fmt_tree(condition):
+  tree = condition.provenance("code", "tree")
+  if tree is None:
+    return "unrecorded"
+  return "MIXED" if tree == "MIXED" else str(tree)[:8]
 
 
 def fmt_seed(condition):
@@ -238,6 +266,7 @@ def summary(conditions, price_by_backend):
       ("trace files", lambda c: "%d" % len(c.files)),
       ("backend", lambda c: c.backend),
       ("code", fmt_code),
+      ("code tree", fmt_tree),
       ("seed", fmt_seed),
       ("config", lambda c: str(c.provenance("config_sha1") or "unrecorded")),
       ("domain guard", lambda c: {True: "on", False: "off", None: "unrecorded"}
@@ -398,9 +427,13 @@ def provenance_warnings(conditions):
   seeds = set(fmt_seed(c) for c in conditions)
   if "UNSEEDED" in seeds:
     out.append("a condition ran unseeded: its trajectory is not reproducible")
-  codes = set(fmt_code(c) for c in conditions if c.manifests)
-  if len(codes) > 1:
-    out.append("the conditions ran different code: %s" % ", ".join(sorted(codes)))
+  trees = set(fmt_tree(c) for c in conditions if c.manifests)
+  if "MIXED" in trees:
+    out.append("a condition's stages ran different code: the simulator "
+               "changed in the middle of the run")
+  elif len(trees) > 1:
+    out.append("the conditions ran different code: %s"
+               % ", ".join(sorted(trees)))
   if any(c.provenance("code", "dirty") for c in conditions):
     out.append("a condition ran from a dirty tree: the commit does not "
                "describe what produced these numbers")

@@ -121,14 +121,30 @@ def _git(*args):
 def _code_version():
   """The commit the numbers came from, and whether it is the whole story.
 
+  Two identifiers, because they answer different questions.
+
+  "sha" is the commit: where this run sits in the history. It moves for any
+  reason at all, including a commit that touches only documentation -- which
+  is what happened on 22 Sep 2026, when two docs commits landed from another
+  session during cmpD2-llm's 1h14 and split its eight stages across two
+  commits. The comparison called the condition MIXED, correctly by its own
+  rule and wrongly about the world: not one line of Python had changed.
+
+  "tree" is the hash of reverie/backend_server as git stores it: the code
+  that actually ran, and nothing else. Two runs that share it ran identical
+  code no matter what their commits say. That is the one to compare on.
+
   A dirty tree is recorded rather than refused: a run mid-edit is a normal
   thing to do, and a row whose manifest says dirty=true is a row nobody will
-  mistake for a citable one.
+  mistake for a citable one. Note that the tree hash is of HEAD, so it does
+  not describe uncommitted edits -- which is exactly why "dirty" is reported
+  beside it and why a dirty run is not a citable one.
   """
   sha = _git("rev-parse", "HEAD")
   status = _git("status", "--porcelain")
   return {
       "sha": sha,
+      "tree": _git("rev-parse", "HEAD:reverie/backend_server"),
       "branch": _git("rev-parse", "--abbrev-ref", "HEAD"),
       "dirty": bool(status) if status is not None else None,
   }
@@ -247,6 +263,8 @@ def status():
   domain_guard.status()."""
   code = (_manifest.get("code") or {})
   sha = code.get("sha") or "unknown"
+  # The commit is what a person recognises; the tree is what the comparison
+  # trusts. The startup line prints the commit, since it is read by people.
   where = "%s%s" % (sha[:8], "+dirty" if code.get("dirty") else "")
   if _seed is None:
     return ("run: %s, UNSEEDED -- this run is not reproducible "
