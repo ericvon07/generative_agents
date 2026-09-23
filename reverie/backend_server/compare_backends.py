@@ -20,12 +20,22 @@ covered the window at all. A condition that died early is the headline, not a
 footnote, so it is printed first.
 
 Reads only; it never touches a simulation.
+
+Three of the per-decision columns are about the retry loop rather than the
+model: of the responses the loop threw away, how many already named one of
+the options the prompt had offered. On the 22 Sep 2026 window that was 241 of
+241 -- the loop was rejecting right answers in the wrong shape and then
+writing a literal into the world. Those columns read the full text the trace
+keeps for a decision rejection; on a trace written before 23 Sep 2026 they
+read the 200-character head instead and the output says the figure is a
+floor.
 """
 import argparse
 import collections
 import glob
 import json
 import os
+import re
 import statistics
 import sys
 
@@ -163,6 +173,160 @@ class Condition(object):
     for r in self.calls:
       out[r.get("path") or "?"] += r.get("in_tok") or 0
     return out
+
+
+def normalise(text):
+  """One spelling for a domain member and for the text that may contain it.
+
+  The same three moves record_decision makes when it asks whether an answer
+  is in the set -- strip, drop the stray brace the prompt template invites,
+  lower -- plus collapsing whitespace, because a response that arrives on two
+  lines names the same place as one that does not.
+  """
+  text = str(text).strip()
+  text = text.strip("{}").strip()
+  return re.sub(r"\s+", " ", text).lower()
+
+
+def members_named(text, domain):
+  """Which members of <domain> the text names, by whole-word containment.
+
+  Whole-word, not plain substring: "bed" must not match "bedroom". Containment
+  and not equality, because the answers being read are the ones the validator
+  refused, and it refused most of them for being a sentence -- "The common
+  room in the Dorm for Oak Hill College." is a valid sector inside prose.
+
+  The cost of containment is the overcount 002-ST named as this measurement's
+  main risk: a domain whose members nest ("Oak Hill College" inside "Dorm for
+  Oak Hill College") matches twice on one name. So the members are returned
+  rather than a boolean, the caller counts a multiple match once, and the
+  ambiguous total is printed beside the figure instead of being assumed away.
+  """
+  normal = normalise(text)
+  out = []
+  for member in domain:
+    if member == "...":  # the decision event truncates a domain over 40
+      continue
+    needle = normalise(member)
+    if not needle:
+      continue
+    if re.search(r"(?<!\w)%s(?!\w)" % re.escape(needle), normal):
+      out.append(member)
+  return out
+
+
+class Rejection(object):
+  """One discarded response on a closed-set decision, read against the set
+  that decision was offered."""
+
+  __slots__ = ("label", "persona", "step", "attempt", "reason", "text",
+               "whole", "matched", "verbatim")
+
+  def __init__(self, record, domain):
+    self.label = decision_label(record)
+    self.persona = record.get("persona")
+    self.step = record.get("step")
+    self.attempt = record.get("attempt")
+    self.reason = record.get("reason")
+    # The full text since 23 Sep 2026; before that the head is all there is,
+    # and <whole> is what tells the reader which of the two was read.
+    self.whole = "resp_full" in record
+    self.text = record.get("resp_full") or record.get("resp_head") or ""
+    self.matched = members_named(self.text, domain)
+    self.verbatim = normalise(self.text) in set(
+        normalise(m) for m in domain if m != "...")
+
+
+def rejections_by_decision(condition):
+  """Pair every reject with the decision it belongs to, on (label, persona,
+  step) -- the triple 002-ST paired by hand.
+
+  A reject whose label is not one of the closed-set decisions is a generation
+  rejection and is not here at all: the daily schedules and the conversations
+  are the bulk of the 758 in a window and they answer no closed question.
+
+  A reject that names a decision but matches none is returned under
+  "unpaired" and printed, never dropped. It is the only evidence there would
+  be that the pairing itself is wrong, and the reader has to see it.
+  """
+  by_key = {}
+  disagreed = set()
+  for r in condition.decisions:
+    key = (decision_label(r), r.get("persona"), r.get("step"))
+    if key in by_key:
+      # Several decisions of the same kind in one step (the poignancy scores
+      # do this). Harmless while they were offered the same set; if they were
+      # not, there is no way to tell which one a reject belongs to.
+      if json.dumps(by_key[key].get("domain"), sort_keys=True, default=str) \
+         != json.dumps(r.get("domain"), sort_keys=True, default=str):
+        disagreed.add(key)
+      continue
+    by_key[key] = r
+
+  labels = set(decision_label(r) for r in condition.decisions)
+  out = collections.defaultdict(list)
+  unpaired = collections.Counter()
+  scoreless = collections.Counter()
+  for r in condition.rejects:
+    label = decision_label(r)
+    if label not in labels:
+      continue  # a generation prompt
+    key = (label, r.get("persona"), r.get("step"))
+    decision = by_key.get(key)
+    if decision is None or key in disagreed:
+      unpaired[label] += 1
+      continue
+    domain = [m for m in (decision.get("domain") or []) if m != "..."]
+    if not domain:
+      # A score was offered no set, so there is no membership to recover
+      # into. Counted apart: the poignancy rejections are real -- 77 in the
+      # 22 Sep window -- and reporting them as zero recoverable would read as
+      # a finding about the model rather than as a question that does not
+      # apply to a 1-10 scale.
+      scoreless[label] += 1
+      continue
+    out[label].append(Rejection(r, domain))
+  return out, unpaired, scoreless
+
+
+def rejection_stats(condition):
+  """Per decision label: how many rejections, how many already held a valid
+  choice, how many were one verbatim, how many named more than one.
+
+  "recoverable" is None where the question does not apply -- a score, which
+  was offered no set -- and that is not the same as zero."""
+  paired, unpaired, scoreless = rejections_by_decision(condition)
+  stats = {}
+
+  def blank(label):
+    return stats.setdefault(label, {"n": 0, "recoverable": 0, "verbatim": 0,
+                                    "ambiguous": 0, "floor": 0, "unpaired": 0})
+
+  for label, rejections in paired.items():
+    row = blank(label)
+    row["n"] = len(rejections)
+    row["recoverable"] = sum(1 for r in rejections if r.matched)
+    row["verbatim"] = sum(1 for r in rejections if r.verbatim)
+    row["ambiguous"] = sum(1 for r in rejections
+                           if len(set(normalise(m) for m in r.matched)) > 1)
+    row["floor"] = sum(1 for r in rejections if not r.whole)
+  for label, n in unpaired.items():
+    blank(label)["unpaired"] = n
+  for label, n in scoreless.items():
+    row = blank(label)
+    row["n"] += n
+    row["recoverable"] = None
+  return stats
+
+
+def has_retry_loop(condition, label):
+  """Whether this condition's decisions of this kind went through a retry
+  loop at all. The typed backend has none, so "of the rejections, how many
+  held a valid answer" is not a zero there -- it is a question that does not
+  apply, and the table says so with a dash."""
+  backends = set(r.get("backend") for r in condition.decisions
+                 if decision_label(r) == label)
+  return backends != {"jev"}
 
 
 def gave_up(record):
@@ -355,9 +519,12 @@ def per_decision(conditions, only=None):
     print("no decisions recorded in either condition.\n")
     return
 
-  header = ("%-20s  %-8s %6s %10s %10s %8s %9s %9s %9s"
+  row_fmt = "%-20s  %-8s %6s %10s %10s %8s %9s %12s %9s %9s %9s %9s"
+  header = (row_fmt
             % ("decision", "cond", "n", "out of dom", "= failsafe", "gave up",
+               "rejected", "already valid", "verbatim",
                "ms/dec", "req/dec", "p50 conf"))
+  stats = dict((id(c), rejection_stats(c)) for c in conditions)
   print("PER DECISION")
   print(header)
   print("-" * len(header))
@@ -365,8 +532,8 @@ def per_decision(conditions, only=None):
     for c in conditions:
       group = [r for r in c.decisions if r.get("label") == label]
       if not group:
-        print("%-20s  %-8s %6s %10s %10s %8s %9s %9s %9s"
-              % (label, c.prefix[-8:], "0", "-", "-", "-", "-", "-", "-"))
+        print(row_fmt % (label, c.prefix[-8:], "0", "-", "-", "-",
+                         "-", "-", "-", "-", "-", "-"))
         continue
       checked = [r for r in group if r.get("in_domain") is not None]
       lat = [r["latency_ms"] for r in c.calls
@@ -376,17 +543,114 @@ def per_decision(conditions, only=None):
       # still time the step waits for -- so this is the total request time
       # divided by decisions, not the median of one request.
       per = (sum(lat) / len(group)) if lat and group else None
-      print("%-20s  %-8s %6d %10s %10s %8s %9s %9s %9s"
+      row = stats[id(c)].get(label)
+      if not has_retry_loop(c, label):
+        # No loop, so nothing was ever discarded: three dashes, not three
+        # zeroes. A zero would read as a backend that discarded nothing on
+        # its way to an answer; this backend has no way to discard.
+        rejected = recoverable = verbatim = "-"
+      elif row is None:
+        rejected, recoverable, verbatim = "0", "-", "-"
+      else:
+        rejected = "%d" % row["n"]
+        if row["recoverable"] is None:
+          recoverable = verbatim = "n/a (score)"
+        else:
+          recoverable = "%d (%s)" % (row["recoverable"],
+                                     share(row["recoverable"], row["n"]))
+          verbatim = "%d" % row["verbatim"]
+      print(row_fmt
             % (label, c.prefix[-8:], len(group),
                share(sum(1 for r in checked if r["in_domain"] is False),
                      len(checked)),
                share(sum(1 for r in group if r.get("is_fail_safe")),
                      len(group)),
                share(sum(1 for r in group if gave_up(r)), len(group)),
+               rejected, recoverable, verbatim,
                "-" if per is None else "%.0f" % per,
                "-" if not lat else "%.2f" % (float(len(lat)) / len(group)),
                "-" if not conf else "%.3f" % statistics.median(conf)))
     print("")
+  for note in rejection_notes(conditions, stats):
+    print("  %s" % note)
+  if any(rejection_notes(conditions, stats)):
+    print("")
+
+
+def rejection_notes(conditions, stats):
+  """Everything the three columns above cannot say inside a cell.
+
+  All three are honesty, not decoration. The ambiguous total is the overcount
+  002-ST predicted, reported rather than assumed away. The unpaired total is
+  the only sign there would be that pairing on (label, persona, step) is
+  wrong. The floor note is the same admission _backfill_gave_up already makes
+  for an old trace: a figure read from a 200-character head is a lower bound,
+  because the answer may have been past the cut.
+  """
+  out = []
+  for c in conditions:
+    rows = stats[id(c)]
+    # Only the rejections the question applies to: a score was offered no
+    # set, so its rejections belong in neither the numerator nor the
+    # denominator of "how many already held a valid choice".
+    total = sum(r["n"] for r in rows.values() if r["recoverable"] is not None)
+    ambiguous = sum(r["ambiguous"] for r in rows.values())
+    unpaired = sum(r["unpaired"] for r in rows.values())
+    floor = sum(r["floor"] for r in rows.values())
+    if ambiguous:
+      out.append("%s: %d of %d rejections named more than one member of the "
+                 "set they were offered (a domain whose names nest does "
+                 "this). Each counts once under \"already valid\"; "
+                 "--decision <label> prints what matched."
+                 % (c.prefix, ambiguous, total))
+    if unpaired:
+      out.append("!! %s: %d rejections carry a decision's name but match no "
+                 "decision at the same persona and step -- the pairing is "
+                 "missing something and the figures above are short by that "
+                 "much" % (c.prefix, unpaired))
+    if floor:
+      out.append("%s: %d of %d rejections were read from a 200-character "
+                 "head (trace written before 23 Sep 2026, which keeps no "
+                 "full text) -- \"already valid\" is a floor, not a rate"
+                 % (c.prefix, floor, total))
+  return out
+
+
+def rejected_responses(conditions, label, limit=12):
+  """What the retry loop actually threw away on one decision, and which
+  member of the set each discarded response named.
+
+  This is where RA-D's "which member matched" lives: a count that says 126 of
+  126 rejections held a valid sector is only believable next to the sentences
+  it counted."""
+  print("REJECTED RESPONSES -- %s" % label)
+  for c in conditions:
+    paired, unpaired, scoreless = rejections_by_decision(c)
+    rejections = paired.get(label, [])
+    if not rejections:
+      why = "no retry loop" if not has_retry_loop(c, label) else "none"
+      if scoreless.get(label):
+        why = "%d rejections, but a score is offered no set" % scoreless[label]
+      print("  %-24s (%s)" % (c.prefix, why))
+      continue
+    print("  %s (%d rejections, %d already valid)"
+          % (c.prefix, len(rejections),
+             sum(1 for r in rejections if r.matched)))
+    seen = collections.Counter()
+    first = {}
+    for r in rejections:
+      key = normalise(r.text)
+      seen[key] += 1
+      first.setdefault(key, r)
+    for key, n in seen.most_common(limit):
+      r = first[key]
+      matched = ", ".join(r.matched) if r.matched else "nothing in the set"
+      print("      %-44s %4d  %s%s"
+            % (r.text.replace("\n", " ")[:44], n, matched,
+               " [verbatim]" if r.verbatim else ""))
+    if len(seen) > limit:
+      print("      ... and %d more distinct responses" % (len(seen) - limit))
+  print("")
 
 
 def answers(conditions, label):
@@ -481,8 +745,16 @@ def main():
         'value. For a 1-10')
   print('  score whose fail-safe is 4, a genuine 4 is counted there too; '
         '"gave up" is the')
-  print('  column that means the backend actually failed.\n')
+  print('  column that means the backend actually failed.')
+  print('  "rejected" is the responses the retry loop discarded on this '
+        'decision; "already')
+  print('  valid" is how many of them named an option the prompt had '
+        'offered, and')
+  print('  "verbatim" how many were one and nothing else. A high pair is '
+        'the loop')
+  print('  rejecting right answers in the wrong shape.\n')
   if args.decision:
+    rejected_responses(conditions, args.decision)
     answers(conditions, args.decision)
 
 
