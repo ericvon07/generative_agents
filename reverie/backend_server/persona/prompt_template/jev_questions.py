@@ -179,6 +179,131 @@ QUESTIONS = {
 }
 
 
+# --- the orphan keys, and the two mechanisms that close them (011-IP TS-A) ---
+#
+# The audit of 2026-09-23: an ORPHAN KEY is a key in the `state` a call site
+# sends that the question's instruction never mentions. The model may look at
+# it; nothing says it should. Every orphan below is a fact the paper's prompt
+# states in a sentence of its own -- nothing is missing from the payload, but
+# nothing tells the model what the fact is for.
+#
+# Two mechanisms are candidates, and the probe of 011-IP step 4 chooses per
+# question:
+#
+#   descriptive criteria  the option descriptions name the orphan keys. The
+#                         instruction does not change, the state does not
+#                         change, the payload grows by two sentences. It fits
+#                         a binary question and not a twelve-option one, so
+#                         only the two social questions get it.
+#   the composed state    the state becomes the paper's own last block,
+#                         rendered from the same prompt_input with the answer
+#                         cue stripped (gpt_structure.composed_state).
+#
+# NOT ON THE RUN PATH YET. QUESTIONS below is what the simulation asks; what
+# follows is the alternate block probe_questions.py selects. Step 5 of 011-IP
+# moves the winner into QUESTIONS, under deviation D7, and the entry in
+# decision-seam.md quotes whatever lands in full so it can be audited against
+# the prompt it paraphrases.
+
+ORPHAN_KEYS = {
+    "action_sector": ("lives_in", "areas_where_they_live",
+                      "areas_where_they_are", "daily_plan_requirement",
+                      "current_action"),
+    "action_arena": ("areas_there", "current_action"),
+    "action_game_object": (),
+    "decide_to_talk": ("last_chatted_at", "last_chatted_about", "subject_is",
+                       "other_is"),
+    "decide_to_react": ("other", "subject_is", "other_is"),
+    "event_poignancy": (),
+    "thought_poignancy": (),
+    "chat_poignancy": (),
+}
+
+
+# The line between naming a fact and steering the answer is thin, and it is
+# the reason these sentences are quoted in the deviation entry rather than
+# only committed. Each one NAMES the keys that bear on the option and asserts
+# nothing about them: no "so they probably would", no "it has been a while".
+# The two descriptions are each other's mirror for exactly that reason -- if
+# one carried a reason the other does not, the payload would be arguing. The
+# two are therefore the SAME SENTENCE apart from "would" / "would not", and
+# test_decision.py holds that character for character.
+_DESCRIPTIVE = {
+    "decide_to_talk": {
+        "yes": ("`subject` would start a conversation with `other` now, "
+                "reading `subject_is` and `other_is` for what each of them is "
+                "doing at `now`, and `last_chatted_at` and "
+                "`last_chatted_about` for when they last spoke and what "
+                "about."),
+        "no": ("`subject` would not start a conversation with `other` now, "
+               "reading `subject_is` and `other_is` for what each of them is "
+               "doing at `now`, and `last_chatted_at` and "
+               "`last_chatted_about` for when they last spoke and what "
+               "about."),
+    },
+}
+
+# decide_to_react's options are built at the call site out of its own
+# prompt_input -- they ARE the paper's Option 1 and Option 2 and nothing here
+# rewrites them. The naming clause is appended instead, so the option text
+# survives verbatim and the orphan keys stop being orphans.
+_DESCRIPTIVE_SUFFIX = {
+    "decide_to_react": (" -- weighed by reading `subject_is` for what "
+                        "`subject` is doing at `now` and `other_is` for what "
+                        "`other` is doing."),
+}
+
+
+def descriptive_criteria(label, criteria=None):
+  """The option descriptions that name <label>'s orphan keys, or None.
+
+  ARGS:
+    label: the decision's name.
+    criteria: what the call site already passes, when it passes any --
+              decide_to_react builds its two options from its prompt_input,
+              and those are appended to, never replaced.
+  RETURNS:
+    {option: description}, or None when this question has no descriptive
+    form (every question whose instruction already names every key, and the
+    location pair, which has too many options for a description each).
+  """
+  if label in _DESCRIPTIVE:
+    return dict(_DESCRIPTIVE[label])
+  suffix = _DESCRIPTIVE_SUFFIX.get(label)
+  if suffix and criteria:
+    return {k: "%s%s" % (v, suffix) for k, v in criteria.items()}
+  return None
+
+
+def orphan_keys(label):
+  """The keys <label>'s state carries that its instruction never names."""
+  return ORPHAN_KEYS.get(label, ())
+
+
+# When the state IS the paper's last block, the instruction cannot go on
+# naming keys in backticks -- there are no keys any more. These point at the
+# paper's own sentence instead of restating it, which is the whole reason the
+# composed form exists: the task line, the "* Stay in the current area"
+# bullets, the "Question: Would ... ?" and the "Of the following three
+# options" are all already IN the state, in the paper's wording. Nothing here
+# adds a criterion; each one says "the answer is to the question already
+# written above".
+COMPOSED_INSTRUCTIONS = {
+    "action_sector": ("The text above ends by naming a task and the area "
+                      "options for it. Which area should the person go to?"),
+    "action_arena": ("The text above ends by naming a task and the areas "
+                     "available for it. Which area should the person go to?"),
+    "decide_to_talk": "Answer the question the text above asks.",
+    "decide_to_react": ("Answer the question the text above asks, choosing "
+                        "one of the options it lists."),
+}
+
+
+def composed_instructions(label):
+  """The instruction that goes with a composed state, or None."""
+  return COMPOSED_INSTRUCTIONS.get(label)
+
+
 def spec(label):
   """The typed question registered for <label>, or None if this decision has
   not been given a typed form yet."""

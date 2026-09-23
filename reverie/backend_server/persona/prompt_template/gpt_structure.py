@@ -596,6 +596,86 @@ def generate_prompt(curr_input, prompt_lib_file):
   return prompt.strip()
 
 
+# --- the composed state (011-IP, TS-A) --------------------------------------
+# A typed question hands the backend a `state`. Until now that state was the
+# dictionary the call site read out of prompt_input, and the audit of
+# 2026-09-23 found that five of the eight typed questions carry keys their
+# instruction never names -- facts the paper states in a sentence of its own
+# and the dictionary hands over as a bare key. This is the other mechanism
+# 011-IP weighs against descriptive criteria: give the backend the paper's own
+# sentences, rendered from the same prompt_input the prompt is built from.
+#
+# Two things are deliberately dropped:
+#
+#   the few-shot examples   jev_questions.py already gives the reason -- they
+#                           teach a format a typed answer does not have, and
+#                           they are where "kitchen" came from.
+#   the answer cue          the trailing "Answer: {", "{", "Reasoning:" or
+#                           "Reasoning: Let's think step by step." that tells
+#                           an LLM where to write. A Choice writes nowhere.
+#
+# What is left is a SUBSTRING of the prompt the llm backend would have sent
+# from the same prompt_input, character for character (S2.1). That is the
+# whole point: the audit that checks this wording is a string comparison, not
+# a reading. The split is done on the TEMPLATE, before substitution, so a
+# rendered value that happens to contain a "---" line cannot move the seam.
+
+# Longest first: "Answer: {" must win over "{", and "Reasoning: Let's think
+# step by step." over "Reasoning:".
+_ANSWER_CUES = (
+    "Reasoning: Let's think step by step.",
+    'Answer in "yes" or "no":',
+    "Answer: {",
+    "Reasoning:",
+    "{",
+)
+
+
+def last_block(prompt_lib_file):
+  """The template's live block: what follows its last few-shot separator.
+
+  Returns the block with its !<INPUT n>! slots still in it, so the caller
+  substitutes exactly as generate_prompt does.
+  """
+  with open(prompt_lib_file, "r") as f:
+    prompt = f.read()
+  if "<commentblockmarker>###</commentblockmarker>" in prompt:
+    prompt = prompt.split("<commentblockmarker>###</commentblockmarker>")[1]
+  return re.split(r"(?m)^-{3,}[ \t]*$", prompt)[-1]
+
+
+def strip_answer_cue(block):
+  """Remove the one trailing cue that tells an LLM where to write, if any."""
+  text = block.rstrip()
+  for cue in _ANSWER_CUES:
+    if text.endswith(cue):
+      return text[:-len(cue)].rstrip()
+  return text
+
+
+def composed_state(curr_input, prompt_lib_file):
+  """The paper's own sentences about THIS state, as a string.
+
+  Same arguments as generate_prompt, and built by the same substitution in
+  the same order, so the two cannot drift: this is that function's last
+  block with the answer cue taken off.
+
+  ARGS:
+    curr_input: the prompt_input the call site built (a list, or one string).
+    prompt_lib_file: the path to the same template generate_prompt is given.
+  RETURNS:
+    a str -- a substring of generate_prompt(curr_input, prompt_lib_file).
+  """
+  if type(curr_input) == type("string"):
+    curr_input = [curr_input]
+  curr_input = [str(i) for i in curr_input]
+
+  block = last_block(prompt_lib_file)
+  for count, i in enumerate(curr_input):
+    block = block.replace(f"!<INPUT {count}>!", i)
+  return strip_answer_cue(block).strip()
+
+
 def safe_generate_response(prompt, 
                            gpt_parameter,
                            repeat=5,
