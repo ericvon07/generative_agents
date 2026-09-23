@@ -26,6 +26,24 @@ model is shown:
       register and adds no new criterion. Scale, anchors and the returned
       integer range are unchanged.
 
+  D5  decide_to_talk is asked as a Choice over {yes, no}, not as a Noul. The
+      paper's prompt asks "Would <A> initiate a conversation with <B>?" and
+      reads a yes/no off a chain of thought: the two answers COMPETE, and the
+      question has a denominator. A Noul has none -- it scores one proposition
+      against nothing, so there is no losing option to take mass from, and the
+      answer lands on a different scale from every other decision in this
+      seam. Measured on n7win (2026-09-23), the typed arm's 249 Noul answers
+      ran 0.12-0.40 with a median of 0.21 and NOT ONE above the 0.50 cut,
+      while every Choice in the same run was sharp -- action_sector over
+      twelve options had a median confidence of 1.000. Asked both ways on the
+      same six states, the Noul spanned 0.38 and the Choice 0.78, and the
+      Choice gave two sleeping agents a p(yes) of 0.000 where the Noul gave
+      0.150. A Choice also removes the threshold: it returns the winner, so
+      there is no constant left to choose. What this deviation does NOT
+      settle is whether the answers are RIGHT -- a Choice that always said
+      "no" at 0.95 would hide the compression rather than cure it, and the
+      readout has to say which happened.
+
   D3  decide_to_react declares a domain of {1, 2, 3} but its prompt offers only
       Option 1 and Option 2; "3" exists solely as the fail-safe. The Choice is
       offered over the two options the prompt actually presents. The declared
@@ -104,16 +122,24 @@ QUESTIONS = {
 
     # --- Section 3.1.1: talk or walk past ---
     # The paper asks "Would <A> initiate a conversation with <B>?" and reads a
-    # yes/no off the end of a chain of thought. As a Noul it is the same
-    # statement, and the answer arrives as the probability that it holds --
-    # which is what makes a threshold, rather than a coin flip near the
-    # boundary, possible at all.
+    # yes/no off the end of a chain of thought. It was a Noul until D5: the
+    # same statement, answered with the probability that it holds. That
+    # reading is what made a threshold possible at all -- and it is also what
+    # made the answer live on a scale no other decision in this seam uses,
+    # because a Noul has no losing option to take mass from.
     "decide_to_talk": {
-        "type": "noul",
+        # D5: a Choice, not a Noul. The wording is the paper's own question
+        # turned back into a question -- the same words, so the only thing
+        # that moves against the Noul it replaces is the question's TYPE.
+        "type": "choice",
         "mirrors": "v2/decide_to_talk_v2.txt",
         "instructions": (
-            "Given `context`, at `now`, `subject` would initiate a "
-            "conversation with `other`."),
+            "Given `context`, at `now`, would `subject` initiate a "
+            "conversation with `other`?"),
+        "criteria": {
+            "yes": "`subject` would start a conversation with `other` now.",
+            "no": "`subject` would not start a conversation with `other` now.",
+        },
     },
 
     # --- Section 4.3.1: react, or carry on ---

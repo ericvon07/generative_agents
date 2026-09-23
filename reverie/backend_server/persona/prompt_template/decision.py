@@ -281,6 +281,17 @@ def choose(label, domain, resolve, fail_safe=None, state=None, criteria=None,
 def _resolve_choice(label, spec, domain, state, fail_safe, criteria,
                     social=None):
   if criteria is None:
+    # A question may describe its own options. decide_to_react's descriptions
+    # are built at the call site because they quote that persona's current
+    # activity; decide_to_talk's are the same two sentences every time, so
+    # they live beside the question in jev_questions.py (D5). Falling back to
+    # the spec is what makes a `criteria` written there reach the backend at
+    # all -- without it the option names go out undescribed and the block is
+    # decoration.
+    criteria = spec.get("criteria")
+    if not isinstance(criteria, dict):
+      criteria = None
+  if criteria is None:
     criteria = dict((option, None) for option in domain)
   if not criteria:
     raise ValueError("%s: a choice needs at least one option" % label)

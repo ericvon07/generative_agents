@@ -54,7 +54,18 @@ _DEFAULTS = {
     "api-key-env": "TYPESAFE_API_KEY",
     "api-key": "",
     "timeout": 30.0,
-    "max-retries": 3,
+    # ATTEMPTS, not retries on top of one -- the loop is
+    # `for attempt in range(1, max-retries + 1)`. Six of them means one
+    # request and five waits, which with the backoff below is 2+4+8+16+32 =
+    # just over a minute of patience. That is deliberately the same coat the
+    # model path got from SV-A of 008-IP, because the two face the same
+    # weather: n7win lost sixteen decisions to the paper's fail-safes on
+    # 2026-09-23 while this path had three attempts and waits of 1 and 2 --
+    # three seconds of patience against a service that was unstable for
+    # thirty-five minutes.
+    "max-retries": 6,
+    "retry-base-delay": 2.0,
+    "retry-max-delay": 32.0,
     # urllib's default User-Agent is "Python-urllib/3.9", which the API's
     # edge bans by client signature: HTTP 403, "error code: 1010". It did
     # not on 22 Sep at 14h and did at 18h31, in the middle of a window, so
@@ -106,6 +117,8 @@ def _load_config():
                         or merged["base-url"]).rstrip("/")
   merged["timeout"] = float(merged["timeout"])
   merged["max-retries"] = int(merged["max-retries"])
+  merged["retry-base-delay"] = float(merged.get("retry-base-delay", 2.0))
+  merged["retry-max-delay"] = float(merged.get("retry-max-delay", 32.0))
   merged["user-agent"] = (os.environ.get("JEV_USER_AGENT")
                           or merged["user-agent"])
   merged["abort-after-consecutive-errors"] = int(
@@ -205,7 +218,20 @@ def noul(instructions):
 
 # --- transport --------------------------------------------------------------
 
-_RETRYABLE_STATUS = (408, 409, 425, 429, 500, 502, 503, 504)
+# Statuses worth asking again. All of them say "the request was fine, the
+# server was not, come back" -- which is the definition of something to
+# retry, as against a 400 or a 403 that will be refused identically forever
+# (GT-1's 403 is the case in point, and spending three attempts on it only
+# makes a dead run slower).
+#
+# 529 is in no RFC. Anthropic and TypeSafe both use it for "overloaded, come
+# back shortly", and leaving it out cost n7win five decisions on 2026-09-23:
+# the backend answered 529 for five minutes, _retryable said no, the loop
+# broke on the FIRST attempt, and on-error: failsafe did what it says. One of
+# the five was a decide_to_talk, whose fail-safe is "yes" -- so the run
+# recorded a conversation no model had agreed to, which is the pathology this
+# lab exists to measure, happening inside the run that measures it.
+_RETRYABLE_STATUS = (408, 409, 425, 429, 500, 502, 503, 504, 529)
 
 
 def _post(payload):
@@ -281,7 +307,10 @@ def ask_full(state, questions, label=None):
       _trace(label, payload, latency, None, None, e)
       if not _retryable(e) or attempt == attempts:
         break
-      time.sleep(min(2.0 ** (attempt - 1), 8.0))
+      # Deterministic, no jitter: the run seeds `random` for reproducibility
+      # and a wait does not get to move that stream.
+      time.sleep(min(_config["retry-base-delay"] * 2 ** (attempt - 1),
+                     _config["retry-max-delay"]))
 
   _note_failure(last_error)
   raise JevError("%s: %s" % (type(last_error).__name__, last_error))
