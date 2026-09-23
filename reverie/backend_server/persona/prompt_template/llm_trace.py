@@ -12,6 +12,12 @@ Six event kinds:
                latency, token usage and a hash/preview of the payload.
   "reject"  -- a response that came back but was thrown away by the retry
                loop (unparseable JSON, failed validation, cleanup crash).
+               Inside a decision_scope -- i.e. on one of the closed-set
+               decisions -- it also carries "resp_full", the untruncated
+               text, because the question "did the discarded answer already
+               name a member of the offered set?" cannot be asked of a
+               200-character head. Outside a decision scope the head is all
+               that is kept: the long rejects are the generation ones.
   "outcome" -- the end of a logical prompt: how many attempts it took and
                whether it ended in the fail-safe value.
   "decision"-- one closed-set choice or rubric score, with the domain it was
@@ -396,19 +402,40 @@ def record_call(path, model, prompt, response=None, latency=None,
 
 
 def record_reject(reason, response=None, label=None):
-  """A response that arrived but was discarded by the retry loop."""
+  """A response that arrived but was discarded by the retry loop.
+
+  On a closed-set decision the whole text is kept, in "resp_full" beside the
+  head, never instead of it: a reader written for the old shape keeps working
+  and a trace from before this field stays legible. The test is the open
+  decision_scope, because that contextvar is non-None for exactly the span of
+  one closed-set decision -- which is the only place the extra bytes buy
+  anything. What they buy: whether the answer the loop refused already named
+  a member of the set it was offered, which a 200-character head cannot say
+  for a response that opens with prose.
+  """
   if not _config["enabled"]:
     return
   try:
-    _emit({
+    record = {
         "event": "reject",
         "label": label or _caller_label(),
         "attempt": _attempt.get(),
         "reason": reason,
         "resp_head": _head(response),
-    })
+    }
+    if response is not None and _in_decision():
+      record["resp_full"] = str(response)
+    _emit(record)
   except Exception:
     pass
+
+
+def _in_decision():
+  """Whether a closed-set decision is open around the caller."""
+  try:
+    return _watch.get() is not None
+  except Exception:
+    return False
 
 
 def reject_reason_from_exception():
