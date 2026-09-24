@@ -46,7 +46,7 @@
         "enabled": true
     },
     "lenient-parser": {
-        "enabled": false
+        "enabled": true
     },
     "model-timeout": 120,
     "rate-limit": {
