@@ -1361,6 +1361,49 @@ def run_gpt_prompt_new_decomp_schedule(persona,
 
 
 
+# D10: the sentence `decide_to_talk` asks for, read the way it is written.
+#
+# The paper's template ends its format block with `Answer in "yes" or "no": []`
+# and the paper's validator split the response on `Answer in yes or no:` --
+# the same words without the quotes. The split therefore found nothing,
+# returned the whole response, and the whole response is not the word "yes"
+# or the word "no", so a correct answer was rejected five times and the call
+# site's own fail-safe -- which is "yes" -- entered the world.
+#
+# Measured before this was written (CU-1, 011-IP step 6): given 512 tokens,
+# five models wrote 227 answers to this prompt across 546 responses on the
+# fork's own model, and the validator accepted NONE of them, at any model
+# size. Repairing the quotes alone would have accepted none of them either:
+# the small model writes `Answer: no`, the large ones write the template's
+# own sentence and then keep writing, and an exact split fails on both.
+#
+# So this reads the LAST answer the response states and takes the word after
+# it. Deliberately narrow -- one call site, one question, two words -- and
+# deliberately NOT the general lenient parser, which 009-IP designs for all
+# five closed-set decisions and which should absorb this when it lands.
+# `decide_to_react` does not need it: its cue is `Answer: Option`, models
+# write exactly that, and it is read.
+_YES_NO = re.compile(r'\*{0,2}answer\*{0,2}'
+                     r'(?:\s*in\s*"?yes"?\s*or\s*"?no"?)?'
+                     r'\s*\*{0,2}\s*:\s*\*{0,2}\s*(yes|no)\b', re.I)
+
+
+def read_yes_no(gpt_response):
+  """The answer `decide_to_talk` gave, or None.
+
+  RETURNS: "yes", "no", or None when the response states neither.
+  """
+  found = None
+  for match in _YES_NO.finditer(gpt_response or ""):
+    found = match
+  if found is not None:
+    return found.group(1).lower()
+  # A response that is nothing but the answer -- what the paper's own split
+  # accepted when its cue was absent, kept so that behaviour does not move.
+  bare = (gpt_response or "").strip().lower()
+  return bare if bare in ("yes", "no") else None
+
+
 def run_gpt_prompt_decide_to_talk(persona, target_persona, retrieved,test_input=None, 
                                        verbose=False): 
   def create_prompt_input(init_persona, target_persona, retrieved, 
@@ -1440,14 +1483,15 @@ def run_gpt_prompt_decide_to_talk(persona, target_persona, retrieved,test_input=
   
   def __func_validate(gpt_response, prompt=""): 
     try: 
-      if gpt_response.split("Answer in yes or no:")[-1].strip().lower() in ["yes", "no"]: 
-        return True
-      return False     
+      # D10: this used to be a split of the response on the cue
+      # `Answer in yes or no:`, which the paper's own template never writes.
+      # See read_yes_no above.
+      return read_yes_no(gpt_response) is not None
     except:
       return False 
 
   def __func_clean_up(gpt_response, prompt=""):
-    return gpt_response.split("Answer in yes or no:")[-1].strip().lower()
+    return read_yes_no(gpt_response)
 
   def get_fail_safe(): 
     fs = "yes"

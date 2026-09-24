@@ -40,9 +40,9 @@ WHAT COUNTS AS AN ANSWER
 Two readings, side by side on every row, because they disagree and the
 disagreement is itself a finding:
 
-  validates   the call site's OWN validator, copied here character for
-              character (see VALIDATORS, and the test that keeps the copies
-              honest in test_decision.py). This is what a run would accept.
+  validates   what a run would accept -- `decide_to_talk`'s own reader,
+              imported, and `decide_to_react`'s validator copied because it
+              is a closure, with a test that keeps the copy honest.
   answer      a tolerant reader that finds an answer the way a person would.
               This is what the model actually wrote.
 
@@ -73,6 +73,7 @@ import concurrent.futures
 import probe_questions as probe
 from persona.prompt_template import gpt_structure as gpt
 from persona.prompt_template import llm_trace
+from persona.prompt_template import run_gpt_prompt
 from persona.prompt_template.gpt_structure import generate_prompt
 
 SOCIAL_LABELS = ("decide_to_talk", "decide_to_react")
@@ -92,18 +93,29 @@ PERCENTILE = 95
 MIN_ACCEPTED = 10
 
 
-# --- the call sites' own validators -----------------------------------------
-# Copied from run_gpt_prompt.py's two social functions, where they are
-# closures and cannot be imported. The copy is pinned by a test that reads
-# the call sites' source and fails if either cue string moves.
+# --- what a run would accept ------------------------------------------------
+# `decide_to_talk` reads its answer through run_gpt_prompt.read_yes_no, which
+# is a module function since D10, so this imports it rather than copying it
+# and cannot drift from the call site at all.
+#
+# `decide_to_react`'s validator is still a closure and cannot be imported, so
+# it is copied, and a test reads the call site's source and fails if its cue
+# string moves.
+#
+# HISTORY, because a row in the archived data means what its own day's
+# validator meant: before D10, `decide_to_talk` split the response on
+# `Answer in yes or no:` -- a sentence its template never asks for -- and the
+# 611 rows of docs/research/budget-011-2026-09-23.jsonl.gz carry a
+# `validates` column computed that way, which is 0 across every model. Read
+# with the validator D10 put in, the same 611 responses give 282 (CU-1).
 
-TALK_CUE = "Answer in yes or no:"
+TALK_CUE_BEFORE_D10 = "Answer in yes or no:"
 REACT_CUE = "Answer: Option"
 
 
 def _validate_talk(text):
   try:
-    return text.split(TALK_CUE)[-1].strip().lower() in ["yes", "no"]
+    return run_gpt_prompt.read_yes_no(text) is not None
   except Exception:
     return False
 
@@ -116,7 +128,7 @@ def _validate_react(text):
 
 
 def _clean_talk(text):
-  return text.split(TALK_CUE)[-1].strip().lower()
+  return run_gpt_prompt.read_yes_no(text) or ""
 
 
 def _clean_react(text):

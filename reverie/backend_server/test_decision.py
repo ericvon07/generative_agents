@@ -440,12 +440,12 @@ class SocialFieldsSurviveAStringState(unittest.TestCase):
     self.assertIsNone(decision._social_fields(None, "prose"))
 
 
-class TheBudgetProbesCopiedValidators(unittest.TestCase):
-  """probe_budget.py decides whether a response would be ACCEPTED by copying
-  the two social call sites' validators, which are closures and cannot be
-  imported. A copy that drifts from its original would report a budget for a
-  run that does not behave that way, so these read the call sites' own source
-  and fail the moment either cue string moves."""
+class WhatARunWouldAccept(unittest.TestCase):
+  """probe_budget.py decides whether a response would be ACCEPTED by asking
+  the call sites themselves. `decide_to_talk`'s reader is a module function
+  since D10 and is imported; `decide_to_react`'s validator is still a closure
+  and is copied, so its cue is read out of the call site's own source and
+  these fail the moment it moves."""
 
   def setUp(self):
     import inspect
@@ -458,36 +458,85 @@ class TheBudgetProbesCopiedValidators(unittest.TestCase):
     nxt = rest.find("\ndef ")
     return rest[:nxt] if nxt != -1 else rest
 
-  def test_decide_to_talk_still_splits_on_the_cue_probe_budget_copied(self):
-    body = self._body_of("run_gpt_prompt_decide_to_talk")
-    self.assertIn('split("%s")' % probe_budget.TALK_CUE, body)
-
   def test_decide_to_react_still_splits_on_the_cue_probe_budget_copied(self):
     body = self._body_of("run_gpt_prompt_decide_to_react")
     self.assertIn('split("%s")' % probe_budget.REACT_CUE, body)
 
-  def test_the_copied_validators_answer_as_the_call_sites_do(self):
-    talk, _ = probe_budget.VALIDATORS["decide_to_talk"]
+  def test_decide_to_talk_reads_through_the_call_sites_own_function(self):
+    body = self._body_of("run_gpt_prompt_decide_to_talk")
+    self.assertIn("read_yes_no(gpt_response)", body)
+    talk, clean = probe_budget.VALIDATORS["decide_to_talk"]
+    self.assertTrue(talk("Answer: no"))
+    self.assertEqual(clean("Answer: no"), "no")
+
+  def test_the_copied_react_validator_answers_as_the_call_site_does(self):
     react, _ = probe_budget.VALIDATORS["decide_to_react"]
-    self.assertTrue(talk("Reasoning: blah. Answer in yes or no: yes"))
-    self.assertTrue(talk("no"))
-    self.assertFalse(talk("Reasoning: blah."))
     self.assertTrue(react("Reasoning: blah. Answer: Option 2"))
     self.assertFalse(react("Reasoning: blah."))
 
-  def test_the_papers_own_cue_is_not_the_validators_cue(self):
-    """The template asks for the answer after `Answer in "yes" or "no":` and
-    the validator splits on `Answer in yes or no:`. The two differ by the
-    quotes, both come from the paper's Initial commit, and a model that obeys
-    the template exactly is therefore rejected. If this test ever fails, one
-    of the two was changed and D9's reasoning has to be re-read."""
-    template = probe_questions.TEMPLATES["decide_to_talk"]
-    with open(template) as handle:
+
+class D10TheAnswerIsReadTheWayItIsWritten(unittest.TestCase):
+  """The paper's decide_to_talk template asks for the answer after
+  `Answer in "yes" or "no":` and its validator split on
+  `Answer in yes or no:`. Five models wrote 227 answers across 546 responses
+  of the fork's own model and that split accepted none of them (CU-1). D10
+  reads the last answer the response states instead. These pin the shapes the
+  probe actually observed, so the reader cannot be narrowed back by accident."""
+
+  def test_the_template_still_asks_with_the_quotes(self):
+    with open(probe_questions.TEMPLATES["decide_to_talk"]) as handle:
       text = handle.read()
     self.assertIn('Answer in "yes" or "no":', text)
-    self.assertNotIn(probe_budget.TALK_CUE, text)
-    talk, _ = probe_budget.VALIDATORS["decide_to_talk"]
-    self.assertFalse(talk('Answer in "yes" or "no": no'))
+
+  def test_the_cue_the_paper_validated_on_is_no_longer_split_on(self):
+    """The string itself stays in the call site -- the comment beside D10
+    quotes it, because a deviation says what it replaced. What must be gone
+    is the SPLIT on it."""
+    import inspect
+    body = inspect.getsource(run_gpt_prompt.run_gpt_prompt_decide_to_talk)
+    self.assertNotIn('split("%s")' % probe_budget.TALK_CUE_BEFORE_D10, body)
+    self.assertIn(probe_budget.TALK_CUE_BEFORE_D10, body)
+
+  def test_every_shape_the_probe_saw_is_read(self):
+    read = run_gpt_prompt.read_yes_no
+    for text, expected in (
+        ('Answer in "yes" or "no": no', "no"),       # 70b, space-bunny, qwen
+        ("Answer in yes or no: yes", "yes"),         # the cue the split wanted
+        ("Answer: no", "no"),                        # 141 of the 8b's answers
+        ("Answer:** No", "no"),                      # 86 of them, bolded
+        ("Answer**: Yes", "yes"),
+        ("**Answer:** yes", "yes"),
+        ("yes", "yes"),                              # what the split accepted
+        ("  NO  ", "no")):
+      self.assertEqual(read(text), expected, text)
+
+  def test_an_answer_followed_by_more_document_is_still_read(self):
+    """gpt-3.5-turbo answers on line one and then keeps writing. An exact
+    split fails on that even with the quotes repaired, which is why the
+    repair is a reader and not a second string."""
+    self.assertEqual(run_gpt_prompt.read_yes_no(
+        'Answer in "yes" or "no": Yes\n---\nReasoning: they are both here.'),
+        "yes")
+
+  def test_the_last_answer_wins(self):
+    """A response that runs on into a second worked example answers the
+    question it was asked first and a different one after."""
+    self.assertEqual(run_gpt_prompt.read_yes_no(
+        "Answer: yes\n---\nContext: someone else\nAnswer: no"), "no")
+
+  def test_prose_that_merely_contains_a_number_or_a_word_is_not_an_answer(self):
+    for text in ("Reasoning: they have no reason to talk.",
+                 "They last chatted about 2 hours ago",
+                 "Answer: Option 2", "", None):
+      self.assertIsNone(run_gpt_prompt.read_yes_no(text), repr(text))
+
+  def test_the_fail_safe_is_still_what_it_was(self):
+    """D10 changes what is accepted, never what happens when nothing is.
+    The fail-safe on this call site is "yes", and that is the whole reason
+    the rejection mattered."""
+    import inspect
+    body = inspect.getsource(run_gpt_prompt.run_gpt_prompt_decide_to_talk)
+    self.assertIn('fs = "yes"', body)
 
 
 if __name__ == "__main__":
