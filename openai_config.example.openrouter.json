@@ -4,10 +4,11 @@
     "model-key-env": "OPEN_ROUTER_API",
     "model-base-url": "https://openrouter.ai/api/v1",
     "model-provider": {
-        "order": ["crusoe"],
+        "order": ["novita"],
         "allow_fallbacks": false
     },
-    "model-provider-fallbacks": ["novita", "friendli"],
+    "model-provider-fallbacks": ["crusoe", "friendli"],
+    "_model-provider-note": "AP-3 as amended 2026-09-24: the first provider is the one the account holds its own key for (OpenRouter BYOK); on the shared pool every provider rate-limited every call.",
     "provider-fallback": {
         "waits-per-provider": 10,
         "retry-primary-after-s": 900
