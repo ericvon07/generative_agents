@@ -65,6 +65,7 @@ import os
 import re
 import sys
 import json
+import gzip
 import argparse
 import datetime
 import threading
@@ -213,6 +214,10 @@ def request(prompt, budget, system, model=None, pin=True):
     gpt._charge(response)
   choice = response.choices[0]
   return {"text": choice.message.content or "",
+          # What one decision costs in wall clock. A window is dozens of
+          # calls per agent per step, so this is the figure that decides
+          # whether a model can run one at all.
+          "latency": attempt.latency,
           "model": getattr(response, "model", None) or model
                    or gpt.openai_config["model"],
           "pinned": bool(pin),
@@ -560,6 +565,108 @@ def report(paths, margin=0.30):
     print()
 
 
+def compare(paths):
+  """One row per model: can it answer these two prompts, and what does one
+  decision cost.
+
+  Acceptance is RECOMPUTED here from each stored response, with the
+  validators the call sites carry today. It is not read from the rows'
+  `validates` column, because rows written before D10 carry that column as
+  the pre-D10 validator computed it, and a table that mixed the two rules
+  would compare models on which day they were asked.
+  """
+  rows = []
+  for path in paths:
+    opener = gzip.open if path.endswith(".gz") else open
+    with opener(path, "rt") as handle:
+      for line in handle:
+        line = line.strip()
+        if line:
+          rows.append(json.loads(line))
+  live = [r for r in rows if not r.get("error") and not r.get("dry_run")
+          and r.get("arm", "").startswith("paper")]
+
+  by_model = {}
+  answered_by = {}
+  for row in live:
+    model = row.get("model") or "?"
+    by_model.setdefault(model, []).append(row)
+    answer, _end = read_answer(row["label"], row.get("text") or "")
+    if answer is not None:
+      answered_by.setdefault(model, {})[row["case"]] = answer
+
+  # The reference for agreement: the model that answered the most states.
+  # Agreement is NOT correctness -- two models can be wrong together -- but a
+  # model that answers every time and agrees with nobody is answering
+  # arbitrarily, and that is worth seeing beside the acceptance rate.
+  reference = None
+  if answered_by:
+    reference = max(answered_by, key=lambda m: len(answered_by[m]))
+
+  print("# The generator on the paper's two closed-set social prompts")
+  print()
+  print("Every row is that model asked with **exactly what a run sends** — the "
+        "completion system prompt, then the prompt — over the probe's own "
+        "states. Acceptance is recomputed with the validators in the code "
+        "today. Each row is one model's own rate over its own states and "
+        "**no two rows are paired**; none is a rate of a run.")
+  print()
+  if reference:
+    print("Agreement is against **`%s`**, the model that answered most of "
+          "these states, over the states both answered. Agreement is not "
+          "correctness — two models can be wrong together — but a model that "
+          "answers every time and agrees with nobody is answering "
+          "arbitrarily." % reference)
+    print()
+  print("| model | asked | wrote an answer | accepted | p%d tokens to the answer | median latency | still writing at the ceiling | agrees with the reference |"
+        % PERCENTILE)
+  print("|---|---:|---:|---:|---:|---:|---:|---:|")
+  for model in sorted(by_model):
+    here = by_model[model]
+    wrote = accepted = ceiling = 0
+    positions = []
+    latencies = []
+    for row in here:
+      text = row.get("text") or ""
+      answer, end = read_answer(row["label"], text)
+      if answer:
+        wrote += 1
+      validate, _clean = VALIDATORS[row["label"]]
+      if validate(text):
+        accepted += 1
+      if row.get("finish_reason") == "length":
+        ceiling += 1
+      if row.get("latency"):
+        latencies.append(row["latency"])
+      tokens, _exact = position_of(dict(row, answer_end_char=end))
+      if tokens is not None:
+        positions.append(tokens)
+    n = len(here)
+    agree = "--"
+    if reference and model != reference:
+      mine, theirs = answered_by.get(model, {}), answered_by[reference]
+      shared = set(mine) & set(theirs)
+      if shared:
+        same = sum(1 for case in shared if mine[case] == theirs[case])
+        agree = "%d of %d (%.0f%%)" % (same, len(shared),
+                                       100.0 * same / len(shared))
+    elif reference and model == reference:
+      agree = "(the reference)"
+    print("| `%s` | %d | %d (%.0f%%) | **%d (%.0f%%)** | %s | %s | %d (%.0f%%) | %s |"
+          % (model, n, wrote, 100.0 * wrote / n, accepted,
+             100.0 * accepted / n,
+             percentile(positions, PERCENTILE) if positions else "--",
+             ("%.1f s" % percentile(latencies, 50)) if latencies else "--",
+             ceiling, 100.0 * ceiling / n, agree))
+  print()
+  print("**What this table is not.** The generator in this architecture also "
+        "writes plans, reflections and dialogue, and none of that is measured "
+        "here. What is measured is the part this lab studies: whether a model "
+        "can name an option from a closed set in the sentence the prompt asks "
+        "for, how long the answer takes to arrive, and how much room it needs.")
+  print()
+
+
 def main(argv=None):
   parser = argparse.ArgumentParser(description=__doc__.split("\n")[2])
   parser.add_argument("--trace", default=None,
@@ -584,8 +691,14 @@ def main(argv=None):
   parser.add_argument("--report", nargs="+", default=None,
                       help="read these JSONL files and print the readout")
   parser.add_argument("--margin", type=float, default=0.30)
+  parser.add_argument("--compare", nargs="+", default=None,
+                      help="read these JSONL (or .jsonl.gz) files and print "
+                           "one row per model")
   args = parser.parse_args(argv)
 
+  if args.compare:
+    compare(args.compare)
+    return 0
   if args.report:
     report(args.report, margin=args.margin)
     return 0
