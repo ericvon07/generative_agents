@@ -598,6 +598,32 @@ class D9TheBudgetHasANumberBehindIt(unittest.TestCase):
                            % (label, longest))
 
 
+class D12TheReflectionHasRoomAndANorth(unittest.TestCase):
+  """011-IP D12: the insight prompt gets 400 tokens and one sentence naming
+  the length, placed before the trailing "1." the completion starts from."""
+
+  def _prompt(self):
+    prompt = generate_prompt(["0. a\n1. b", "5"],
+                             "persona/prompt_template/v2/insight_and_evidence_v1.txt")
+    return run_gpt_prompt.with_insight_length(prompt)
+
+  def test_the_budget_is_400(self):
+    import inspect
+    source = inspect.getsource(run_gpt_prompt.run_gpt_prompt_insight_and_guidance)
+    self.assertEqual(re.findall(r'^\s*gpt_param = .*?"max_tokens": (\d+)',
+                                source, re.M), ["400"])
+
+  def test_the_sentence_sits_before_the_completion_start(self):
+    prompt = self._prompt()
+    self.assertTrue(prompt.rstrip().endswith("\n1."))
+    self.assertIn("(because of 1, 5, 3)) " + run_gpt_prompt.INSIGHT_LENGTH_SENTENCE
+                  + "\n1.", prompt)
+    self.assertEqual(prompt.count(run_gpt_prompt.INSIGHT_LENGTH_SENTENCE), 1)
+
+  def test_the_statements_are_untouched(self):
+    self.assertIn("Input:\n0. a\n1. b\n", self._prompt())
+
+
 class TheWatcherSeesWhatItWasBuiltFor(unittest.TestCase):
   """watch_run.py is pointed at a window that has never run this code, so it
   must be known to fire. Each case here is a row shaped exactly as the trace

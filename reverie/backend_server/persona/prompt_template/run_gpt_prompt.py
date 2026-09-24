@@ -2445,6 +2445,17 @@ def run_gpt_prompt_focal_pt(persona, statements, n, test_input=None, verbose=Fal
 
 
   
+# D12: see run_gpt_prompt_insight_and_guidance.
+INSIGHT_LENGTH_SENTENCE = ("Keep each numbered insight to one sentence "
+                           "followed by its evidence, and write nothing after "
+                           "the last one.")
+
+
+def with_insight_length(prompt):
+  head, tail = prompt.rsplit("\n1.", 1)
+  return head + " " + INSIGHT_LENGTH_SENTENCE + "\n1." + tail
+
+
 def run_gpt_prompt_insight_and_guidance(persona, statements, n, test_input=None, verbose=False): 
   def create_prompt_input(persona, statements, n, test_input=None): 
     prompt_input = [statements, str(n)]
@@ -2475,12 +2486,27 @@ def run_gpt_prompt_insight_and_guidance(persona, statements, n, test_input=None,
 
 
 
-  gpt_param = {"engine": "gpt-35-turbo-0125", "max_tokens": 150, 
+  # D12 (011-IP, found in the first minutes of the typed window, 2026-09-23):
+  # a length the model is told, and a budget that lets it arrive.
+  #
+  # Was max_tokens: 150, sized for gpt-3.5's terse insights. On
+  # google/gemma-4-31b-it every one of the 18 calls in the aborted window
+  # returned exactly 150 tokens: 10 were cut mid-insight, rejected as
+  # truncated and retried identically, and one reflection in nine fell to
+  # "I am hungry". Asked the same 12 real prompts three times at 500, the
+  # model needed 205 tokens at the median, 243 at p95, 260 at most -- five
+  # insights, all 36 valid. 400 covers the longest with margin; a ceiling
+  # costs nothing unless it is used, and a truncation is still named as one.
+  #
+  # The sentence is the north, not the fix (the author's call): with it the
+  # same probe gave 191 / 219 / 236, all 36 valid. It goes before the
+  # trailing "1." so the completion still starts where the paper's does.
+  gpt_param = {"engine": "gpt-35-turbo-0125", "max_tokens": 400, 
                "temperature": 0.5, "top_p": 1, "stream": False,
                "frequency_penalty": 0, "presence_penalty": 0, "stop": None}
   prompt_template = "persona/prompt_template/v2/insight_and_evidence_v1.txt"
   prompt_input = create_prompt_input(persona, statements, n)
-  prompt = generate_prompt(prompt_input, prompt_template)
+  prompt = with_insight_length(generate_prompt(prompt_input, prompt_template))
 
   fail_safe = get_fail_safe(n)
   output = safe_generate_response(prompt, gpt_param, 5, fail_safe,
