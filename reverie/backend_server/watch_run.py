@@ -21,7 +21,12 @@ turns each line into a notification; it decides nothing and changes nothing.
 WHAT IT FLAGS, AND WHICH FIX EACH ONE GUARDS
 
   fail-safe          a decision the backend never answered, so the call
-                     site's own fallback entered the world. On the two
+                     site's own fallback entered the world. Read from
+                     `gave_up`, never from `is_fail_safe`: the latter only
+                     says the answer EQUALS the fail-safe value, so a typed
+                     `kitchen` at confidence 1.0 or a genuine poignancy of 4
+                     read as fail-safes (the shakedown of 2026-09-23 saw
+                     seven such "fail-safes" and not one real one). On the two
                      social questions this is what D9, D10 and the new
                      generator exist to remove: before them it was ~94% of
                      decide_to_talk, and if it is still high, one of the
@@ -33,7 +38,8 @@ WHAT IT FLAGS, AND WHICH FIX EACH ONE GUARDS
                      different formatting habit shows up first.
   brace              a decision answer carrying punctuation the maze will
                      not forgive. GT-3 again, one step earlier than the
-                     crash.
+                     crash. An apostrophe inside a name ("Eddy Lin's
+                     bedroom") is the world's own spelling and is not one.
   truncated          a response cut off at max_tokens. On the two social
                      prompts that means D9's budget of 160 is short for
                      this model.
@@ -43,6 +49,12 @@ WHAT IT FLAGS, AND WHICH FIX EACH ONE GUARDS
   rate-limit         the ride-out waiting. Bounded, but it is the failure
                      that invalidated n9probe3.
   backend-down       the typed backend gave up on the run.
+  gen-fail-safe      a generator prompt (not a decision) exhausted its
+                     retries and its fail-safe entered the world -- an
+                     emoji, an object's state, a focal point. A new
+                     generator's formatting habits show up here first: on
+                     2026-09-23 gemma-4-31b-it wrapped its JSON in markdown
+                     fences and pronunciatio fell back 8 times in 8.
   cost               the run's spend against the config's upper bound.
 
 WHAT IT COUNTS, FOR 009-IP
@@ -73,8 +85,25 @@ from collections import Counter, defaultdict
 SOCIAL = ("decide_to_talk", "decide_to_react")
 LOCATION = ("action_sector", "action_arena", "action_game_object")
 
-# Punctuation the domain guard strips and the maze does not (GT-3).
-_BAD_CHARS = "{}[]\"'"
+# Punctuation the domain guard strips and the maze does not (GT-3). A single
+# quote only counts at an edge: inside, it is a possessive the world spells.
+_BAD_CHARS = "{}[]\""
+
+
+def fell_back(row):
+  """Did the decision's fail-safe actually enter the world? `gave_up` says
+  so; `is_fail_safe` is only consulted on traces written before it existed."""
+  if row.get("gave_up") is not None:
+    return bool(row.get("gave_up"))
+  return bool(row.get("is_fail_safe"))
+
+
+def has_brace(answer):
+  if not isinstance(answer, str):
+    return False
+  stripped = answer.strip()
+  return (any(c in stripped for c in _BAD_CHARS)
+          or stripped[:1] == "'" or stripped[-1:] == "'")
 
 
 def _flag(kind, row, message):
@@ -90,15 +119,12 @@ def examine(row, seen):
   label = row.get("label") or "?"
 
   if event == "decision":
-    if row.get("is_fail_safe"):
+    if fell_back(row):
       out.append(_flag("fail-safe", row,
                        "%s took the call site's fail-safe (%r)"
                        % (label, row.get("answer"))))
-    if row.get("gave_up"):
-      out.append(_flag("gave-up", row,
-                       "%s: the backend answered nothing" % label))
     answer = row.get("answer")
-    if isinstance(answer, str) and any(c in answer for c in _BAD_CHARS):
+    if has_brace(answer):
       out.append(_flag("brace", row,
                        "%s answered %r -- GT-3's shape, one step before the "
                        "maze refuses it" % (label, answer)))
@@ -120,6 +146,11 @@ def examine(row, seen):
                        "this model" % label))
     elif reason.startswith("transport:"):
       out.append(_flag("transport", row, "%s: %s" % (label, reason)))
+
+  elif event == "outcome" and row.get("failsafe"):
+    out.append(_flag("gen-fail-safe", row,
+                     "%s fell back after %s attempts"
+                     % (label, row.get("attempts"))))
 
   elif event == "rate_limit":
     out.append(_flag("rate-limit", row,
@@ -143,6 +174,8 @@ class Tally(object):
     self.failsafes = Counter()
     self.rejects = defaultdict(Counter)
     self.guards = Counter()
+    self.outcomes = Counter()
+    self.gen_failsafes = Counter()
     self.steps = set()
 
   def add(self, row):
@@ -152,12 +185,16 @@ class Tally(object):
       self.steps.add(row["step"])
     if event == "decision":
       self.decisions[label] += 1
-      if row.get("is_fail_safe"):
+      if fell_back(row):
         self.failsafes[label] += 1
     elif event == "reject":
       self.rejects[label][row.get("reason") or "?"] += 1
     elif event == "guard":
       self.guards[label] += 1
+    elif event == "outcome":
+      self.outcomes[label] += 1
+      if row.get("failsafe"):
+        self.gen_failsafes[label] += 1
 
   def digest(self):
     lines = []
@@ -171,6 +208,17 @@ class Tally(object):
       fs = self.failsafes[label]
       lines.append("| %s | %d | %d (%.0f%%) | %d |"
                    % (label, n, fs, 100.0 * fs / n, self.guards[label]))
+    if self.gen_failsafes:
+      lines.append("")
+      lines.append("Generator prompts whose fail-safe entered the world:")
+      lines.append("")
+      lines.append("| prompt | asked | fell back |")
+      lines.append("|---|---:|---:|")
+      for label in sorted(self.gen_failsafes):
+        n = self.outcomes[label]
+        fs = self.gen_failsafes[label]
+        lines.append("| %s | %d | %d (%.0f%%) |"
+                     % (label, n, fs, 100.0 * fs / n))
     if self.rejects:
       lines.append("")
       lines.append("Rejections -- the question 009-IP asks, of a generator "

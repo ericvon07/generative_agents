@@ -622,11 +622,34 @@ class TheWatcherSeesWhatItWasBuiltFor(unittest.TestCase):
   def test_a_clean_answer_raises_nothing(self):
     self.assertEqual(self._kinds(self._decision()), set())
 
-  def test_a_fail_safe_and_a_give_up_are_separate_flags(self):
+  def test_a_fail_safe_is_read_from_gave_up(self):
     kinds = self._kinds(self._decision(is_fail_safe=True, gave_up=True,
                                        answer="kitchen"))
     self.assertIn("FAIL-SAFE", kinds)
-    self.assertIn("GAVE-UP", kinds)
+
+  def test_an_answer_that_equals_the_fail_safe_is_not_one(self):
+    """The shakedown's typed `kitchen` at confidence 1.0: is_fail_safe is
+    true because the answer equals the fall-back value, and nothing fell
+    back."""
+    self.assertEqual(self._kinds(self._decision(
+        label="action_arena", is_fail_safe=True, gave_up=False,
+        answer="kitchen")), set())
+
+  def test_an_old_trace_without_gave_up_still_reads_is_fail_safe(self):
+    self.assertIn("FAIL-SAFE", self._kinds(self._decision(
+        is_fail_safe=True, gave_up=None, answer="kitchen")))
+
+  def test_a_possessive_is_not_a_brace(self):
+    self.assertEqual(self._kinds(self._decision(
+        answer="Wolfgang Schulz's room")), set())
+
+  def test_a_quote_at_the_edge_is_a_brace(self):
+    self.assertIn("BRACE", self._kinds(self._decision(answer="'Hobbs Cafe'")))
+
+  def test_a_generator_fail_safe_is_flagged(self):
+    self.assertIn("GEN-FAIL-SAFE", self._kinds(
+        {"event": "outcome", "label": "run_gpt_prompt_pronunciatio",
+         "step": 3241, "persona": "x", "failsafe": True, "attempts": 3}))
 
   def test_out_of_domain_is_seen_even_when_the_guard_did_not_fire(self):
     self.assertIn("OUT-OF-DOMAIN",
@@ -666,7 +689,7 @@ class TheWatcherSeesWhatItWasBuiltFor(unittest.TestCase):
       tally.add({"event": "reject", "label": "run_gpt_prompt_action_sector",
                  "reason": "validate_false", "step": 1})
     tally.add({"event": "decision", "label": "action_sector", "step": 1,
-               "is_fail_safe": True})
+               "is_fail_safe": True, "gave_up": True})
     digest = tally.digest()
     self.assertIn("action_sector", digest)
     self.assertIn("validate_false 3", digest)
