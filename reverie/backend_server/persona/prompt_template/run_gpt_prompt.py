@@ -1499,7 +1499,23 @@ def run_gpt_prompt_decide_to_talk(persona, target_persona, retrieved,test_input=
 
 
 
-  gpt_param = {"engine": "gpt-35-turbo-0125", "max_tokens": 20, 
+  # D9 (011-IP, TS-E): the budget, from a measurement.
+  #
+  # Was max_tokens: 20, which does not reach the end of a sentence of
+  # reasoning, so the answer never arrived and the call site's own fail-safe
+  # entered the world -- measured at the token level on cmpD2-llm and
+  # rtrA-llm, where every one of these calls returned exactly 20 output
+  # tokens (SR-1). 160 comes from the probe of 011-IP step 6 on
+  # google/gemma-4-31b-it, the generator the benchmark chose: the answer
+  # lands by token 101 at the 95th percentile on decide_to_talk and 104 on
+  # decide_to_react, and the longest response the probe saw ran to 151. The
+  # margin is chosen to cover that one too, because max_tokens is a ceiling
+  # and costs nothing unless it is used, while a truncation costs a fail-safe.
+  #
+  # The location trio keeps 15 and 20 (SC-C, SR-1): their answers arrive in
+  # 3 to 7 tokens and their budget belongs to the study that owns the model
+  # sweep, not here.
+  gpt_param = {"engine": "gpt-35-turbo-0125", "max_tokens": 160, 
                "temperature": 0, "top_p": 1, "stream": False,
                "frequency_penalty": 0, "presence_penalty": 0, "stop": None}
   prompt_template = "persona/prompt_template/v2/decide_to_talk_v2.txt"
@@ -1615,7 +1631,23 @@ def run_gpt_prompt_decide_to_react(persona, target_persona, retrieved,test_input
     return fs
 
 
-  gpt_param = {"engine": "gpt-35-turbo-0125", "max_tokens": 20, 
+  # D9 (011-IP, TS-E): the budget, from a measurement.
+  #
+  # Was max_tokens: 20, which does not reach the end of a sentence of
+  # reasoning, so the answer never arrived and the call site's own fail-safe
+  # entered the world -- measured at the token level on cmpD2-llm and
+  # rtrA-llm, where every one of these calls returned exactly 20 output
+  # tokens (SR-1). 160 comes from the probe of 011-IP step 6 on
+  # google/gemma-4-31b-it, the generator the benchmark chose: the answer
+  # lands by token 101 at the 95th percentile on decide_to_talk and 104 on
+  # decide_to_react, and the longest response the probe saw ran to 151. The
+  # margin is chosen to cover that one too, because max_tokens is a ceiling
+  # and costs nothing unless it is used, while a truncation costs a fail-safe.
+  #
+  # The location trio keeps 15 and 20 (SC-C, SR-1): their answers arrive in
+  # 3 to 7 tokens and their budget belongs to the study that owns the model
+  # sweep, not here.
+  gpt_param = {"engine": "gpt-35-turbo-0125", "max_tokens": 160, 
                "temperature": 0, "top_p": 1, "stream": False,
                "frequency_penalty": 0, "presence_penalty": 0, "stop": None}
   prompt_template = "persona/prompt_template/v2/decide_to_react_v1.txt"

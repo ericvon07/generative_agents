@@ -10,6 +10,8 @@ tests, from reverie/backend_server:
 
     ../../../.venv/bin/python test_decision.py
 """
+import os
+import re
 import json
 import datetime
 import unittest
@@ -537,6 +539,63 @@ class D10TheAnswerIsReadTheWayItIsWritten(unittest.TestCase):
     import inspect
     body = inspect.getsource(run_gpt_prompt.run_gpt_prompt_decide_to_talk)
     self.assertIn('fs = "yes"', body)
+
+
+class D9TheBudgetHasANumberBehindIt(unittest.TestCase):
+  """011-IP TS-E: the two social prompts get room to answer and the location
+  trio does not. 160 is the 95th percentile of where the answer lands on
+  google/gemma-4-31b-it -- 101 tokens on decide_to_talk, 104 on
+  decide_to_react -- with a margin chosen to cover the longest response the
+  probe saw, which ran to 151. S5.3 is the other half and is held here too:
+  a session raising the location trio's budget by habit breaks this."""
+
+  BUDGETS = {"decide_to_talk": 160, "decide_to_react": 160,
+             "action_sector": 15, "action_arena": 15,
+             "action_game_object": 15}
+
+  def _budget_of(self, name):
+    import inspect
+    source = inspect.getsource(
+        getattr(run_gpt_prompt, "run_gpt_prompt_%s" % name))
+    found = re.findall(r'^\s*gpt_param = .*?"max_tokens": (\d+)',
+                       source, re.M)
+    self.assertEqual(len(found), 1,
+                     "%s has %d live gpt_param blocks" % (name, len(found)))
+    return int(found[0])
+
+  def test_the_two_social_prompts_have_the_measured_budget(self):
+    for name in ("decide_to_talk", "decide_to_react"):
+      self.assertEqual(self._budget_of(name), self.BUDGETS[name], name)
+
+  def test_the_location_trio_is_untouched(self):
+    for name in ("action_sector", "action_arena", "action_game_object"):
+      self.assertEqual(self._budget_of(name), 15, name)
+
+  def test_the_budget_covers_every_answer_the_probe_recorded(self):
+    """The number is not a guess and this is how it is checked: read the
+    archived responses of the model the budget was set from, and no answer
+    may end past the budget."""
+    import gzip
+    import probe_budget
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                        "..", "..", "..",
+                        "docs", "research", "model-bench-011-2026-09-23.jsonl.gz")
+    if not os.path.exists(path):
+      self.skipTest("the benchmark's rows are in the lab, not the fork")
+    worst = {}
+    with gzip.open(path, "rt") as handle:
+      for line in handle:
+        row = json.loads(line)
+        if row.get("model") != "google/gemma-4-31b-it" or row.get("error"):
+          continue
+        tokens, _exact = probe_budget.position_of(row)
+        if tokens:
+          worst[row["label"]] = max(worst.get(row["label"], 0), tokens)
+    self.assertTrue(worst, "no gemma-4-31b answers in the archived rows")
+    for label, longest in worst.items():
+      self.assertLessEqual(longest, self.BUDGETS[label],
+                           "%s: an answer ended at token %d, past the budget"
+                           % (label, longest))
 
 
 if __name__ == "__main__":
