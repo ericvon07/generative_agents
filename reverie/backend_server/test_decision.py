@@ -696,5 +696,45 @@ class TheWatcherSeesWhatItWasBuiltFor(unittest.TestCase):
     self.assertIn("1 (100%)", digest)
 
 
+class TheNoFenceSentenceIsOffUnlessAsked(unittest.TestCase):
+  """GT-8's experiment: the sentence is added only when asked for, so the
+  paper's prompt is byte-identical with the switch off (law 2)."""
+
+  def _prompt(self, flag):
+    from persona.prompt_template import gpt_structure as gpt
+    sent = []
+    saved = gpt.ChatGPT_request, os.environ.get("JSON_NO_FENCE")
+    gpt.ChatGPT_request = lambda p: sent.append(p) or '{"output": "x"}'
+    try:
+      if flag is None:
+        os.environ.pop("JSON_NO_FENCE", None)
+      else:
+        os.environ["JSON_NO_FENCE"] = flag
+      gpt.ChatGPT_safe_generate_response(
+          "Emoji:", "\U0001F6C1", "Only emojis.", 1, "fs",
+          lambda r, prompt=None: True, lambda r, prompt=None: r)
+    finally:
+      gpt.ChatGPT_request = saved[0]
+      if saved[1] is None:
+        os.environ.pop("JSON_NO_FENCE", None)
+      else:
+        os.environ["JSON_NO_FENCE"] = saved[1]
+    return sent[0]
+
+  def test_off_by_default(self):
+    from persona.prompt_template import gpt_structure as gpt
+    if (gpt.openai_config.get("json-no-fence") or {}).get("enabled"):
+      self.skipTest("this checkout's config turns it on")
+    self.assertNotIn("code fence", self._prompt(None))
+
+  def test_off_leaves_the_papers_lines_adjacent(self):
+    self.assertIn("Only emojis.\nExample output json:\n", self._prompt("0"))
+
+  def test_on_adds_one_line_before_the_example(self):
+    self.assertIn("Only emojis.\nReply with the JSON object only: no "
+                  "markdown, no code fence.\nExample output json:\n",
+                  self._prompt("1"))
+
+
 if __name__ == "__main__":
   unittest.main(verbosity=2)

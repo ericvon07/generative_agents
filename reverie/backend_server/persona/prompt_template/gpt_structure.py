@@ -411,6 +411,27 @@ def ChatGPT_request(prompt):
   return completion.choices[0].message.content
 
 
+# An EXPERIMENT, off by default, measured in 011-IP's second shakedown
+# (GT-8). gemma-4-31b-it wraps its JSON in a markdown fence, and the parser
+# below cuts at the last "}" but never at the first "{", so a correct answer is
+# thrown away. The repair of the parser belongs to 009-IP; this asks the model
+# instead, with one sentence, to see whether asking is enough. It changes the
+# text of every prompt on this path, so it is never on in a run anyone cites
+# without a deviation number of its own.
+NO_FENCE_SENTENCE = ("Reply with the JSON object only: no markdown, "
+                     "no code fence.")
+
+
+def no_fence_enabled():
+  """`"json-no-fence": {"enabled": true}` in the config, or JSON_NO_FENCE=1
+  in the environment. Off when neither says otherwise."""
+  flag = os.environ.get("JSON_NO_FENCE")
+  if flag is not None:
+    return flag.strip().lower() in ("1", "true", "yes", "on")
+  block = openai_config.get("json-no-fence") or {}
+  return bool(block.get("enabled", False))
+
+
 def ChatGPT_safe_generate_response(prompt, 
                                    example_output,
                                    special_instruction,
@@ -422,6 +443,8 @@ def ChatGPT_safe_generate_response(prompt,
   # prompt = 'GPT-3 Prompt:\n"""\n' + prompt + '\n"""\n'
   prompt = '"""\n' + prompt + '\n"""\n'
   prompt += f"Output the response to the prompt above in json. {special_instruction}\n"
+  if no_fence_enabled():
+    prompt += NO_FENCE_SENTENCE + "\n"
   prompt += "Example output json:\n"
   prompt += '{"output": "' + str(example_output) + '"}'
 
