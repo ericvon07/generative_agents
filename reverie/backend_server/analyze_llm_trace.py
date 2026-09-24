@@ -458,6 +458,201 @@ def report_by_step(records):
   print("")
 
 
+# --- the social decisions ---------------------------------------------------
+# Everything here reads fields the trace has carried since 008-IP SV-B --
+# `subject`, `other` and `episode` on a social decision -- and which no reader
+# knew about. Read by hand until now, which is how the n9win readings of
+# 2026-09-23 were made.
+#
+# Two traps this report exists to keep a reader out of:
+#
+#   is_fail_safe is not a failure rate on decide_to_talk. Its fail-safe value
+#   is "yes", so EVERY genuine "yes" reads is_fail_safe: true. `gave_up` is
+#   the field that says a decision actually fell back, and the header below
+#   prints both so they can never be confused again.
+#
+#   the ask is not the episode. The same question is put again every step two
+#   agents can see each other, so an agent who stands still all afternoon
+#   collects asks without collecting encounters -- Isabella Rodriguez ran at
+#   4.3 asks per episode in n9win while Carmen Ortiz ran at 1.0. UN-1 in the
+#   lab is the decision this serves: report the distribution, and where a rate
+#   is shown at all show both units.
+
+SOCIAL_LABELS = ("decide_to_talk", "decide_to_react")
+
+
+def _p_yes(record):
+  """The probability the Choice put on the affirmative option, or None.
+
+  "yes" on decide_to_talk, "1" on decide_to_react -- the option that means
+  the agent engages rather than walks past. A Noul answer has no option, so
+  its recorded probability is read instead.
+  """
+  probabilities = record.get("probabilities")
+  if isinstance(probabilities, dict):
+    for option in ("yes", "1"):
+      if option in probabilities:
+        return probabilities[option]
+  return record.get("noul")
+
+
+def _social(records, label):
+  out = []
+  for r in records:
+    if r.get("event") != "decision" or r.get("label") != label:
+      continue
+    if r.get("subject") and r.get("other") and _p_yes(r) is not None:
+      out.append(r)
+  out.sort(key=lambda r: (r.get("step") or 0))
+  return out
+
+
+def _episodes(rows):
+  buckets = {}
+  for r in rows:
+    buckets.setdefault(r.get("episode"), []).append(r)
+  return buckets
+
+
+def report_social(records, tail=0.30):
+  # A trace directory holds every run the machine ever made, and --all reads
+  # all of them. Adding two runs together makes a rate out of two populations
+  # and law 3 of the lab forbids it, so say so before printing a number that
+  # looks like one run's.
+  sims = sorted(set(str(r.get("sim") or "").split("-s-")[0]
+                    for r in records if r.get("sim")))
+  if len(sims) > 1:
+    print("!! THESE RECORDS SPAN %d RUNS: %s" % (len(sims), ", ".join(sims)))
+    print("!! Every figure below adds them together. Pass the one run's files "
+          "explicitly, or --dir a directory that holds only it.")
+    print("")
+
+  for label in SOCIAL_LABELS:
+    rows = _social(records, label)
+    if not rows:
+      continue
+    values = [_p_yes(r) for r in rows]
+    eps = _episodes(rows)
+    engaged = [r for r in rows if _p_yes(r) > 0.5]
+    gave_up = sum(1 for r in rows if r.get("gave_up"))
+    equals_fs = sum(1 for r in rows if r.get("is_fail_safe"))
+
+    print("SOCIAL: %s" % label)
+    print("  %d asks in %d episodes (%.1f per episode); p median %.3f, max %.3f"
+          % (len(rows), len(eps), float(len(rows)) / len(eps),
+             median(values), max(values)))
+    print("  above 0.50: %d of %d asks (%.1f%%), %d of %d episodes (%.1f%%)"
+          % (len(engaged), len(rows), 100.0 * len(engaged) / len(rows),
+             len(set(r.get("episode") for r in engaged)), len(eps),
+             100.0 * len(set(r.get("episode") for r in engaged)) / len(eps)))
+    print("  gave_up: %d  <- the failure rate. "
+          "is_fail_safe: %d  <- NOT a failure rate: \"yes\" IS the fail-safe "
+          "value, so every genuine yes reads true." % (gave_up, equals_fs))
+    print("")
+
+    # --- by subject: who is asked, how often, and how concentrated ---------
+    by_subject = {}
+    for r in rows:
+      by_subject.setdefault(r["subject"], []).append(r)
+    subject_rows = []
+    for name, group in sorted(by_subject.items(), key=lambda kv: -len(kv[1])):
+      vals = [_p_yes(r) for r in group]
+      n_eps = len(set(r.get("episode") for r in group))
+      subject_rows.append([
+          name, "%d" % len(group), "%d" % n_eps,
+          "%.1f" % (float(len(group)) / n_eps),
+          "%.3f" % median(vals), "%.3f" % max(vals),
+          "%d" % sum(1 for v in vals if v >= tail),
+          "%d" % sum(1 for v in vals if v > 0.5),
+      ])
+    print("  BY SUBJECT")
+    table(["subject", "asks", "episodes", "asks/ep", "median", "max",
+           ">=%.2f" % tail, ">0.50"],
+          subject_rows, [22, 5, 9, 8, 7, 7, 7, 6])
+    print("")
+
+    # --- the reciprocal gap -----------------------------------------------
+    # The strongest thing this report can say. A->B and B->A asked at the
+    # SAME step is the same encounter, the same place, the same second: what
+    # differs is only which persona the question is about, and which
+    # persona's own retrieved memories are in `context`. A wide gap there is
+    # the backend discriminating a DIRECTION rather than scoring a name --
+    # and it is the reading that says whether it reads the state at all.
+    at_step = {}
+    for r in rows:
+      at_step.setdefault(r.get("step"), {})[(r["subject"], r["other"])] = r
+    seen, recip = set(), []
+    for step, pairs in at_step.items():
+      for (a, b), r in pairs.items():
+        mirror = pairs.get((b, a))
+        if not mirror:
+          continue
+        key = (step, tuple(sorted((a, b))))
+        if key in seen:
+          continue
+        seen.add(key)
+        recip.append((step, r, mirror))
+    if recip:
+      gaps = [abs(_p_yes(r) - _p_yes(m)) for _, r, m in recip]
+      print("  RECIPROCAL ASKS AT THE SAME STEP: %d pairs, "
+            "|p(A->B) - p(B->A)| median %.3f, max %.3f"
+            % (len(recip), median(gaps), max(gaps)))
+      widest = sorted(recip, key=lambda t: -abs(_p_yes(t[1]) - _p_yes(t[2])))
+      gap_rows = []
+      for step, r, m in widest[:8]:
+        gap_rows.append([
+            "%s" % step,
+            "%s -> %s" % (r["subject"], r["other"]), "%.3f" % _p_yes(r),
+            "%.3f" % _p_yes(m),
+            "%.3f" % abs(_p_yes(r) - _p_yes(m)),
+        ])
+      table(["step", "direction", "p", "p back", "gap"],
+            gap_rows, [8, 40, 7, 8, 7])
+      print("")
+
+    # --- within an episode -------------------------------------------------
+    multi = [v for v in eps.values() if len(v) > 1]
+    if multi:
+      spreads = [max(_p_yes(x) for x in v) - min(_p_yes(x) for x in v)
+                 for v in multi]
+      frozen = sum(1 for s in spreads if s < 1e-9)
+      print("  WITHIN AN EPISODE: %d episodes hold more than one ask; spread "
+            "median %.3f, max %.3f; %d never moved at all"
+            % (len(multi), median(spreads), max(spreads), frozen))
+      widest = max(multi, key=lambda v: max(_p_yes(x) for x in v)
+                   - min(_p_yes(x) for x in v))
+      print("    widest: %s (n=%d) %s"
+            % (widest[0].get("episode"), len(widest),
+               " ".join("%.3f" % _p_yes(x) for x in widest)))
+      print("")
+
+    # --- who was ever in a room with whom ----------------------------------
+    # An ask exists only where two agents could see each other, so this IS
+    # the encounter graph. It belongs beside any diffusion number: an agent
+    # who never meets five of the other eight cannot pass anything to them,
+    # and a reach figure computed without it measures the map.
+    met = {}
+    pair_asks = {}
+    for r in rows:
+      a, b = r["subject"], r["other"]
+      met.setdefault(a, set()).add(b)
+      met.setdefault(b, set()).add(a)
+      key = tuple(sorted((a, b)))
+      pair_asks[key] = pair_asks.get(key, 0) + 1
+    names = sorted(met)
+    print("  THE ENCOUNTER GRAPH (%d agents ever asked about)" % len(names))
+    reach_rows = []
+    for name in sorted(names, key=lambda n: -len(met[n])):
+      missing = [m for m in names if m != name and m not in met[name]]
+      reach_rows.append([
+          name, "%d of %d" % (len(met[name]), len(names) - 1),
+          ", ".join(missing) if missing else "-",
+      ])
+    table(["agent", "met", "never in a room with"],
+          reach_rows, [22, 8, 62])
+    print("")
+
+
 def main():
   parser = argparse.ArgumentParser(description=__doc__,
       formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -472,6 +667,9 @@ def main():
                       help="detail the responses that failed validation")
   parser.add_argument("--persona", action="store_true", help="per-agent table")
   parser.add_argument("--steps", action="store_true", help="per-step table")
+  parser.add_argument("--social", action="store_true",
+                      help="the social decisions: episodes, reciprocal "
+                           "gaps and the encounter graph")
   args = parser.parse_args()
 
   files = find_files(args)
@@ -494,6 +692,8 @@ def main():
     report_by_persona(records)
   if args.steps:
     report_by_step(records)
+  if args.social:
+    report_social(records)
 
 
 if __name__ == "__main__":

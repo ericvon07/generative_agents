@@ -423,9 +423,16 @@ def probe(cases, out, dry_run=False, four_way=True):
     label = case["label"]
     prompt_input = case["prompt_input"]
     domain = case.get("domain")
+    # subject and other ride on every row so the reader can pair an A->B ask
+    # with the B->A ask asked at the SAME step. That pairing is the one
+    # reading in this probe that can falsify something: if a form collapses a
+    # gap the dictionary opened, the asymmetry was never in the orphan keys.
+    who = state_of(label, prompt_input)
     base = {"probe": "011-IP", "at": stamp, "source": case.get("source", "hand"),
             "case": case.get("case"), "anchor": bool(case.get("anchor")),
             "label": label, "expect": case.get("expect"),
+            "subject": who.get("subject") or who.get("persona"),
+            "other": who.get("other"),
             "run": case.get("run"), "step": case.get("step"),
             "reconstruction": case.get("reconstruction")}
     asks = [(form, "choice") for form in forms_for(label)]
