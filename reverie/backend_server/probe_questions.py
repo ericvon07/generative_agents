@@ -202,8 +202,9 @@ def forms_for(label):
   """Which forms apply to <label>. The location pair has no descriptive form:
   twelve options do not get a description each (TS-A)."""
   if jev_questions.descriptive_criteria(label, {"x": "y"}):
-    return ("dictionary", "descriptive", "composed", "structured")
-  return ("dictionary", "composed", "structured")
+    return ("dictionary", "descriptive", "composed", "structured",
+            "sentences")
+  return ("dictionary", "composed", "structured", "sentences")
 
 
 def build(label, form, prompt_input, domain, question_type="choice"):
@@ -219,6 +220,9 @@ def build(label, form, prompt_input, domain, question_type="choice"):
   elif form == "structured":
     state = structured_state.build(label, prompt_input, domain)
     instructions = structured_state.instructions(label)
+  elif form == "sentences":
+    state = structured_state.build_sentences(label, prompt_input, domain)
+    instructions = structured_state.sentence_instructions(label)
   elif form == "descriptive":
     described = jev_questions.descriptive_criteria(label, criteria)
     if not described:

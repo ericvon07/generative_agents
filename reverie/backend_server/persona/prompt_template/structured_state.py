@@ -245,3 +245,169 @@ INSTRUCTIONS = {
 
 def instructions(label):
   return INSTRUCTIONS.get(label)
+
+
+# === THE FIFTH FORM: named fields whose values are the paper's sentences =====
+#
+# The author's objection to the structured form (2026-09-24): it chopped a
+# sentence like "Klaus Mueller is on the way to catching up with friends at
+# Hobbs Cafe" into name / activity / progress / place, and the relation the
+# decision turns on lived in the sentence. So this form keeps the SAME named
+# fields and puts the paper's whole sentence in each, verbatim -- braces,
+# blanks and all. Rules go to the instruction and options to the criteria,
+# exactly as in the structured form, so between "structured" and "sentences"
+# the one thing that moves is atoms versus sentences; and between "composed"
+# and "sentences" the one thing that moves (besides where the rules sit) is
+# whether the sentences come in a container with names.
+#
+# Same contract: sentences_to_prompt_input inverts build_sentences exactly.
+
+
+def _raw(half):
+  """A context half as a sentence string: 'a. b.' (the builder's 'a. b. ')."""
+  return half[:-1] if half.endswith(" ") else half
+
+
+def _unraw(value):
+  return "%s " % value if value else ""
+
+
+def _sentence_context(text):
+  events, thoughts = str(text).split("\n", 1) if "\n" in str(text) else (None, None)
+  if events is None:
+    raise ValueError("a context with no events/thoughts separator: %r" % text)
+  for half in (events, thoughts):
+    if half and not half.endswith(". "):
+      raise ValueError("a context half that does not end in '. ': %r" % half)
+  return {"recent_events": _raw(events), "thoughts": _raw(thoughts)}
+
+
+def _sentence_context_text(context):
+  return "%s\n%s" % (_unraw(context["recent_events"]),
+                     _unraw(context["thoughts"]))
+
+
+def _cut(text, prefix, suffix=""):
+  if not text.startswith(prefix) or not text.endswith(suffix):
+    raise ValueError("%r is not %r...%r" % (text, prefix, suffix))
+  return text[len(prefix):len(text) - len(suffix)]
+
+
+def build_sentences(label, prompt_input, domain=None):
+  pi = [str(i) for i in prompt_input]
+
+  if label == "action_sector":
+    state = {"person": pi[0],
+             "home": "%s lives in {%s} that has %s." % (pi[0], pi[1], pi[2]),
+             "currently_in": "%s is currently in {%s} that has %s."
+                             % (pi[3], pi[4], pi[5]),
+             "activity": "%s is %s." % (pi[8], pi[9]),
+             "task": pi[10]}
+    if pi[6]:
+      if not pi[6].startswith("\n"):
+        raise ValueError("daily plan requirement without its newline")
+      state["daily_plan_requirement"] = pi[6][1:]
+    return state
+
+  if label == "action_arena":
+    return {"person": pi[0],
+            "going_to": "%s is going to %s that has the following areas: {%s}"
+                        % (pi[0], pi[1], pi[2]),
+            "activity": "%s is %s." % (pi[3], pi[4]),
+            "task": pi[5]}
+
+  if label == "decide_to_talk":
+    return {"now": "Right now, it is %s." % pi[1],
+            "subject": {"name": pi[2], "doing": pi[6]},
+            "other": {"name": pi[3], "doing": pi[7]},
+            "last_conversation": "%s and %s last chatted at %s about %s."
+                                 % (pi[2], pi[3], pi[4], pi[5]),
+            "context": _sentence_context(pi[0])}
+
+  if label == "decide_to_react":
+    return {"now": "Right now, it is %s." % pi[1],
+            "subject": {"name": pi[4], "doing": pi[2]},
+            "other": {"name": pi[6], "doing": pi[3]},
+            "context": _sentence_context(pi[0])}
+
+  raise ValueError("no sentences state for %r" % label)
+
+
+def _react_activity(sentence, name):
+  for _, phrase in _PROGRESS[:2]:
+    head = "%s%s" % (name, phrase)
+    if sentence.startswith(head):
+      return sentence[len(head):].rsplit(" at ", 1)[0]
+  raise ValueError("cannot read an activity out of %r" % sentence)
+
+
+def sentences_to_prompt_input(label, state, domain=None):
+  s = state
+  if label == "action_sector":
+    p = s["person"]
+    home_area, home_places = _cut(s["home"], "%s lives in {" % p,
+                                  ".").split("} that has ", 1)
+    here_area, here_places = _cut(s["currently_in"],
+                                  "%s is currently in {" % p,
+                                  ".").split("} that has ", 1)
+    dpr = s.get("daily_plan_requirement")
+    return [p, home_area, home_places, p, here_area, here_places,
+            ("\n%s" % dpr) if dpr is not None else "", ", ".join(domain or []),
+            p, _cut(s["activity"], "%s is " % p, "."), s["task"], p]
+
+  if label == "action_arena":
+    p = s["person"]
+    area, places = _cut(s["going_to"], "%s is going to " % p,
+                        "}").split(" that has the following areas: {", 1)
+    return [p, area, places, p, _cut(s["activity"], "%s is " % p, "."),
+            s["task"], p, area, places]
+
+  if label == "decide_to_talk":
+    a, b = s["subject"]["name"], s["other"]["name"]
+    when, about = _cut(s["last_conversation"],
+                       "%s and %s last chatted at " % (a, b),
+                       ".").split(" about ", 1)
+    return [_sentence_context_text(s["context"]),
+            _cut(s["now"], "Right now, it is ", "."), a, b, when, about,
+            s["subject"]["doing"], s["other"]["doing"], a, b]
+
+  if label == "decide_to_react":
+    sub, oth = s["subject"], s["other"]
+    sub_act = _react_activity(sub["doing"], sub["name"])
+    return [_sentence_context_text(s["context"]),
+            _cut(s["now"], "Right now, it is ", "."),
+            sub["doing"], oth["doing"], sub["name"], sub_act, oth["name"],
+            _react_activity(oth["doing"], oth["name"]), sub_act]
+
+  raise ValueError("no sentences state for %r" % label)
+
+
+SENTENCE_INSTRUCTIONS = {
+    "action_sector": (
+        "`activity` says what `person` is doing. For `task`, which area "
+        "should `person` go to? `home` says where they live and "
+        "`currently_in` where they are now, each with the places inside it; "
+        "`daily_plan_requirement`, when present, is a standing part of their "
+        "day. Stay in the current area if the activity can be done there. "
+        "Only go out if the activity needs to take place in another place."),
+    "action_arena": (
+        "`activity` says what `person` is doing. For `task`, which of the "
+        "areas named in `going_to` should `person` go to? Stay in the "
+        "current area if the activity can be done there. NEVER go into "
+        "other people's rooms unless necessary."),
+    "decide_to_talk": (
+        "`now` is the time. Would `subject.name` initiate a conversation "
+        "with `other.name`? `subject.doing` and `other.doing` say what each "
+        "of them is doing; `last_conversation` says when the two last "
+        "chatted and about what; `context` holds recent events and "
+        "thoughts."),
+    "decide_to_react": (
+        "`now` is the time. What should `subject.name` do? `subject.doing` "
+        "and `other.doing` say what each of them is doing and where; "
+        "`context` holds recent events and thoughts. Choose one of the "
+        "options."),
+}
+
+
+def sentence_instructions(label):
+  return SENTENCE_INSTRUCTIONS.get(label)
