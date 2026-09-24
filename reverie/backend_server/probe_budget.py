@@ -157,6 +157,10 @@ _ANSWER_PATTERNS = {
 }
 
 
+_BARE_ANSWERS = {"decide_to_talk": ("yes", "no"),
+                 "decide_to_react": ("1", "2", "3")}
+
+
 def read_answer(label, text):
   """RETURNS: (answer, end_char) -- the LAST answer the model wrote and where
   it ends, or (None, None). The last, not the first, because a response that
@@ -165,9 +169,17 @@ def read_answer(label, text):
   found = None
   for match in _ANSWER_PATTERNS[label].finditer(text):
     found = match
-  if found is None:
-    return None, None
-  return found.group(1).lower(), found.end()
+  if found is not None:
+    return found.group(1).lower(), found.end()
+  # A response that is nothing but the answer, with no cue at all. Both call
+  # sites accept it -- the paper's own split returned the whole response when
+  # its cue was absent, and read_yes_no keeps that -- so a reader that missed
+  # it would undercount exactly the models that obey the completion system
+  # prompt most literally. `deepseek-v4-flash` answers "no" and nothing else.
+  bare = text.strip().lower()
+  if bare in _BARE_ANSWERS[label]:
+    return bare, len(text.rstrip())
+  return None, None
 
 
 # --- one request ------------------------------------------------------------
@@ -392,6 +404,19 @@ def measure(cases, out, budget, which_arms, dry_run=False, done=(),
 
 # --- the reading ------------------------------------------------------------
 
+def _rows_of(paths):
+  """Every row in these JSONL files, plain or gzipped."""
+  rows = []
+  for path in paths:
+    opener = gzip.open if path.endswith(".gz") else open
+    with opener(path, "rt") as handle:
+      for line in handle:
+        line = line.strip()
+        if line:
+          rows.append(json.loads(line))
+  return rows
+
+
 def position_of(row):
   """Where the answer ends, in the model's own tokens, and whether that
   position is exact. Derived HERE from the raw facts every row stores --
@@ -401,7 +426,11 @@ def position_of(row):
 
   RETURNS: (tokens, exact) or (None, None) when the row has no answer.
   """
-  end = row.get("answer_end_char")
+  # The answer's end is DERIVED from the stored response, never read from
+  # the row's own column: a row written by an older version of this file
+  # carries that column as that version computed it, and both readers here
+  # must read every row by one rule.
+  _answer, end = read_answer(row["label"], row.get("text") or "")
   total = row.get("completion_tokens")
   if end is None or total is None:
     return None, None
@@ -430,13 +459,7 @@ def percentile(values, which):
 
 
 def report(paths, margin=0.30):
-  rows = []
-  for path in paths:
-    with open(path) as handle:
-      for line in handle:
-        line = line.strip()
-        if line:
-          rows.append(json.loads(line))
+  rows = _rows_of(paths)
   live = [r for r in rows if not r.get("error") and not r.get("dry_run")]
   print("# 011-IP step 6 -- the budget of the two social prompts")
   print()
@@ -451,6 +474,12 @@ def report(paths, margin=0.30):
   print("Asked at max_tokens = %s."
         % ", ".join(str(b) for b in budgets))
   print()
+  print("**Acceptance is the call sites' validators AS THE CODE CARRIES THEM "
+        "TODAY**, recomputed from each stored response. Rows recorded before "
+        "D10 carry a `validates` column computed by the validator of their "
+        "own day -- the split on `Answer in yes or no:` -- which accepted "
+        "none of them. That is what CU-1 measures; this table is not it.")
+  print()
 
   print("## 1. What each arm produced")
   print()
@@ -461,8 +490,10 @@ def report(paths, margin=0.30):
       here = [r for r in live if r["label"] == label and r["arm"] == arm]
       if not here:
         continue
-      wrote = sum(1 for r in here if r.get("answer"))
-      ok = sum(1 for r in here if r.get("validates"))
+      wrote = sum(1 for r in here
+                  if read_answer(label, r.get("text") or "")[0])
+      validate, _clean = VALIDATORS[label]
+      ok = sum(1 for r in here if validate(r.get("text") or ""))
       print("| `%s` | %s | %d | %d (%.0f%%) | %d (%.0f%%) |"
             % (label, arm, len(here), wrote, 100.0 * wrote / len(here),
                ok, 100.0 * ok / len(here)))
@@ -519,7 +550,8 @@ def report(paths, margin=0.30):
       if (label, arm) not in chosen:
         continue
       here = [r for r in live if r["label"] == label and r["arm"] == arm]
-      accepts = sum(1 for r in here if r.get("validates"))
+      validate, _clean = VALIDATORS[label]
+      accepts = sum(1 for r in here if validate(r.get("text") or ""))
       best = chosen[(label, arm)]
       with_margin = best * (1 + margin)
       rounded = int(-(-with_margin // 10) * 10)
@@ -565,7 +597,7 @@ def report(paths, margin=0.30):
     print()
 
 
-def compare(paths):
+def compare(paths, reference=None):
   """One row per model: can it answer these two prompts, and what does one
   decision cost.
 
@@ -575,14 +607,7 @@ def compare(paths):
   the pre-D10 validator computed it, and a table that mixed the two rules
   would compare models on which day they were asked.
   """
-  rows = []
-  for path in paths:
-    opener = gzip.open if path.endswith(".gz") else open
-    with opener(path, "rt") as handle:
-      for line in handle:
-        line = line.strip()
-        if line:
-          rows.append(json.loads(line))
+  rows = _rows_of(paths)
   live = [r for r in rows if not r.get("error") and not r.get("dry_run")
           and r.get("arm", "").startswith("paper")]
 
@@ -599,8 +624,14 @@ def compare(paths):
   # Agreement is NOT correctness -- two models can be wrong together -- but a
   # model that answers every time and agrees with nobody is answering
   # arbitrarily, and that is worth seeing beside the acceptance rate.
-  reference = None
-  if answered_by:
+  # Chosen by the caller, or else the model that answered most. That default
+  # depends on WHICH FILES were passed, so a comparison whose agreement
+  # column is going to be quoted should pin it with --reference.
+  if reference and reference not in answered_by:
+    raise SystemExit("(budget): no answers from %r in these files; the "
+                     "models present are: %s"
+                     % (reference, ", ".join(sorted(answered_by))))
+  if reference is None and answered_by:
     reference = max(answered_by, key=lambda m: len(answered_by[m]))
 
   print("# The generator on the paper's two closed-set social prompts")
@@ -612,8 +643,7 @@ def compare(paths):
         "**no two rows are paired**; none is a rate of a run.")
   print()
   if reference:
-    print("Agreement is against **`%s`**, the model that answered most of "
-          "these states, over the states both answered. Agreement is not "
+    print("Agreement is against **`%s`**, over the states both answered. Agreement is not "
           "correctness — two models can be wrong together — but a model that "
           "answers every time and agrees with nobody is answering "
           "arbitrarily." % reference)
@@ -691,13 +721,17 @@ def main(argv=None):
   parser.add_argument("--report", nargs="+", default=None,
                       help="read these JSONL files and print the readout")
   parser.add_argument("--margin", type=float, default=0.30)
+  parser.add_argument("--reference", default=None,
+                      help="the model the agreement column compares against; "
+                           "the default is whichever answered most, which "
+                           "depends on the files passed")
   parser.add_argument("--compare", nargs="+", default=None,
                       help="read these JSONL (or .jsonl.gz) files and print "
                            "one row per model")
   args = parser.parse_args(argv)
 
   if args.compare:
-    compare(args.compare)
+    compare(args.compare, reference=args.reference)
     return 0
   if args.report:
     report(args.report, margin=args.margin)
