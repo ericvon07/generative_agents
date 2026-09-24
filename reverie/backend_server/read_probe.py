@@ -54,7 +54,7 @@ import collections
 # structured_state.py) is last: it replaces the payload as "composed" does and
 # also needs its own builder at every call site.
 FORM_COST = ("dictionary", "descriptive", "composed", "structured",
-             "sentences")
+             "sentences", "question-out")
 TIE = 0.05
 
 

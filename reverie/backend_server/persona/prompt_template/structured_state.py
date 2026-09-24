@@ -411,3 +411,32 @@ SENTENCE_INSTRUCTIONS = {
 
 def sentence_instructions(label):
   return SENTENCE_INSTRUCTIONS.get(label)
+
+
+# === THE QUESTION MOVED OUT: the composed state without its question =========
+#
+# Named fields lost to the composed state whether their values were atoms or
+# whole sentences. One of the differences left is WHERE THE QUESTION SITS: the
+# composed state ends with the paper's own question and its instruction only
+# says "answer the question the text above asks", while every fielded form put
+# the question in the instruction, as TypeSafe's guidance asks. This form is
+# the composed state, character for character, minus the question sentence,
+# which becomes the instruction verbatim. Social pair only: there the question
+# is a sentence of its own; on the location pair it is fused with the task.
+
+_QUESTION_CUTS = {"decide_to_talk": "\n\nQuestion: ",
+                  "decide_to_react": "\nMy question: "}
+
+
+def question_out(label, composed):
+  """(state, instructions) -- the composed text split at its question."""
+  cut = _QUESTION_CUTS.get(label)
+  if cut is None or cut not in composed:
+    raise ValueError("no question to move out of a %s state" % label)
+  state, rest = composed.split(cut, 1)
+  if label == "decide_to_talk":
+    return state, rest.strip()
+  # decide_to_react: the question is the first line; the options stay put,
+  # as they do in the composed state.
+  question, options = rest.split("\n", 1)
+  return "%s\n%s" % (state, options), question.strip()

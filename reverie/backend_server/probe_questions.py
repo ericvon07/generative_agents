@@ -203,7 +203,7 @@ def forms_for(label):
   twelve options do not get a description each (TS-A)."""
   if jev_questions.descriptive_criteria(label, {"x": "y"}):
     return ("dictionary", "descriptive", "composed", "structured",
-            "sentences")
+            "sentences", "question-out")
   return ("dictionary", "composed", "structured", "sentences")
 
 
@@ -220,6 +220,9 @@ def build(label, form, prompt_input, domain, question_type="choice"):
   elif form == "structured":
     state = structured_state.build(label, prompt_input, domain)
     instructions = structured_state.instructions(label)
+  elif form == "question-out":
+    state, instructions = structured_state.question_out(
+        label, composed_state(prompt_input, TEMPLATES[label]))
   elif form == "sentences":
     state = structured_state.build_sentences(label, prompt_input, domain)
     instructions = structured_state.sentence_instructions(label)
