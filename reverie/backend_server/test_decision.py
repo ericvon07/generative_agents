@@ -233,12 +233,15 @@ class DescriptiveCriteria(unittest.TestCase):
                      "from the negation -- one of them is arguing")
 
   def test_the_orphan_table_matches_what_the_call_sites_send(self):
-    # An orphan is a key the instruction never names. Recompute it from the
-    # state the call site builds and the instruction beside the question, so
-    # the table cannot go stale in silence.
+    # An orphan is a key the DICTIONARY state carried that the DICTIONARY-era
+    # instruction never named. The table is the audit of what D7 repaired, so
+    # it is computed against the wording D7 replaced -- the composed
+    # instruction names no key because a composed state has none, and
+    # checking against it would call every key an orphan.
     for label, prompt_input in INPUTS.items():
       state = probe_questions.state_of(label, prompt_input)
-      instructions = jev_questions.spec(label)["instructions"]
+      spec = jev_questions.spec(label)
+      instructions = spec.get("instructions_before_d7") or spec["instructions"]
       found = tuple(k for k in state if "`%s`" % k not in instructions)
       self.assertEqual(set(found), set(jev_questions.orphan_keys(label)),
                        "%s: ORPHAN_KEYS disagrees with the call site" % label)
@@ -292,12 +295,39 @@ class TargetSentence(unittest.TestCase):
     run_gpt_prompt.decision.choose = self._choose
     run_gpt_prompt.debug = self._debug
 
-  def _other_is(self, init_act, init_path, target_act, target_path):
+  def _lines(self, init_act, init_path, target_act, target_path):
+    """The two description lines as the backend actually receives them.
+
+    Before D7 this read state["other_is"], which WAS prompt_input[7]. D7 made
+    the state the paper's own last block, so the slot is no longer a key --
+    it is a line of prose. Reading the line back is the stronger check: it is
+    what the model sees, and it would catch the sentence being right in the
+    dictionary and wrong in the text.
+    """
     run_gpt_prompt.run_gpt_prompt_decide_to_talk(
         _Persona("Klaus Mueller", init_act, init_path),
         _Persona("Maria Lopez", target_act, target_path),
         {"events": [], "thoughts": []})
-    return self.captured["state"]["other_is"]
+    state = self.captured["state"]
+    self.assertIsInstance(state, str, "D7: the state should be prose now")
+    return [l.strip() for l in state.splitlines() if l.strip()]
+
+  def _other_is(self, *args):
+    """The one line that describes the TARGET. Exactly one line may."""
+    lines = self._lines(*args)
+    mine = [l for l in lines if l.startswith("Maria Lopez is ")]
+    self.assertEqual(len(mine), 1,
+                     "expected exactly one line about the target, got %r"
+                     % (mine,))
+    return mine[0]
+
+  def _subject_is(self, *args):
+    lines = self._lines(*args)
+    mine = [l for l in lines if l.startswith("Klaus Mueller is ")]
+    self.assertEqual(len(mine), 1,
+                     "expected exactly one line about the initiator, got %r"
+                     % (mine,))
+    return mine[0]
 
   def test_an_initiator_who_is_waiting_does_not_take_over_the_sentence(self):
     # S3.1. Before D8 this read "Klaus Mueller is waiting for the bus".
@@ -326,9 +356,87 @@ class TargetSentence(unittest.TestCase):
                      "Maria Lopez is on the way to cooking dinner")
 
   def test_the_initiators_own_sentence_is_untouched(self):
-    self._other_is("waiting for the bus", [], "reading a book", [(1, 2)])
-    self.assertEqual(self.captured["state"]["subject_is"],
-                     "Klaus Mueller is waiting for the bus")
+    self.assertEqual(
+        self._subject_is("waiting for the bus", [], "reading a book", [(1, 2)]),
+        "Klaus Mueller is waiting for the bus")
+
+  def test_the_target_line_is_not_a_second_copy_of_the_initiators(self):
+    # The exact shape of the bug D8 repaired: before it, BOTH lines named the
+    # initiator whenever the initiator was waiting.
+    lines = self._lines("waiting for the bus", [], "reading a book", [(1, 2)])
+    about_klaus = [l for l in lines if l.startswith("Klaus Mueller is ")]
+    self.assertEqual(len(about_klaus), 1,
+                     "the initiator is described twice: %r" % (about_klaus,))
+
+
+# --- D7 on the run path -----------------------------------------------------
+
+class D7OnTheRunPath(unittest.TestCase):
+  """S2.1, S2.3, S2.4. The four questions send the paper's own last block,
+  and the control arm's prompt did not move to make it possible."""
+
+  FOUR = ("action_sector", "action_arena", "decide_to_talk", "decide_to_react")
+
+  def test_the_four_questions_declare_the_composed_form(self):
+    for label in self.FOUR:
+      self.assertEqual(jev_questions.state_form(label), "composed",
+                       "%s did not take D7" % label)
+
+  def test_no_other_question_took_it(self):
+    for label in ("action_game_object", "event_poignancy", "thought_poignancy",
+                  "chat_poignancy"):
+      self.assertIsNone(jev_questions.state_form(label),
+                        "%s took D7 and should not have" % label)
+
+  def test_the_wording_d7_replaced_is_still_readable(self):
+    for label in self.FOUR:
+      spec = jev_questions.spec(label)
+      self.assertIn("instructions_before_d7", spec,
+                    "%s lost the wording D7 replaced" % label)
+      self.assertNotEqual(spec["instructions"], spec["instructions_before_d7"])
+
+  def test_the_mirrors_line_is_load_bearing_now(self):
+    # composed_state reads the same template the entry names, so a wrong
+    # `mirrors:` stopped being a documentation slip the day D7 landed -- it
+    # now sends the wrong sentences to the backend.
+    for label in self.FOUR:
+      mirrors = jev_questions.spec(label)["mirrors"]
+      self.assertTrue(probe_questions.TEMPLATES[label].endswith(mirrors),
+                      "%s: mirrors %r does not name the template that is "
+                      "actually rendered (%r)"
+                      % (label, mirrors, probe_questions.TEMPLATES[label]))
+
+  def test_the_composed_state_is_what_the_control_arm_reads(self):
+    # S2.1 and S2.3 in one: the state is a substring of the prompt the llm
+    # backend builds from the SAME prompt_input, so the typed side gained
+    # sentences without the control side losing or gaining one character.
+    for label, prompt_input in INPUTS.items():
+      template = probe_questions.TEMPLATES[label]
+      self.assertIn(composed_state(prompt_input, template),
+                    generate_prompt(prompt_input, template), label)
+
+
+class SocialFieldsSurviveAStringState(unittest.TestCase):
+  """D7 turns the two social states from a dict into a string, and
+  _social_fields used to read `subject` out of that dict. It falls back to the
+  trace's own persona scope, and the fallback is exact: across n9win and the
+  three probe runs, persona == subject on 694 of 694 social decisions. This
+  pins the fallback so the episode -- which S7.2's denominator is built on --
+  cannot go quietly missing."""
+
+  def test_a_string_state_still_produces_subject_other_and_episode(self):
+    from persona.prompt_template import decision, llm_trace
+    with llm_trace.persona_scope("Isabella Rodriguez"):
+      fields = decision._social_fields("Maria Lopez",
+                                       "Context: prose, not a dict.")
+    self.assertEqual(fields["other"], "Maria Lopez")
+    self.assertEqual(fields["subject"], "Isabella Rodriguez")
+    self.assertIn("Isabella Rodriguez", fields["episode"])
+    self.assertIn("Maria Lopez", fields["episode"])
+
+  def test_no_counterparty_still_means_no_social_fields(self):
+    from persona.prompt_template import decision
+    self.assertIsNone(decision._social_fields(None, "prose"))
 
 
 if __name__ == "__main__":

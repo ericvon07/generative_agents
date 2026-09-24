@@ -672,16 +672,16 @@ def run_gpt_prompt_action_sector(action_description,
                                prompt, gpt_param, 5, fail_safe,
                                __func_validate, __func_clean_up),
                            fail_safe=fail_safe,
-                           state={
-                               "persona": prompt_input[0],
-                               "lives_in": prompt_input[1],
-                               "areas_where_they_live": prompt_input[2],
-                               "currently_in": prompt_input[4],
-                               "areas_where_they_are": prompt_input[5],
-                               "daily_plan_requirement": prompt_input[6].strip(),
-                               "current_action": prompt_input[9],
-                               "task": prompt_input[10],
-                           })
+                           # D7: the paper's own last block, rendered from
+                           # the SAME prompt_input `prompt` is built from,
+                           # with the answer cue stripped -- a substring of
+                           # that prompt, character for character. The
+                           # dictionary this replaced is still readable, on
+                           # the question's own entry, under
+                           # `instructions_before_d7`. Chosen by the probe of
+                           # 011-IP step 4; the reasoning is in
+                           # jev_questions.py beside the deviation.
+                           state=composed_state(prompt_input, prompt_template))
   y = f"{maze.access_tile(persona.scratch.curr_tile)['world']}"
   x = [i.strip() for i in persona.s_mem.get_str_accessible_sectors(y).split(",")]
   if output not in x: 
@@ -792,13 +792,16 @@ def run_gpt_prompt_action_arena(action_description,
                                prompt, gpt_param, 5, fail_safe,
                                __func_validate, __func_clean_up),
                            fail_safe=fail_safe,
-                           state={
-                               "persona": prompt_input[0],
-                               "going_to": prompt_input[1],
-                               "areas_there": prompt_input[2],
-                               "current_action": prompt_input[4],
-                               "task": prompt_input[5],
-                           })
+                           # D7: the paper's own last block, rendered from
+                           # the SAME prompt_input `prompt` is built from,
+                           # with the answer cue stripped -- a substring of
+                           # that prompt, character for character. The
+                           # dictionary this replaced is still readable, on
+                           # the question's own entry, under
+                           # `instructions_before_d7`. Chosen by the probe of
+                           # 011-IP step 4; the reasoning is in
+                           # jev_questions.py beside the deviation.
+                           state=composed_state(prompt_input, prompt_template))
   print (output)
   # The authors' domain guard, restored (deviation D4). It stood here, live,
   # in defunct_run_gpt_prompt.py:612-615 and was commented out when the MAR 11
@@ -1471,16 +1474,16 @@ def run_gpt_prompt_decide_to_talk(persona, target_persona, retrieved,test_input=
                            # Who the decision is about. Recorded, never read
                            # back: the answer is the same with it (SV-B).
                            counterparty=target_persona.name,
-                           state={
-                               "subject": prompt_input[2],
-                               "other": prompt_input[3],
-                               "context": prompt_input[0],
-                               "now": prompt_input[1],
-                               "last_chatted_at": prompt_input[4],
-                               "last_chatted_about": prompt_input[5],
-                               "subject_is": prompt_input[6],
-                               "other_is": prompt_input[7],
-                           })
+                           # D7: the paper's own last block, rendered from
+                           # the SAME prompt_input `prompt` is built from,
+                           # with the answer cue stripped -- a substring of
+                           # that prompt, character for character. The
+                           # dictionary this replaced is still readable, on
+                           # the question's own entry, under
+                           # `instructions_before_d7`. Chosen by the probe of
+                           # 011-IP step 4; the reasoning is in
+                           # jev_questions.py beside the deviation.
+                           state=composed_state(prompt_input, prompt_template))
 
   if debug or verbose: 
     print_run_prompts(prompt_template, persona, gpt_param, 
@@ -1594,14 +1597,16 @@ def run_gpt_prompt_decide_to_react(persona, target_persona, retrieved,test_input
                                        prompt_input[7]),
                                "2": "Continue on to %s now" % prompt_input[8],
                            },
-                           state={
-                               "subject": prompt_input[4],
-                               "other": prompt_input[6],
-                               "context": prompt_input[0],
-                               "now": prompt_input[1],
-                               "subject_is": prompt_input[2],
-                               "other_is": prompt_input[3],
-                           })
+                           # D7: the paper's own last block, rendered from
+                           # the SAME prompt_input `prompt` is built from,
+                           # with the answer cue stripped -- a substring of
+                           # that prompt, character for character. The
+                           # dictionary this replaced is still readable, on
+                           # the question's own entry, under
+                           # `instructions_before_d7`. Chosen by the probe of
+                           # 011-IP step 4; the reasoning is in
+                           # jev_questions.py beside the deviation.
+                           state=composed_state(prompt_input, prompt_template))
 
   if debug or verbose: 
     print_run_prompts(prompt_template, persona, gpt_param, 

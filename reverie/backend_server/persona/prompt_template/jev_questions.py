@@ -304,6 +304,71 @@ def composed_instructions(label):
   return COMPOSED_INSTRUCTIONS.get(label)
 
 
+# --- D7 LANDS: the four questions take the composed state -------------------
+#
+# 011-IP step 5, on the probe of step 4 (docs/research/, 2026-09-23). The probe
+# asked 260 decide_to_talk, 22 decide_to_react, 182 action_sector and 182
+# action_arena REAL states in every form that applies, plus six hand-written
+# states with two anchors among them.
+#
+# What decided it, on decide_to_talk, was the reciprocal reading: the same
+# encounter asked in both directions at the SAME step, where only the
+# direction differs. The dictionary put a median 0.030 between the two
+# directions; the composed state put 0.180, six times wider, with the widest
+# pair at 0.720. A form that merely pushed every answer upward would move both
+# directions together and leave the gap alone. It did not. That is
+# discrimination and not displacement, and it is the one reading in the probe
+# that could have falsified this deviation.
+#
+# The anchors agree and add a second, independent fact: the separation between
+# the state a reader calls "no" and the one a reader calls "yes" is 0.740 for
+# a Choice on the dictionary and 0.900 for a Choice on the composed state --
+# and 0.470 / 0.600 for a Noul on the same two. D5 (the type) and D7 (the
+# state) are separate effects and they add.
+#
+# THE CRITERION WAS AMENDED, AFTER THE DATA, AND THIS SAYS SO. TS-A said "the
+# form with the wider SPREAD". On the location pair the two ways of measuring
+# spread disagreed: the literal range picked the dictionary, the p10-p90 band
+# picked the composed state. The range picked the dictionary because the
+# dictionary is SATURATED -- it answers 69% of action_arena states at above
+# 0.99 confidence, its body pinned at 1.000, its range bought by a few extreme
+# lows. Saturation is the failure the criterion existed to catch, so the
+# author amended "spread" to mean the p10-p90 band and the amendment is
+# recorded in the plan beside TS-A.
+#
+# decide_to_react IS AN OVERRIDE, NOT A RESULT. Under the amended criterion it
+# tied -- 0.392 for the dictionary against 0.397 for the composed state, well
+# inside TS-A's own 0.05 tie -- and the tie-break sends a tie to the cheaper
+# form, which is the dictionary. The author took the composed state there
+# anyway, for uniformity: a typed arm where three questions read prose and the
+# fourth reads a dictionary is a mixture, not a condition. That is a decision
+# about comparability and not a reading of the probe, and nothing here claims
+# the probe chose it.
+#
+# What each question now sends: the paper's own last block, rendered from the
+# same prompt_input with the answer cue stripped (gpt_structure.composed_state),
+# and an instruction that points at the paper's sentence rather than restating
+# it. `criteria` are untouched -- decide_to_talk keeps D5's two neutral
+# descriptions and decide_to_react keeps the paper's Option 1 and Option 2,
+# which the call site still builds. The `mirrors:` line on each entry still
+# names the template the sentences come from, and it is now load-bearing:
+# composed_state reads that same file.
+
+for _label, _composed in COMPOSED_INSTRUCTIONS.items():
+  _entry = QUESTIONS[_label]
+  # kept so the wording D7 replaced can be read off the entry itself
+  _entry["instructions_before_d7"] = _entry["instructions"]
+  _entry["instructions"] = _composed
+  _entry["state_form"] = "composed"
+del _label, _composed, _entry
+
+
+def state_form(label):
+  """"composed" when the call site must send the paper's last block instead of
+  the dictionary it used to send, else None."""
+  return (QUESTIONS.get(label) or {}).get("state_form")
+
+
 def spec(label):
   """The typed question registered for <label>, or None if this decision has
   not been given a typed form yet."""
