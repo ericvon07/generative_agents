@@ -290,18 +290,24 @@ class EmptyResponse(Exception):
   """
 
 
+# The statuses no amount of waiting fixes: a malformed request, a key, a
+# balance, a permission, a model that does not exist. Everything else a
+# provider can say is ridden out -- the night of 011-IP's windows Crusoe
+# answered 429, 502 and 412 ("no available servers") in turn, and each one
+# ended a window the first time it was met.
+_PERMANENT = (400, 401, 402, 403, 404)
+
+
 def _is_transient(e):
-  """A request that got no answer, as against one that got a refusal: the
-  router's empty body, the client's timeout, a dropped connection, and any
-  5xx -- a 502 from Crusoe ended the third attempt at 011-IP's typed window.
-  Ridden out from the same budget as a 429 and recorded the same way; when
-  the budget runs out it raises, unchanged, exactly as a 429 does. A 4xx
-  other than 429 -- a key, a balance, a malformed request -- is not waited
-  on: no amount of patience fixes a configuration."""
+  """A request that got no answer, or an answer that says come back later:
+  the router's empty body, the client's timeout, a dropped connection, and
+  any status that is not in _PERMANENT. Ridden out from the same budget as
+  a 429 and recorded the same way; when the budget runs out it raises,
+  unchanged, exactly as a 429 does."""
   if isinstance(e, (EmptyResponse, APITimeoutError, APIConnectionError)):
     return True
   status = _status_of(e)
-  return status is not None and 500 <= status < 600
+  return status is not None and status not in _PERMANENT
 
 
 def _retry_after(e):
