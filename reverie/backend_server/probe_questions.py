@@ -210,7 +210,11 @@ def build(label, form, prompt_input, domain, question_type="choice"):
   state = state_of(label, prompt_input)
   criteria = base_criteria(label, prompt_input, domain)
   spec = jev_questions.spec(label) or {}
-  instructions = spec.get("instructions")
+  # D7 put the composed instruction into QUESTIONS at import and kept the
+  # one it replaced under instructions_before_d7; the dictionary and
+  # descriptive forms are that one, or the probe would ask a dictionary
+  # "the question the text above asks" with no text above.
+  instructions = spec.get("instructions_before_d7", spec.get("instructions"))
 
   if form == "composed":
     state = composed_state(prompt_input, TEMPLATES[label])

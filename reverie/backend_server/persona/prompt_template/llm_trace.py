@@ -531,6 +531,13 @@ def record_call(path, model, prompt, response=None, latency=None,
         # must agree for the run to be one condition. None on any backend
         # that does not route (every local one).
         "provider": facts["provider"],
+        # What this call cost, in USD, as response_facts reads it: the
+        # router's figure, plus the provider's own charge under BYOK. None
+        # on a backend that reports nothing. It was only in the ledger until
+        # 2026-09-24, and a trace that cannot be audited for cost is a trace
+        # that cannot check the ledger.
+        "cost": facts["cost"],
+        "byok": bool(facts.get("byok")),
     }
     if extra:
       record.update(extra)
@@ -677,7 +684,7 @@ def record_decision(label, domain, answer, backend=None, fail_safe=None,
 
 
 def record_rate_limit(path, status, attempt, of, delay, error=None,
-                      label=None):
+                      label=None, provider=None):
   """A provider said 429, and the request is about to be made again.
 
   Deliberately its own event rather than a failed "call". Nothing came back
@@ -707,6 +714,9 @@ def record_rate_limit(path, status, attempt, of, delay, error=None,
         "ride_attempt": attempt,
         "ride_budget": of,
         "delay_s": None if delay is None else round(float(delay), 3),
+        # Which pin the request carried when it was refused (AP-3): a wait on
+        # a fallback and a wait on the configured provider are two things.
+        "provider": provider,
         "error": _head(error),
     })
   except Exception:

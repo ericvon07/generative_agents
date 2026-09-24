@@ -1393,14 +1393,19 @@ def read_yes_no(gpt_response):
 
   RETURNS: "yes", "no", or None when the response states neither.
   """
+  # The template's own Format block shows the answer in brackets, and a model
+  # that copies it -- `Answer in "yes" or "no": [no]` -- or quotes or bolds
+  # the word is still answering. Punctuation around the word is not the
+  # answer, so it comes off before the cue is read.
+  text = re.sub(r"[\[\]\"'*()]", " ", gpt_response or "")
   found = None
-  for match in _YES_NO.finditer(gpt_response or ""):
+  for match in _YES_NO.finditer(text):
     found = match
   if found is not None:
     return found.group(1).lower()
   # A response that is nothing but the answer -- what the paper's own split
   # accepted when its cue was absent, kept so that behaviour does not move.
-  bare = (gpt_response or "").strip().lower()
+  bare = text.strip().lower()
   return bare if bare in ("yes", "no") else None
 
 

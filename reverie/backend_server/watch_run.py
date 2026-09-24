@@ -112,7 +112,7 @@ def _flag(kind, row, message):
   return "[%s] %s %s | %s" % (kind.upper(), where, who, message)
 
 
-def examine(row, seen):
+def examine(row, tally):
   """RETURNS: a list of flag lines this row deserves."""
   out = []
   event = row.get("event")
@@ -243,7 +243,18 @@ class Tally(object):
 
 
 def rows_of(handle):
-  for line in handle:
+  """Every complete line from where the handle is. A line still being
+  written when the poll reaches the end of the file -- no newline yet -- is
+  left for the next pass, or a large record would be read as two fragments
+  and lost twice."""
+  while True:
+    pos = handle.tell()
+    line = handle.readline()
+    if not line:
+      return
+    if not line.endswith("\n"):
+      handle.seek(pos)
+      return
     line = line.strip()
     if not line:
       continue

@@ -779,5 +779,27 @@ class TheNoFenceSentenceIsOffUnlessAsked(unittest.TestCase):
                   self._prompt("1"))
 
 
+class D7TheComposedQuestionRefusesADictionary(unittest.TestCase):
+  """The seam, not the call site, holds that a composed question gets text."""
+
+  def test_a_dictionary_state_is_refused_before_the_backend_is_asked(self):
+    from persona.prompt_template import decision
+    with self.assertRaises(ValueError) as caught:
+      decision._ask("action_sector", {"lives_in": "x"}, "q", "kitchen")
+    self.assertIn("composed text (D7)", str(caught.exception))
+    self.assertIn("dict", str(caught.exception))
+
+
+class D10TheAnswerInBracketsIsStillTheAnswer(unittest.TestCase):
+  """The template's Format block shows `[no]`; a model that copies it, or
+  quotes or bolds the word, has answered."""
+
+  def test_brackets_quotes_and_bold_come_off(self):
+    for text in ('Answer in "yes" or "no": [no]', 'Answer: "no"',
+                 "Reasoning...\nAnswer in yes or no: **no**", "[no]"):
+      self.assertEqual("no", run_gpt_prompt.read_yes_no(text), text)
+    self.assertEqual("yes", run_gpt_prompt.read_yes_no('Answer: [Yes]'))
+
+
 if __name__ == "__main__":
   unittest.main(verbosity=2)

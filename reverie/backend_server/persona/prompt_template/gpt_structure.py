@@ -10,7 +10,7 @@ import time
 import json
 from pathlib import Path
 from openai import (AzureOpenAI, OpenAI, RateLimitError, APITimeoutError,
-                    APIConnectionError)
+                    APIConnectionError, Stream)
 
 from utils import *
 from openai_cost_logger import DEFAULT_LOG_PATH
@@ -109,7 +109,7 @@ fallback_policy = _fallback_policy(openai_config)
 
 # Which link of the chain requests go to now, and since when. Module state
 # because a run is one process; swapped by the tests.
-_provider_state = {"index": 0, "since": None}
+_provider_state = {"index": 0, "since": None, "probing": False}
 _clock = time.time
 
 
@@ -144,6 +144,11 @@ def _maybe_return_to_primary(path):
   frm = _provider_name(provider_pin())
   _provider_state["index"] = 0
   _provider_state["since"] = None
+  # The return is a probe: one request. If the configured provider is still
+  # failing, the next failure moves the request on at once rather than
+  # spending the whole per-provider budget on a provider known to be down
+  # (ten minutes every fifteen, on the example config).
+  _provider_state["probing"] = True
   llm_trace.record_provider_switch(path, frm, _provider_name(provider_pin()),
                                    reason="return")
 
@@ -152,6 +157,7 @@ def _fall_back(path, error):
   frm = _provider_name(provider_pin())
   _provider_state["index"] += 1
   _provider_state["since"] = _clock()
+  _provider_state["probing"] = False
   to = _provider_name(provider_pin())
   llm_trace.record_provider_switch(path, frm, to, reason="fallback",
                                    error=error)
@@ -366,7 +372,10 @@ class EmptyResponse(Exception):
 # been served by it all along) in turn, and each one ended a window the
 # first time it was met. A model name that is wrong from the start is
 # caught before a run by asking it once, not by this list.
-_PERMANENT = (400, 401, 402, 403)
+# 405, 413, 415 and 422 are the other shapes of "this request": a method, a
+# body too large, a media type, an unprocessable entity -- deterministic, so a
+# wait would be a wait for nothing.
+_PERMANENT = (400, 401, 402, 403, 405, 413, 415, 422)
 
 
 def _is_transient(e):
@@ -429,24 +438,43 @@ def _send(path, attempt, create):
   policy = rate_limit_policy
   chain = len(_provider_chain())
   _maybe_return_to_primary(path)
+  # AP-3: every link but the last is waited on for its own budget, then the
+  # request moves on at once; the last link gets the run's whole patience, so
+  # a run with no fallbacks behaves exactly as before. The per-provider
+  # budget is clamped to the run's, or a config whose fallback budget is the
+  # larger one would raise before it ever fell back (the review of
+  # 2026-09-24 found exactly that under the defaults). A return probe gets
+  # no waits at all: one request, and on failure it moves on.
   waits = 0
   while True:
     attempt.start()
     try:
       response = create()
       attempt.stop()
-      if not getattr(response, "choices", None):
+      if (not isinstance(response, Stream)
+          and not getattr(response, "choices", None)):
         raise EmptyResponse("the router answered with no choices")
+      if _provider_state["probing"]:
+        _provider_state["probing"] = False
       return response
     except Exception as e:
       attempt.stop()
+      more_links = _provider_state["index"] < chain - 1
       if not (_is_rate_limit(e) or _is_transient(e)):
+        # A status no wait fixes. For THIS provider: a key, a balance or a
+        # permission is per provider when a fallback list exists, and the
+        # next link may well accept the same request. On the last link it
+        # is what it always was: the run stops and says so (RB-C). Only an
+        # HTTP status moves a request; an exception with no status is the
+        # client's or ours, and asking another provider would hide it.
+        if more_links and _status_of(e) is not None:
+          _fall_back(path, e)
+          waits = 0
+          continue
         raise
-      # AP-3: every link but the last is waited on for its own budget, then
-      # the request moves on at once; the last link gets the run's whole
-      # patience, so a run with no fallbacks behaves exactly as before.
-      if (_provider_state["index"] < chain - 1
-          and waits >= fallback_policy["waits"]):
+      budget = (0 if _provider_state["probing"]
+                else min(fallback_policy["waits"], policy["attempts"]))
+      if more_links and waits >= budget:
         _fall_back(path, e)
         waits = 0
         continue
@@ -455,12 +483,15 @@ def _send(path, attempt, create):
       waits += 1
       delay = _retry_after(e)
       if delay is None:
-        delay = min(policy["max_delay"],
-                    policy["base_delay"] * (2 ** (waits - 1)))
+        delay = policy["base_delay"] * (2 ** (waits - 1))
+      # The provider's own number is obeyed, but not past the run's cap: a
+      # Retry-After of an hour is one call holding the whole simulation.
+      delay = min(policy["max_delay"], delay)
       llm_trace.record_rate_limit(path, status=_status_of(e) or
                                   (429 if _is_rate_limit(e) else None),
                                   attempt=waits, of=policy["attempts"],
-                                  delay=delay, error=e)
+                                  delay=delay, error=e,
+                                  provider=_provider_name(provider_pin()))
       print("rate limit on %s: waiting %.1fs (%d of %d)"
             % (path, delay, waits, policy["attempts"]))
       _sleep(delay)

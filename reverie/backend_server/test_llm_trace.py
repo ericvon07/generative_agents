@@ -319,10 +319,22 @@ class Stubbed(OwnTrace):
     # the ledger, and a test does not get to touch the run's cost logs.
     gpt_structure.cost_logger = type(
         "Silent", (), {"update_cost": lambda self, *a, **k: None})()
+    # The ambient config may declare provider fallbacks (AP-3); every suite
+    # here is about one provider unless it says otherwise, and the state the
+    # chain keeps between requests must not leak from one case to the next.
+    self.real_fallbacks = gpt_structure.openai_config.pop(
+        "model-provider-fallbacks", None)
+    self.real_provider_state = dict(gpt_structure._provider_state)
+    gpt_structure._provider_state.update({"index": 0, "since": None,
+                                          "probing": False})
 
   def tearDown(self):
     gpt_structure.client = self.real_client
     gpt_structure.cost_logger = self.real_logger
+    if self.real_fallbacks is not None:
+      gpt_structure.openai_config["model-provider-fallbacks"] = self.real_fallbacks
+    gpt_structure._provider_state.clear()
+    gpt_structure._provider_state.update(self.real_provider_state)
 
 class TransportFailure(Stubbed, unittest.TestCase):
   """A backend that did not answer is not a backend that answered badly."""
@@ -454,8 +466,9 @@ def rate_limited(retry_after=None):
       response=response, body=None)
 
 
-class RideOut(Stubbed, unittest.TestCase):
-  """A provider's rate limit costs time, never a stage and never an answer."""
+class RideOutSetup(Stubbed):
+  """The ride-out's fixture: a recorded sleep and a small budget, for cases
+  about one provider's bad minute. Not a TestCase: see Stubbed."""
 
   POLICY = {"attempts": 3, "base_delay": 2.0, "max_delay": 60.0}
 
@@ -472,6 +485,10 @@ class RideOut(Stubbed, unittest.TestCase):
     gpt_structure._sleep = self.real_sleep
     gpt_structure.rate_limit_policy = self.real_policy
     Stubbed.tearDown(self)
+
+
+class RideOut(RideOutSetup, unittest.TestCase):
+  """A provider's rate limit costs time, never a stage and never an answer."""
 
   # --- case 13 (S1.1, S1.2): the limit passes and the run does not notice ---
 
@@ -562,7 +579,7 @@ class EmptyStub(Stub):
     return Stub.create(self, **kwargs)
 
 
-class TheRouterSEmptyAnswer(RideOut):
+class TheRouterSEmptyAnswer(RideOutSetup, unittest.TestCase):
   """011-IP, the night of the windows: an empty body and a hung request are
   ridden out like a 429, and never reach the cost ledger."""
 
@@ -623,6 +640,15 @@ class TheRouterSEmptyAnswer(RideOut):
     # One wait each for the 502, the 412 and the 404, none for the 402.
     self.assertEqual([2.0, 2.0, 2.0], self.slept)
 
+  def test_the_provider_s_retry_after_is_capped_at_the_run_s_max_delay(self):
+    gpt_structure.client = Stub(error=rate_limited(retry_after=3600),
+                                text="kitchen", fails=1)
+    gpt_structure.safe_generate_response(
+        "where is Isabella?", self.PARAMS, repeat=5, fail_safe_response="bed",
+        func_validate=lambda r, prompt: True,
+        func_clean_up=lambda r, prompt: r)
+    self.assertEqual([60.0], self.slept)
+
   def test_an_empty_response_that_never_ends_still_raises(self):
     gpt_structure.client = EmptyStub(fails=99)
     with self.assertRaises(gpt_structure.BackendTransportError):
@@ -682,7 +708,8 @@ class OurSideFallback(Stubbed, unittest.TestCase):
     gpt_structure.rate_limit_policy = {"attempts": 4, "base_delay": 2.0,
                                        "max_delay": 60.0}
     gpt_structure.fallback_policy = {"waits": 2, "return_after": 900.0}
-    gpt_structure._provider_state.update({"index": 0, "since": None})
+    gpt_structure._provider_state.update({"index": 0, "since": None,
+                                          "probing": False})
     gpt_structure.openai_config["model-provider"] = dict(self.PIN)
     gpt_structure.openai_config["model-provider-fallbacks"] = ["novita",
                                                                "friendli"]
@@ -752,16 +779,70 @@ class OurSideFallback(Stubbed, unittest.TestCase):
     self.assertEqual(5, asked.count("friendli"))
     self.assertEqual([], self.records("outcome"))
 
-  def test_a_permanent_error_does_not_move_the_request(self):
+  def _permanent(self, code=402):
     import httpx
     from openai import APIStatusError
     req = httpx.Request("POST", "https://openrouter.ai/api/v1/chat/completions")
-    gpt_structure.client = ProviderStub(
-        APIStatusError("Error code: 402", response=httpx.Response(402, request=req),
-                       body=None), {"crusoe": None})
+    return APIStatusError("Error code: %d" % code,
+                          response=httpx.Response(code, request=req), body=None)
+
+  def test_a_permanent_error_moves_the_request_at_once_when_a_fallback_exists(self):
+    """A balance or a key is per provider under AP-3 as amended -- the primary
+    is on the account's own credit -- so the next link is asked, without a
+    wait, and the move is recorded with the error."""
+    gpt_structure.client = ProviderStub(self._permanent(402), {"crusoe": None})
+    self.assertEqual("kitchen", self.ask())
+    self.assertEqual(["crusoe", "novita"], gpt_structure.client.asked)
+    self.assertEqual([], self.slept)
+    switch = self.records("provider_switch")
+    self.assertEqual(["fallback"], [r["reason"] for r in switch])
+    self.assertIn("402", switch[0]["error"])
+
+  def test_an_exception_with_no_status_does_not_move_the_request(self):
+    """A ConnectionError from the client, a bug of ours: nothing another
+    provider could answer, and moving would hide it."""
+    gpt_structure.client = ProviderStub(ConnectionError("refused"), {"crusoe": None})
     with self.assertRaises(gpt_structure.BackendTransportError):
       self.ask()
     self.assertEqual(["crusoe"], gpt_structure.client.asked)
+    self.assertEqual([], self.records("provider_switch"))
+
+  def test_a_permanent_error_on_the_last_link_still_raises(self):
+    gpt_structure.client = ProviderStub(
+        self._permanent(402), {"crusoe": None, "novita": None, "friendli": None})
+    with self.assertRaises(gpt_structure.BackendTransportError):
+      self.ask()
+    self.assertEqual(["crusoe", "novita", "friendli"], gpt_structure.client.asked)
+    self.assertEqual([], self.slept)
+
+  def test_the_per_provider_budget_is_clamped_to_the_run_s(self):
+    """The review of 2026-09-24: with waits-per-provider above rate-limit
+    attempts the old loop raised before it ever fell back."""
+    gpt_structure.fallback_policy = {"waits": 10, "return_after": 900.0}
+    gpt_structure.client = ProviderStub(rate_limited(), {"crusoe": None})
+    self.assertEqual("kitchen", self.ask())
+    # attempts is 4: four waits on crusoe, then novita.
+    self.assertEqual(["crusoe"] * 5 + ["novita"], gpt_structure.client.asked)
+    self.assertEqual([2.0, 4.0, 8.0, 16.0], self.slept)
+
+  def test_the_return_is_one_request_and_moves_on_if_it_fails(self):
+    gpt_structure.client = ProviderStub(rate_limited(), {"crusoe": None})
+    self.ask()
+    self.assertEqual([2.0, 4.0], self.slept)
+    self.now[0] += 901
+    self.ask()
+    # One request to crusoe, no wait, straight back to novita.
+    self.assertEqual(["crusoe", "crusoe", "crusoe", "novita", "crusoe", "novita"],
+                     gpt_structure.client.asked)
+    self.assertEqual([2.0, 4.0], self.slept)
+    self.assertEqual(["fallback", "return", "fallback"],
+                     [r["reason"] for r in self.records("provider_switch")])
+
+  def test_a_wait_names_the_provider_it_was_on(self):
+    gpt_structure.client = ProviderStub(rate_limited(), {"crusoe": None, "novita": 1})
+    self.ask()
+    self.assertEqual(["crusoe", "crusoe", "novita"],
+                     [r["provider"] for r in self.records("rate_limit")])
 
   def test_without_fallbacks_nothing_changes(self):
     gpt_structure.openai_config.pop("model-provider-fallbacks")

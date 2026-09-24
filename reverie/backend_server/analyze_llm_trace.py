@@ -501,7 +501,11 @@ def _social(records, label):
   for r in records:
     if r.get("event") != "decision" or r.get("label") != label:
       continue
-    if r.get("subject") and r.get("other") and _p_yes(r) is not None:
+    # A fail-safe row carries no probabilities at all (decision._failsafe),
+    # and it is exactly the row the failure rate is made of: keep it, and
+    # let the caller separate answered asks from the holes.
+    if r.get("subject") and r.get("other") and (
+        _p_yes(r) is not None or r.get("gave_up")):
       out.append(r)
   out.sort(key=lambda r: (r.get("step") or 0))
   return out
@@ -528,18 +532,27 @@ def report_social(records, tail=0.30):
     print("")
 
   for label in SOCIAL_LABELS:
-    rows = _social(records, label)
-    if not rows:
+    asks = _social(records, label)
+    if not asks:
       continue
-    values = [_p_yes(r) for r in rows]
-    eps = _episodes(rows)
-    engaged = [r for r in rows if _p_yes(r) > 0.5]
-    gave_up = sum(1 for r in rows if r.get("gave_up"))
-    equals_fs = sum(1 for r in rows if r.get("is_fail_safe"))
+    gave_up = sum(1 for r in asks if r.get("gave_up"))
+    equals_fs = sum(1 for r in asks if r.get("is_fail_safe"))
+    # Every figure below is over the asks the backend answered; the asks it
+    # gave up on are counted once, as gave_up, and never as a probability.
+    rows = [r for r in asks if _p_yes(r) is not None]
+    eps = _episodes(asks)
 
     print("SOCIAL: %s" % label)
-    print("  %d asks in %d episodes (%.1f per episode); p median %.3f, max %.3f"
-          % (len(rows), len(eps), float(len(rows)) / len(eps),
+    if not rows:
+      print("  %d asks in %d episodes, every one a fail-safe (gave_up: %d)"
+            % (len(asks), len(eps), gave_up))
+      print("")
+      continue
+    values = [_p_yes(r) for r in rows]
+    engaged = [r for r in rows if _p_yes(r) > 0.5]
+    print("  %d asks in %d episodes (%.1f per episode), %d answered; "
+          "p median %.3f, max %.3f"
+          % (len(asks), len(eps), float(len(asks)) / len(eps), len(rows),
              median(values), max(values)))
     print("  above 0.50: %d of %d asks (%.1f%%), %d of %d episodes (%.1f%%)"
           % (len(engaged), len(rows), 100.0 * len(engaged) / len(rows),

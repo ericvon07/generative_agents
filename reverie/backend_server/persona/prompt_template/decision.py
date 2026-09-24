@@ -405,6 +405,14 @@ def _ask(label, state, question, fail_safe):
     raise ValueError(
         "decision '%s' reached the jev backend without a state; the call site "
         "must pass the facts its prompt spells out" % label)
+  # D7: a question whose instruction says "the text above" must be handed
+  # text. A dictionary here would be sent, answered with a confidence, and
+  # recorded as a normal decision -- a well-formed question about nothing.
+  if (jev_questions.state_form(label) == "composed"
+      and not isinstance(state, str)):
+    raise ValueError(
+        "decision '%s' is asked over the paper's composed text (D7) but the "
+        "call site passed a %s" % (label, type(state).__name__))
   try:
     return jev.ask(state, {_QUESTION_KEY: question}, label=label)
   except jev.JevError as e:

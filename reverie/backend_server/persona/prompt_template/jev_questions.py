@@ -199,10 +199,12 @@ QUESTIONS = {
 #                         rendered from the same prompt_input with the answer
 #                         cue stripped (gpt_structure.composed_state).
 #
-# NOT ON THE RUN PATH YET. QUESTIONS below is what the simulation asks; what
-# follows is the alternate block probe_questions.py selects. Step 5 of 011-IP
-# moves the winner into QUESTIONS, under deviation D7, and the entry in
-# decision-seam.md quotes whatever lands in full so it can be audited against
+# ON THE RUN PATH SINCE D7 (011-IP step 5, 2026-09-23): the composed state is
+# what the simulation sends for the four questions, put into QUESTIONS by the
+# landing loop at the end of this file, which keeps the instruction it
+# replaced under instructions_before_d7 for the probe. The descriptive form
+# below lost the probe and stays as the record of what was compared; the
+# entry in decision-seam.md quotes what landed so it can be audited against
 # the prompt it paraphrases.
 
 ORPHAN_KEYS = {
