@@ -43,7 +43,7 @@
     },
     "model-timeout": 120,
     "rate-limit": {
-        "attempts": 10,
+        "attempts": 40,
         "base-delay": 2.0,
         "max-delay": 120.0
     },

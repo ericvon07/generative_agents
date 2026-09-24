@@ -292,10 +292,16 @@ class EmptyResponse(Exception):
 
 def _is_transient(e):
   """A request that got no answer, as against one that got a refusal: the
-  router's empty body, the client's timeout, a dropped connection. Ridden out
-  from the same budget as a 429 and recorded the same way; when the budget
-  runs out it raises, unchanged, exactly as a 429 does."""
-  return isinstance(e, (EmptyResponse, APITimeoutError, APIConnectionError))
+  router's empty body, the client's timeout, a dropped connection, and any
+  5xx -- a 502 from Crusoe ended the third attempt at 011-IP's typed window.
+  Ridden out from the same budget as a 429 and recorded the same way; when
+  the budget runs out it raises, unchanged, exactly as a 429 does. A 4xx
+  other than 429 -- a key, a balance, a malformed request -- is not waited
+  on: no amount of patience fixes a configuration."""
+  if isinstance(e, (EmptyResponse, APITimeoutError, APIConnectionError)):
+    return True
+  status = _status_of(e)
+  return status is not None and 500 <= status < 600
 
 
 def _retry_after(e):
