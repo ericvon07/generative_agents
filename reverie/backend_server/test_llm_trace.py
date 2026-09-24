@@ -552,6 +552,57 @@ class RideOut(Stubbed, unittest.TestCase):
     self.assertEqual(1.5, self.records("rate_limit")[-1]["delay_s"])
 
 
+class EmptyStub(Stub):
+  """The router's ~300 s cut: a 200 with no choices, for the first <fails>."""
+
+  def create(self, **kwargs):
+    if self.calls < (self.fails or 0):
+      self.calls += 1
+      return type("R", (), {"choices": None, "usage": None, "model": None})()
+    return Stub.create(self, **kwargs)
+
+
+class TheRouterSEmptyAnswer(RideOut):
+  """011-IP, the night of the windows: an empty body and a hung request are
+  ridden out like a 429, and never reach the cost ledger."""
+
+  def test_an_empty_response_is_ridden_out(self):
+    gpt_structure.client = EmptyStub(text="kitchen", fails=2)
+    answer = gpt_structure.safe_generate_response(
+        "where is Isabella?", self.PARAMS, repeat=5,
+        fail_safe_response="bed",
+        func_validate=lambda r, prompt: True,
+        func_clean_up=lambda r, prompt: r)
+    self.assertEqual("kitchen", answer)
+    self.assertEqual([2.0, 4.0], self.slept)
+    waits = self.records("rate_limit")
+    self.assertEqual([None, None], [w["status"] for w in waits])
+    self.assertEqual(1, len(self.records("call")))
+
+  def test_a_timeout_is_ridden_out(self):
+    import httpx
+    from openai import APITimeoutError
+    timeout = APITimeoutError(request=httpx.Request(
+        "POST", "https://openrouter.ai/api/v1/chat/completions"))
+    gpt_structure.client = Stub(error=timeout, text="kitchen", fails=1)
+    gpt_structure.safe_generate_response(
+        "where is Isabella?", self.PARAMS, repeat=5,
+        fail_safe_response="bed",
+        func_validate=lambda r, prompt: True,
+        func_clean_up=lambda r, prompt: r)
+    self.assertEqual([2.0], self.slept)
+
+  def test_an_empty_response_that_never_ends_still_raises(self):
+    gpt_structure.client = EmptyStub(fails=99)
+    with self.assertRaises(gpt_structure.BackendTransportError):
+      gpt_structure.safe_generate_response(
+          "where is Isabella?", self.PARAMS, repeat=5,
+          fail_safe_response="kitchen",
+          func_validate=lambda r, prompt: True,
+          func_clean_up=lambda r, prompt: r)
+    self.assertEqual([], self.records("outcome"))
+
+
 class Episodes(OwnTrace, unittest.TestCase):
   """A social decision says who it was about, and which encounter it was part
   of.

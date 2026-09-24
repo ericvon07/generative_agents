@@ -41,6 +41,12 @@
     "json-no-fence": {
         "enabled": true
     },
+    "model-timeout": 120,
+    "rate-limit": {
+        "attempts": 10,
+        "base-delay": 2.0,
+        "max-delay": 120.0
+    },
     "run": {
         "seed": 20260922
     }

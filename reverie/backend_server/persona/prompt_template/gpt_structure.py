@@ -9,7 +9,8 @@ import re
 import time 
 import json
 from pathlib import Path
-from openai import AzureOpenAI, OpenAI, RateLimitError
+from openai import (AzureOpenAI, OpenAI, RateLimitError, APITimeoutError,
+                    APIConnectionError)
 
 from utils import *
 from openai_cost_logger import DEFAULT_LOG_PATH
@@ -127,9 +128,14 @@ def setup_client(type: str, config: dict):
   elif type == "openai":
     # base_url is optional: None -> api.openai.com. Set it to point at any
     # OpenAI-compatible server (Ollama: http://localhost:11434/v1, vLLM, ...).
+    # "timeout" is set for the generator only (011-IP, the night of the
+    # windows): the SDK's default is 600 s, and a request the router left
+    # hanging held a run for five minutes before it came back empty.
+    kwargs = {"timeout": config["timeout"]} if config.get("timeout") else {}
     client = OpenAI(
         api_key=config["key"],
         base_url=config.get("base_url"),
+        **kwargs
     )
   else:
     raise ValueError("Invalid client")
@@ -145,6 +151,7 @@ elif openai_config["client"] == "openai":
   client = setup_client("openai", {
       "key": _resolve_key(openai_config, "model-key", "model-key-env"),
       "base_url": openai_config.get("model-base-url"),
+      "timeout": openai_config.get("model-timeout"),
   })
 else:
   raise ValueError("Invalid client")
@@ -273,6 +280,24 @@ def _is_rate_limit(e):
   return isinstance(e, RateLimitError) or _status_of(e) == 429
 
 
+class EmptyResponse(Exception):
+  """The router answered 200 with no choices and no usage.
+
+  Seen twice in the first hour of 011-IP's typed window, each after exactly
+  ~300 s: the router's own cut of a request the provider left hanging. Nothing
+  came back that anyone could read, so it is ridden out like a 429 -- the
+  paper's code used to reach the cost ledger with it and die there.
+  """
+
+
+def _is_transient(e):
+  """A request that got no answer, as against one that got a refusal: the
+  router's empty body, the client's timeout, a dropped connection. Ridden out
+  from the same budget as a 429 and recorded the same way; when the budget
+  runs out it raises, unchanged, exactly as a 429 does."""
+  return isinstance(e, (EmptyResponse, APITimeoutError, APIConnectionError))
+
+
 def _retry_after(e):
   """The provider's own instruction, when it sends one. Preferred over the
   backoff: a number the provider chose beats a number we guessed."""
@@ -325,17 +350,21 @@ def _send(path, attempt, create):
     try:
       response = create()
       attempt.stop()
+      if not getattr(response, "choices", None):
+        raise EmptyResponse("the router answered with no choices")
       return response
     except Exception as e:
       attempt.stop()
-      if not _is_rate_limit(e) or waits >= policy["attempts"]:
+      if (not (_is_rate_limit(e) or _is_transient(e))
+          or waits >= policy["attempts"]):
         raise
       waits += 1
       delay = _retry_after(e)
       if delay is None:
         delay = min(policy["max_delay"],
                     policy["base_delay"] * (2 ** (waits - 1)))
-      llm_trace.record_rate_limit(path, status=_status_of(e) or 429,
+      llm_trace.record_rate_limit(path, status=_status_of(e) or
+                                  (429 if _is_rate_limit(e) else None),
                                   attempt=waits, of=policy["attempts"],
                                   delay=delay, error=e)
       print("rate limit on %s: waiting %.1fs (%d of %d)"
