@@ -411,13 +411,17 @@ def ChatGPT_request(prompt):
   return completion.choices[0].message.content
 
 
-# An EXPERIMENT, off by default, measured in 011-IP's second shakedown
-# (GT-8). gemma-4-31b-it wraps its JSON in a markdown fence, and the parser
-# below cuts at the last "}" but never at the first "{", so a correct answer is
-# thrown away. The repair of the parser belongs to 009-IP; this asks the model
-# instead, with one sentence, to see whether asking is enough. It changes the
-# text of every prompt on this path, so it is never on in a run anyone cites
-# without a deviation number of its own.
+# Deviation D11 (011-IP, GT-8). gemma-4-31b-it wraps its JSON in a markdown
+# fence, and the parser below cuts at the last "}" but never at the first "{",
+# so a correct answer is thrown away -- 213 of 213 responses on the 011-IP
+# shakedown, 0 of 76 once this sentence was added. The parser's own repair
+# belongs to 009-IP; this asks the model instead.
+#
+# Off by default, so the paper's prompt is byte-identical without it. When on,
+# it is on for EVERY prompt on this path, in both arms -- the generator's own
+# prompts, and on the llm arm the decisions that travel this path (the three
+# poignancy scores). The typed backend never sees it: a jev decision sends a
+# state, not this prompt.
 NO_FENCE_SENTENCE = ("Reply with the JSON object only: no markdown, "
                      "no code fence.")
 

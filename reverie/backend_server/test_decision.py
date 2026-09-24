@@ -722,10 +722,27 @@ class TheNoFenceSentenceIsOffUnlessAsked(unittest.TestCase):
     return sent[0]
 
   def test_off_by_default(self):
+    """A config that does not name the switch gets the paper's prompt,
+    whatever this checkout's own config says."""
     from persona.prompt_template import gpt_structure as gpt
-    if (gpt.openai_config.get("json-no-fence") or {}).get("enabled"):
-      self.skipTest("this checkout's config turns it on")
-    self.assertNotIn("code fence", self._prompt(None))
+    saved = gpt.openai_config.pop("json-no-fence", None)
+    try:
+      self.assertNotIn("code fence", self._prompt(None))
+    finally:
+      if saved is not None:
+        gpt.openai_config["json-no-fence"] = saved
+
+  def test_the_config_turns_it_on(self):
+    from persona.prompt_template import gpt_structure as gpt
+    saved = gpt.openai_config.get("json-no-fence")
+    gpt.openai_config["json-no-fence"] = {"enabled": True}
+    try:
+      self.assertIn("no code fence", self._prompt(None))
+    finally:
+      if saved is None:
+        gpt.openai_config.pop("json-no-fence", None)
+      else:
+        gpt.openai_config["json-no-fence"] = saved
 
   def test_off_leaves_the_papers_lines_adjacent(self):
     self.assertIn("Only emojis.\nExample output json:\n", self._prompt("0"))

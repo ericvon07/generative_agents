@@ -38,6 +38,9 @@
     "domain-guard": {
         "enabled": true
     },
+    "json-no-fence": {
+        "enabled": true
+    },
     "run": {
         "seed": 20260922
     }
