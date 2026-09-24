@@ -592,7 +592,7 @@ class TheRouterSEmptyAnswer(RideOut):
         func_clean_up=lambda r, prompt: r)
     self.assertEqual([2.0], self.slept)
 
-  def test_a_502_and_a_412_are_ridden_out_and_a_402_is_not(self):
+  def test_a_502_a_412_and_a_404_are_ridden_out_and_a_402_is_not(self):
     import httpx
     from openai import InternalServerError, APIStatusError
     def err(cls, code):
@@ -609,14 +609,19 @@ class TheRouterSEmptyAnswer(RideOut):
     gpt_structure.safe_generate_response(
         "where is Isabella?", self.PARAMS, repeat=5, fail_safe_response="bed",
         func_validate=lambda r, prompt: True, func_clean_up=lambda r, prompt: r)
-    self.assertEqual([502, 412], [w["status"] for w in self.records("rate_limit")])
+    gpt_structure.client = Stub(error=err(APIStatusError, 404),
+                                text="kitchen", fails=1)
+    gpt_structure.safe_generate_response(
+        "where is Isabella?", self.PARAMS, repeat=5, fail_safe_response="bed",
+        func_validate=lambda r, prompt: True, func_clean_up=lambda r, prompt: r)
+    self.assertEqual([502, 412, 404], [w["status"] for w in self.records("rate_limit")])
     gpt_structure.client = Stub(error=err(APIStatusError, 402))
     with self.assertRaises(gpt_structure.BackendTransportError):
       gpt_structure.safe_generate_response(
           "where is Isabella?", self.PARAMS, repeat=5, fail_safe_response="bed",
           func_validate=lambda r, prompt: True, func_clean_up=lambda r, prompt: r)
-    # One wait each for the 502 and the 412, none for the 402.
-    self.assertEqual([2.0, 2.0], self.slept)
+    # One wait each for the 502, the 412 and the 404, none for the 402.
+    self.assertEqual([2.0, 2.0, 2.0], self.slept)
 
   def test_an_empty_response_that_never_ends_still_raises(self):
     gpt_structure.client = EmptyStub(fails=99)

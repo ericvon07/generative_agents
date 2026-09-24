@@ -291,11 +291,13 @@ class EmptyResponse(Exception):
 
 
 # The statuses no amount of waiting fixes: a malformed request, a key, a
-# balance, a permission, a model that does not exist. Everything else a
-# provider can say is ridden out -- the night of 011-IP's windows Crusoe
-# answered 429, 502 and 412 ("no available servers") in turn, and each one
-# ended a window the first time it was met.
-_PERMANENT = (400, 401, 402, 403, 404)
+# balance, a permission. Everything else a provider can say is ridden out --
+# the night of 011-IP's windows Crusoe answered 429, 502, 412 ("no available
+# servers") and 404 ("model not found", two hours into a window that had
+# been served by it all along) in turn, and each one ended a window the
+# first time it was met. A model name that is wrong from the start is
+# caught before a run by asking it once, not by this list.
+_PERMANENT = (400, 401, 402, 403)
 
 
 def _is_transient(e):
