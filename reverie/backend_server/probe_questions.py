@@ -72,6 +72,7 @@ import datetime
 from persona.prompt_template import jev
 from persona.prompt_template import jev_questions
 from persona.prompt_template.gpt_structure import composed_state
+from persona.prompt_template import structured_state
 
 PROBE_LABELS = ("action_sector", "action_arena", "decide_to_talk",
                 "decide_to_react")
@@ -201,8 +202,8 @@ def forms_for(label):
   """Which forms apply to <label>. The location pair has no descriptive form:
   twelve options do not get a description each (TS-A)."""
   if jev_questions.descriptive_criteria(label, {"x": "y"}):
-    return ("dictionary", "descriptive", "composed")
-  return ("dictionary", "composed")
+    return ("dictionary", "descriptive", "composed", "structured")
+  return ("dictionary", "composed", "structured")
 
 
 def build(label, form, prompt_input, domain, question_type="choice"):
@@ -215,6 +216,9 @@ def build(label, form, prompt_input, domain, question_type="choice"):
   if form == "composed":
     state = composed_state(prompt_input, TEMPLATES[label])
     instructions = jev_questions.composed_instructions(label) or instructions
+  elif form == "structured":
+    state = structured_state.build(label, prompt_input, domain)
+    instructions = structured_state.instructions(label)
   elif form == "descriptive":
     described = jev_questions.descriptive_criteria(label, criteria)
     if not described:
@@ -356,6 +360,19 @@ HAND_WRITTEN = [
 ]
 
 
+# The social builders ALWAYS write events, one "\n", then thoughts -- the
+# context has that separator even when there are no thoughts. Three of the
+# hand-written contexts above were typed without it, which no call site can
+# produce. The structured form (structured_state.py) reads the separator and
+# refuses a context without one, so they are put in the builder's shape here:
+# the sentences are events, and the thoughts are empty. Rows written before
+# 2026-09-24 asked the unshaped text.
+for _case in HAND_WRITTEN:
+  if _case["label"] in ("decide_to_talk", "decide_to_react"):
+    if "\n" not in _case["prompt_input"][0]:
+      _case["prompt_input"][0] = _case["prompt_input"][0] + "\n"
+
+
 # --- the trace reader -------------------------------------------------------
 
 def read_trace(path):
@@ -414,7 +431,7 @@ def _row(base, extra):
   return row
 
 
-def probe(cases, out, dry_run=False, four_way=True):
+def probe(cases, out, dry_run=False, four_way=True, only_forms=None):
   """Ask every case in every form that applies, writing one row per answer."""
   stamp = datetime.datetime.now().isoformat(timespec="seconds")
   written = 0
@@ -435,7 +452,8 @@ def probe(cases, out, dry_run=False, four_way=True):
             "other": who.get("other"),
             "run": case.get("run"), "step": case.get("step"),
             "reconstruction": case.get("reconstruction")}
-    asks = [(form, "choice") for form in forms_for(label)]
+    asks = [(form, "choice") for form in forms_for(label)
+            if only_forms is None or form in only_forms]
     if four_way and label == "decide_to_talk":
       # The four-way ask (TS-C): the same state as a Noul and as a Choice, on
       # the dictionary and on the composed state. The two Choice halves are
@@ -476,6 +494,9 @@ def main(argv=None):
   parser.add_argument("--limit", type=int, default=None,
                       help="at most this many traced states per label")
   parser.add_argument("--no-four-way", action="store_true")
+  parser.add_argument("--forms", default=None,
+                      help="comma-separated forms to ask (default: every "
+                           "form that applies)")
   args = parser.parse_args(argv)
 
   cases = list(HAND_WRITTEN)
@@ -513,8 +534,9 @@ def main(argv=None):
           "with too small a head; set LLM_TRACE_HEAD and run again"
           % truncated)
   with open(args.out, "w") as out:
+    only = set(args.forms.split(",")) if args.forms else None
     written, skipped = probe(cases, out, dry_run=args.dry_run,
-                             four_way=not args.no_four_way)
+                             four_way=not args.no_four_way, only_forms=only)
   print("(probe): wrote %d rows to %s" % (written, args.out))
   for case, label, form, error in skipped:
     print("(probe): no %s form for %s (%s): %s" % (form, label, case, error))

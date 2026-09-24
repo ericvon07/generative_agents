@@ -50,8 +50,10 @@ import json
 import argparse
 import collections
 
-# TS-A's own order, cheapest first. A tie goes left.
-FORM_COST = ("dictionary", "descriptive", "composed")
+# TS-A's own order, cheapest first. A tie goes left. "structured" (2026-09-24,
+# structured_state.py) is last: it replaces the payload as "composed" does and
+# also needs its own builder at every call site.
+FORM_COST = ("dictionary", "descriptive", "composed", "structured")
 TIE = 0.05
 
 
