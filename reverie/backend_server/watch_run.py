@@ -154,14 +154,21 @@ def examine(row, seen):
 
   elif event == "rate_limit":
     out.append(_flag("rate-limit", row,
-                     "%s waiting %ss (%s of %s)"
-                     % (row.get("path"), row.get("delay"),
-                        row.get("attempt"), row.get("of"))))
+                     "%s waiting %ss (%s of %s), status %s"
+                     % (row.get("path"), row.get("delay_s"),
+                        row.get("ride_attempt"), row.get("ride_budget"),
+                        row.get("status"))))
+
+  elif event == "provider_switch":
+    out.append(_flag("provider", row,
+                     "%s: %s -> %s (%s)"
+                     % (row.get("path"), row.get("from"), row.get("to"),
+                        row.get("reason"))))
 
   elif event == "backend_down":
     out.append(_flag("backend-down", row,
                      "%s down after %s consecutive errors"
-                     % (row.get("backend"), row.get("consecutive"))))
+                     % (row.get("backend"), row.get("consecutive_errors"))))
 
   return out
 

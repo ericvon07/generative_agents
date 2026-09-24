@@ -1,14 +1,18 @@
 {
     "client": "openai",
-    "model": "meta-llama/llama-3.1-8b-instruct",
+    "model": "google/gemma-4-31b-it",
     "model-key-env": "OPEN_ROUTER_API",
     "model-base-url": "https://openrouter.ai/api/v1",
     "model-provider": {
-        "order": ["deepinfra"],
-        "allow_fallbacks": false,
-        "quantizations": ["fp8"]
+        "order": ["crusoe"],
+        "allow_fallbacks": false
     },
-    "model-costs": { "input": 0.02, "output": 0.04 },
+    "model-provider-fallbacks": ["novita", "friendli"],
+    "provider-fallback": {
+        "waits-per-provider": 10,
+        "retry-primary-after-s": 900
+    },
+    "model-costs": { "input": 0.14, "output": 0.4 },
     "embeddings-client": "openai",
     "embeddings": "nomic-embed-text",
     "embeddings-key": "ollama",

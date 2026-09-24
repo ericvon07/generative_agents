@@ -634,6 +634,143 @@ class TheRouterSEmptyAnswer(RideOut):
     self.assertEqual([], self.records("outcome"))
 
 
+class ProviderStub(Stub):
+  """Answers or fails by which provider the request is pinned to.
+
+  <down> maps a provider slug to how many requests pinned to it fail (None:
+  every one). Records the order of providers asked, which is the whole of
+  what AP-3 changes."""
+
+  def __init__(self, error, down, text="kitchen"):
+    Stub.__init__(self, text=text)
+    self.fail_error = error
+    self.down = dict(down)
+    self.asked = []
+
+  def create(self, **kwargs):
+    who = ((kwargs.get("extra_body") or {}).get("provider") or {}).get(
+        "order", [None])[0]
+    self.asked.append(who)
+    if who in self.down:
+      left = self.down[who]
+      if left is None or left > 0:
+        if left is not None:
+          self.down[who] = left - 1
+        self.calls += 1
+        raise self.fail_error
+    return Stub.create(self, **kwargs)
+
+
+class OurSideFallback(Stubbed, unittest.TestCase):
+  """AP-3: each request is pinned to one provider; this code moves it to the
+  next only after the first failed for its whole budget, and back after a
+  cooldown."""
+
+  PIN = {"order": ["crusoe"], "allow_fallbacks": False}
+
+  def setUp(self):
+    Stubbed.setUp(self)
+    self.slept = []
+    self.now = [1000.0]
+    self.saved = (gpt_structure._sleep, gpt_structure.rate_limit_policy,
+                  gpt_structure.fallback_policy, gpt_structure._clock,
+                  dict(gpt_structure._provider_state),
+                  {k: gpt_structure.openai_config.get(k) for k in
+                   ("model-provider", "model-provider-fallbacks")})
+    gpt_structure._sleep = self._sleep
+    gpt_structure._clock = lambda: self.now[0]
+    gpt_structure.rate_limit_policy = {"attempts": 4, "base_delay": 2.0,
+                                       "max_delay": 60.0}
+    gpt_structure.fallback_policy = {"waits": 2, "return_after": 900.0}
+    gpt_structure._provider_state.update({"index": 0, "since": None})
+    gpt_structure.openai_config["model-provider"] = dict(self.PIN)
+    gpt_structure.openai_config["model-provider-fallbacks"] = ["novita",
+                                                               "friendli"]
+
+  def _sleep(self, seconds):
+    self.slept.append(seconds)
+    self.now[0] += seconds
+
+  def tearDown(self):
+    (gpt_structure._sleep, gpt_structure.rate_limit_policy,
+     gpt_structure.fallback_policy, gpt_structure._clock, state,
+     config) = self.saved
+    gpt_structure._provider_state.clear()
+    gpt_structure._provider_state.update(state)
+    for k, v in config.items():
+      if v is None:
+        gpt_structure.openai_config.pop(k, None)
+      else:
+        gpt_structure.openai_config[k] = v
+    Stubbed.tearDown(self)
+
+  def ask(self):
+    return gpt_structure.safe_generate_response(
+        "where is Isabella?", self.PARAMS, repeat=5, fail_safe_response="bed",
+        func_validate=lambda r, prompt: True,
+        func_clean_up=lambda r, prompt: r)
+
+  def test_a_blip_never_moves_the_request(self):
+    gpt_structure.client = ProviderStub(rate_limited(), {"crusoe": 2})
+    self.assertEqual("kitchen", self.ask())
+    self.assertEqual(["crusoe"] * 3, gpt_structure.client.asked)
+    self.assertEqual([], self.records("provider_switch"))
+
+  def test_a_sustained_failure_moves_to_the_next_and_says_so(self):
+    gpt_structure.client = ProviderStub(rate_limited(), {"crusoe": None})
+    self.assertEqual("kitchen", self.ask())
+    # Two waits on crusoe (its budget), then at once to novita.
+    self.assertEqual(["crusoe", "crusoe", "crusoe", "novita"],
+                     gpt_structure.client.asked)
+    self.assertEqual([2.0, 4.0], self.slept)
+    switch = self.records("provider_switch")
+    self.assertEqual([("crusoe", "novita", "fallback")],
+                     [(r["from"], r["to"], r["reason"]) for r in switch])
+    # The call record carries the pin it was actually sent with.
+    self.assertEqual(["novita"],
+                     self.records("call")[-1]["provider_pin"]["order"])
+
+  def test_the_next_request_stays_on_the_fallback_then_returns(self):
+    gpt_structure.client = ProviderStub(rate_limited(), {"crusoe": 3})
+    self.ask()
+    self.ask()
+    self.assertEqual("novita", gpt_structure.client.asked[-1])
+    self.now[0] += 901
+    self.ask()
+    self.assertEqual("crusoe", gpt_structure.client.asked[-1])
+    self.assertEqual(["fallback", "return"],
+                     [r["reason"] for r in self.records("provider_switch")])
+
+  def test_the_last_provider_gets_the_whole_patience_then_it_raises(self):
+    gpt_structure.client = ProviderStub(
+        rate_limited(), {"crusoe": None, "novita": None, "friendli": None})
+    with self.assertRaises(gpt_structure.BackendTransportError):
+      self.ask()
+    asked = gpt_structure.client.asked
+    self.assertEqual(3, asked.count("crusoe"))
+    self.assertEqual(3, asked.count("novita"))
+    self.assertEqual(5, asked.count("friendli"))
+    self.assertEqual([], self.records("outcome"))
+
+  def test_a_permanent_error_does_not_move_the_request(self):
+    import httpx
+    from openai import APIStatusError
+    req = httpx.Request("POST", "https://openrouter.ai/api/v1/chat/completions")
+    gpt_structure.client = ProviderStub(
+        APIStatusError("Error code: 402", response=httpx.Response(402, request=req),
+                       body=None), {"crusoe": None})
+    with self.assertRaises(gpt_structure.BackendTransportError):
+      self.ask()
+    self.assertEqual(["crusoe"], gpt_structure.client.asked)
+
+  def test_without_fallbacks_nothing_changes(self):
+    gpt_structure.openai_config.pop("model-provider-fallbacks")
+    gpt_structure.client = ProviderStub(rate_limited(), {"crusoe": 3})
+    self.assertEqual("kitchen", self.ask())
+    self.assertEqual(["crusoe"] * 4, gpt_structure.client.asked)
+    self.assertEqual([], self.records("provider_switch"))
+
+
 class Episodes(OwnTrace, unittest.TestCase):
   """A social decision says who it was about, and which encounter it was part
   of.

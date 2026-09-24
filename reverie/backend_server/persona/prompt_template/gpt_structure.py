@@ -76,17 +76,86 @@ def _resolve_key(config, key_field, env_field):
   return value
 
 
+def _provider_chain():
+  """The pins this run may send, in order: the configured one, then one per
+  name in "model-provider-fallbacks", each the same block with its "order"
+  replaced. Empty when nothing is pinned.
+
+  AP-3: the fallback is ours, not the router's. Each request is pinned to
+  ONE provider with allow_fallbacks off, so the router never moves a call on
+  its own; this code moves it, only after a sustained failure, and says so
+  in the trace.
+  """
+  pin = openai_config.get("model-provider")
+  if not (isinstance(pin, dict) and pin):
+    return []
+  chain = [pin]
+  for name in openai_config.get("model-provider-fallbacks") or []:
+    fallback = dict(pin)
+    fallback["order"] = [name]
+    chain.append(fallback)
+  return chain
+
+
+def _fallback_policy(config):
+  """How long a provider is waited on before the call moves to the next,
+  and how long the call stays there before the first is tried again."""
+  block = config.get("provider-fallback") or {}
+  return {"waits": int(block.get("waits-per-provider", 10)),
+          "return_after": float(block.get("retry-primary-after-s", 900))}
+
+
+fallback_policy = _fallback_policy(openai_config)
+
+# Which link of the chain requests go to now, and since when. Module state
+# because a run is one process; swapped by the tests.
+_provider_state = {"index": 0, "since": None}
+_clock = time.time
+
+
 def provider_pin():
-  """The `provider` block sent with every request to the router, or None.
+  """The `provider` block sent with THIS request to the router, or None.
 
   One entry in `order` with `allow_fallbacks: false` is what makes a remote
   run one condition rather than an average over whoever was cheapest that
   minute: the weights, the quantization and the serving stack all move when
   the provider does. It is sent only when configured, so the Ollama path
-  keeps sending exactly the body it sent before this plan (law 2).
+  keeps sending exactly the body it sent before this plan (law 2). Under
+  AP-3 it is the link of the chain the run is on; without fallbacks
+  configured that is always the configured pin.
   """
-  pin = openai_config.get("model-provider")
-  return pin if isinstance(pin, dict) and pin else None
+  chain = _provider_chain()
+  if not chain:
+    return None
+  return chain[min(_provider_state["index"], len(chain) - 1)]
+
+
+def _provider_name(pin):
+  return ((pin or {}).get("order") or [None])[0]
+
+
+def _maybe_return_to_primary(path):
+  """After return_after seconds on a fallback, the next request tries the
+  configured provider again."""
+  if _provider_state["index"] == 0:
+    return
+  if _clock() - (_provider_state["since"] or 0) < fallback_policy["return_after"]:
+    return
+  frm = _provider_name(provider_pin())
+  _provider_state["index"] = 0
+  _provider_state["since"] = None
+  llm_trace.record_provider_switch(path, frm, _provider_name(provider_pin()),
+                                   reason="return")
+
+
+def _fall_back(path, error):
+  frm = _provider_name(provider_pin())
+  _provider_state["index"] += 1
+  _provider_state["since"] = _clock()
+  to = _provider_name(provider_pin())
+  llm_trace.record_provider_switch(path, frm, to, reason="fallback",
+                                   error=error)
+  print("provider %s kept failing on %s: moving to %s" % (frm, path, to))
 
 
 def _extra_body():
@@ -358,6 +427,8 @@ def _send(path, attempt, create):
   reproducibility and a wait is not allowed to draw from that stream.
   """
   policy = rate_limit_policy
+  chain = len(_provider_chain())
+  _maybe_return_to_primary(path)
   waits = 0
   while True:
     attempt.start()
@@ -369,8 +440,17 @@ def _send(path, attempt, create):
       return response
     except Exception as e:
       attempt.stop()
-      if (not (_is_rate_limit(e) or _is_transient(e))
-          or waits >= policy["attempts"]):
+      if not (_is_rate_limit(e) or _is_transient(e)):
+        raise
+      # AP-3: every link but the last is waited on for its own budget, then
+      # the request moves on at once; the last link gets the run's whole
+      # patience, so a run with no fallbacks behaves exactly as before.
+      if (_provider_state["index"] < chain - 1
+          and waits >= fallback_policy["waits"]):
+        _fall_back(path, e)
+        waits = 0
+        continue
+      if waits >= policy["attempts"]:
         raise
       waits += 1
       delay = _retry_after(e)

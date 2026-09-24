@@ -699,6 +699,31 @@ def record_rate_limit(path, status, attempt, of, delay, error=None,
     pass
 
 
+def record_provider_switch(path, frm, to, reason, error=None, label=None):
+  """A request moved from one provider to another (AP-3).
+
+  reason "fallback": <frm> failed for its whole budget and the request is
+  being resent pinned to <to>. reason "return": the run spent its cooldown on
+  a fallback and the next request tries the configured provider again. The
+  provider that actually answered each call stays on its call record; this
+  is the moment the run chose to ask someone else.
+  """
+  if not _config["enabled"]:
+    return
+  try:
+    _emit({
+        "event": "provider_switch",
+        "label": label or _caller_label(),
+        "path": path,
+        "from": frm,
+        "to": to,
+        "reason": reason,
+        "error": _head(error),
+    })
+  except Exception:
+    pass
+
+
 def record_backend_down(backend, consecutive, error):
   """The backend stopped answering and the run is giving up on it.
 

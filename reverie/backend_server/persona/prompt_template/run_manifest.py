@@ -239,6 +239,10 @@ def apply(fork_sim_code=None, sim_code=None, steps=None):
           # quantizations and two serving stacks (RB-E). Null on a run that
           # does not route.
           "provider_pin": cfg.get("model-provider"),
+          # AP-3: the providers this run's own code may move a request to,
+          # in order, after the pinned one fails for its budget. Absent
+          # when none are configured.
+          "provider_fallbacks": cfg.get("model-provider-fallbacks") or None,
           "embeddings": cfg.get("embeddings"),
           "embeddings_base_url": cfg.get("embeddings-base-url"),
       },
