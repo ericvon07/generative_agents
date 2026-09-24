@@ -20,6 +20,7 @@ from persona.prompt_template.gpt_structure import (generate_prompt,
                                                    strip_answer_cue)
 from persona.prompt_template import run_gpt_prompt
 import probe_questions
+import probe_budget
 
 
 # --- fixtures ---------------------------------------------------------------
@@ -437,6 +438,56 @@ class SocialFieldsSurviveAStringState(unittest.TestCase):
   def test_no_counterparty_still_means_no_social_fields(self):
     from persona.prompt_template import decision
     self.assertIsNone(decision._social_fields(None, "prose"))
+
+
+class TheBudgetProbesCopiedValidators(unittest.TestCase):
+  """probe_budget.py decides whether a response would be ACCEPTED by copying
+  the two social call sites' validators, which are closures and cannot be
+  imported. A copy that drifts from its original would report a budget for a
+  run that does not behave that way, so these read the call sites' own source
+  and fail the moment either cue string moves."""
+
+  def setUp(self):
+    import inspect
+    self.source = inspect.getsource(run_gpt_prompt)
+
+  def _body_of(self, function_name):
+    """The source of one call-site function, up to the next one."""
+    start = self.source.index("def %s(" % function_name)
+    rest = self.source[start + 1:]
+    nxt = rest.find("\ndef ")
+    return rest[:nxt] if nxt != -1 else rest
+
+  def test_decide_to_talk_still_splits_on_the_cue_probe_budget_copied(self):
+    body = self._body_of("run_gpt_prompt_decide_to_talk")
+    self.assertIn('split("%s")' % probe_budget.TALK_CUE, body)
+
+  def test_decide_to_react_still_splits_on_the_cue_probe_budget_copied(self):
+    body = self._body_of("run_gpt_prompt_decide_to_react")
+    self.assertIn('split("%s")' % probe_budget.REACT_CUE, body)
+
+  def test_the_copied_validators_answer_as_the_call_sites_do(self):
+    talk, _ = probe_budget.VALIDATORS["decide_to_talk"]
+    react, _ = probe_budget.VALIDATORS["decide_to_react"]
+    self.assertTrue(talk("Reasoning: blah. Answer in yes or no: yes"))
+    self.assertTrue(talk("no"))
+    self.assertFalse(talk("Reasoning: blah."))
+    self.assertTrue(react("Reasoning: blah. Answer: Option 2"))
+    self.assertFalse(react("Reasoning: blah."))
+
+  def test_the_papers_own_cue_is_not_the_validators_cue(self):
+    """The template asks for the answer after `Answer in "yes" or "no":` and
+    the validator splits on `Answer in yes or no:`. The two differ by the
+    quotes, both come from the paper's Initial commit, and a model that obeys
+    the template exactly is therefore rejected. If this test ever fails, one
+    of the two was changed and D9's reasoning has to be re-read."""
+    template = probe_questions.TEMPLATES["decide_to_talk"]
+    with open(template) as handle:
+      text = handle.read()
+    self.assertIn('Answer in "yes" or "no":', text)
+    self.assertNotIn(probe_budget.TALK_CUE, text)
+    talk, _ = probe_budget.VALIDATORS["decide_to_talk"]
+    self.assertFalse(talk('Answer in "yes" or "no": no'))
 
 
 if __name__ == "__main__":
