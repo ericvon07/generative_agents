@@ -14,8 +14,11 @@ glob. Every `reject` record is re-validated under the three tolerances of
 LP-D and filed as ACCEPTED (D6 would have kept it), STILL REJECTED (with the
 reason -- ambiguous, truncated, or a prompt D6 does not touch) or UNJUDGEABLE
 (the recorded head was cut before the answer could be read). Beside them,
-per prompt: how many times the prompt was asked (`outcome` records) and how
-many times its fail-safe entered the world (`failsafe: true`).
+per prompt: how many `outcome` records it left and how many of them gave up
+(`failsafe: true`). focal_pt leaves two per call when its chat path gives up
+-- the paper then asks its old completion prompt -- so its outcomes are split
+by resolver: "gave up" on the chat path is three wasted calls, "gave up" on
+the completion path is ["Who am I"] * n entering the world.
 
 What the trace lets the replay see, per path:
 
@@ -143,6 +146,10 @@ class Tally(object):
   def __init__(self):
     self.asked = collections.Counter()
     self.fell_back = collections.Counter()
+    # focal_pt has two resolvers in a row -- the chat path, then the paper's
+    # old completion prompt when the chat path gives up -- and one logical
+    # call can leave two outcomes. Kept apart so "fell back" says WHICH.
+    self.by_resolver = collections.defaultdict(collections.Counter)
     self.rejected = collections.Counter()
     self.verdicts = collections.defaultdict(collections.Counter)
     self.reasons = collections.defaultdict(collections.Counter)
@@ -153,8 +160,11 @@ class Tally(object):
     label = record.get("label")
     if event == "outcome":
       self.asked[label] += 1
+      resolver = record.get("resolver") or "?"
+      self.by_resolver[label][(resolver, "asked")] += 1
       if record.get("failsafe"):
         self.fell_back[label] += 1
+        self.by_resolver[label][(resolver, "gave up")] += 1
     elif event == "reject":
       self.rejected[label] += 1
       verdict, reason = judge(record)
@@ -175,6 +185,12 @@ class Tally(object):
           label.replace("run_gpt_prompt_", ""), self.asked[label],
           self.rejected[label], self.fell_back[label],
           v[ACCEPTED], v[STILL], v[UNJUDGEABLE]))
+      resolvers = sorted({r for r, _ in self.by_resolver[label]})
+      if len(resolvers) > 1:
+        for r in resolvers:
+          lines.append("%-40s %30s %5d asked, %d gave up" % (
+              "", r, self.by_resolver[label][(r, "asked")],
+              self.by_resolver[label][(r, "gave up")]))
       for (verdict, reason), n in sorted(self.reasons[label].items(),
                                          key=lambda kv: -kv[1]):
         lines.append("%-40s %30s %5d  %s" % ("", verdict, n, reason))

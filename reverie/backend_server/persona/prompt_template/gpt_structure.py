@@ -17,6 +17,7 @@ from openai_cost_logger import DEFAULT_LOG_PATH
 from persona.prompt_template.openai_logger_singleton import OpenAICostLogger_Singleton
 from persona.prompt_template import env_file
 from persona.prompt_template import llm_trace
+from persona.prompt_template import lenient_parser
 
 config_path = Path("../../openai_config.json")
 with open(config_path, "r") as f:
@@ -587,8 +588,13 @@ def ChatGPT_safe_generate_response(prompt,
     llm_trace.set_attempt(i + 1)
     try: 
       curr_gpt_response = ChatGPT_request(prompt).strip()
-      end_index = curr_gpt_response.rfind('}') + 1
-      curr_gpt_response = curr_gpt_response[:end_index]
+      if lenient_parser.enabled():
+        # D6, tolerance 2 (009-IP, GT-8): the object starts at the first
+        # "{" as well as ending at the last "}", so a fenced answer parses.
+        curr_gpt_response = lenient_parser.json_cut(curr_gpt_response)
+      else:
+        end_index = curr_gpt_response.rfind('}') + 1
+        curr_gpt_response = curr_gpt_response[:end_index]
       curr_gpt_response = json.loads(curr_gpt_response)["output"]
       
       if func_validate(curr_gpt_response, prompt=prompt): 

@@ -38,6 +38,7 @@ from persona.persona import *
 from persona.prompt_template import llm_trace
 from persona.prompt_template import decision
 from persona.prompt_template import domain_guard
+from persona.prompt_template import lenient_parser
 from persona.prompt_template import run_manifest
 
 current_file = os.path.abspath(__file__)
@@ -483,6 +484,7 @@ class ReverieServer:
     # Whether an out-of-domain answer ends the run or is replaced, said before
     # the first step rather than inferred from the trace afterwards.
     print (domain_guard.status())
+    print (lenient_parser.status())
     # The commit and the seed, so the log of a run says what the run was
     # without anyone having to open the trace.
     print (run_manifest.status())
