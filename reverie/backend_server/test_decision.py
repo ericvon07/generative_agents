@@ -598,5 +598,80 @@ class D9TheBudgetHasANumberBehindIt(unittest.TestCase):
                            % (label, longest))
 
 
+class TheWatcherSeesWhatItWasBuiltFor(unittest.TestCase):
+  """watch_run.py is pointed at a window that has never run this code, so it
+  must be known to fire. Each case here is a row shaped exactly as the trace
+  writes it, and the brace case is GT-3's own answer out of cmpD2-llm's
+  trace -- the one that killed a run one step later."""
+
+  def _kinds(self, row):
+    import watch_run
+    return set(line.split("]")[0].strip("[") for line in
+               watch_run.examine(row, None))
+
+  def _decision(self, **kw):
+    row = {"event": "decision", "label": "action_sector", "step": 3420,
+           "persona": "Isabella Rodriguez", "answer": "the Ville",
+           "is_fail_safe": False, "gave_up": False, "in_domain": True}
+    row.update(kw)
+    return row
+
+  def test_the_brace_that_killed_a_run_is_seen(self):
+    self.assertIn("BRACE", self._kinds(self._decision(answer="{Hobbs Cafe")))
+
+  def test_a_clean_answer_raises_nothing(self):
+    self.assertEqual(self._kinds(self._decision()), set())
+
+  def test_a_fail_safe_and_a_give_up_are_separate_flags(self):
+    kinds = self._kinds(self._decision(is_fail_safe=True, gave_up=True,
+                                       answer="kitchen"))
+    self.assertIn("FAIL-SAFE", kinds)
+    self.assertIn("GAVE-UP", kinds)
+
+  def test_out_of_domain_is_seen_even_when_the_guard_did_not_fire(self):
+    self.assertIn("OUT-OF-DOMAIN",
+                  self._kinds(self._decision(in_domain=False,
+                                             answer="kitchen")))
+
+  def test_the_guard_substituting_is_gt_3(self):
+    self.assertIn("GUARD", self._kinds(
+        {"event": "guard", "label": "action_arena", "step": 3420,
+         "persona": "Isabella Rodriguez", "answer": "kitchen",
+         "replacement": "bathroom"}))
+
+  def test_a_social_prompt_cut_at_the_budget_says_d9_is_short(self):
+    kinds = self._kinds({"event": "reject", "step": 4000, "persona": "x",
+                         "label": "run_gpt_prompt_decide_to_talk",
+                         "reason": "truncated"})
+    self.assertIn("TRUNCATED", kinds)
+
+  def test_an_ordinary_validation_rejection_is_counted_not_flagged(self):
+    """Rejections are the 009-IP tally, not an interruption: a run that
+    rejects and then succeeds is the paper's retry loop working."""
+    kinds = self._kinds({"event": "reject", "step": 4000, "persona": "x",
+                         "label": "run_gpt_prompt_action_sector",
+                         "reason": "validate_false"})
+    self.assertEqual(kinds, set())
+
+  def test_a_transport_failure_is_flagged_because_the_pin_forbids_fallbacks(self):
+    kinds = self._kinds({"event": "reject", "step": 4000, "persona": "x",
+                         "label": "run_gpt_prompt_action_sector",
+                         "reason": "transport:RateLimitError"})
+    self.assertIn("TRANSPORT", kinds)
+
+  def test_the_tally_counts_rejections_by_label_and_reason(self):
+    import watch_run
+    tally = watch_run.Tally()
+    for _ in range(3):
+      tally.add({"event": "reject", "label": "run_gpt_prompt_action_sector",
+                 "reason": "validate_false", "step": 1})
+    tally.add({"event": "decision", "label": "action_sector", "step": 1,
+               "is_fail_safe": True})
+    digest = tally.digest()
+    self.assertIn("action_sector", digest)
+    self.assertIn("validate_false 3", digest)
+    self.assertIn("1 (100%)", digest)
+
+
 if __name__ == "__main__":
   unittest.main(verbosity=2)
