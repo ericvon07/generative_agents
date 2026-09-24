@@ -428,8 +428,22 @@ def response_facts(response):
   except Exception:
     pass
   try:
-    cost = getattr(getattr(response, "usage", None), "cost", None)
+    usage = getattr(response, "usage", None)
+    cost = getattr(usage, "cost", None)
     facts["cost"] = None if cost is None else float(cost)
+    # With the account's own provider key (BYOK, AP-3), OpenRouter reports
+    # only its own fee in "cost" -- 0 inside the free allowance -- and the
+    # provider's charge in cost_details.upstream_inference_cost, billed to
+    # the provider account. The call cost both; a ledger that read "cost"
+    # alone would book every call as free and the bill guard would go blind.
+    if getattr(usage, "is_byok", False):
+      details = getattr(usage, "cost_details", None) or {}
+      upstream = (details.get("upstream_inference_cost")
+                  if isinstance(details, dict)
+                  else getattr(details, "upstream_inference_cost", None))
+      if upstream is not None:
+        facts["cost"] = (facts["cost"] or 0.0) + float(upstream)
+      facts["byok"] = True
   except Exception:
     pass
   return facts

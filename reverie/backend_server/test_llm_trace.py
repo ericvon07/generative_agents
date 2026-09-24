@@ -771,6 +771,28 @@ class OurSideFallback(Stubbed, unittest.TestCase):
     self.assertEqual([], self.records("provider_switch"))
 
 
+class ByokCost(unittest.TestCase):
+  """AP-3: a call on the account's own provider key costs the provider's
+  charge plus OpenRouter's fee, not the 0 the router reports as "cost"."""
+
+  def _response(self, usage):
+    return type("R", (), {"choices": [], "provider": "Novita",
+                          "usage": type("U", (), usage)()})()
+
+  def test_the_upstream_charge_is_counted(self):
+    facts = llm_trace.response_facts(self._response(
+        {"cost": 0, "is_byok": True,
+         "cost_details": {"upstream_inference_cost": 1.48e-05}}))
+    self.assertAlmostEqual(1.48e-05, facts["cost"])
+    self.assertTrue(facts["byok"])
+
+  def test_a_shared_pool_call_is_read_as_before(self):
+    facts = llm_trace.response_facts(self._response(
+        {"cost": 2.0e-05, "is_byok": False}))
+    self.assertAlmostEqual(2.0e-05, facts["cost"])
+    self.assertNotIn("byok", facts)
+
+
 class Episodes(OwnTrace, unittest.TestCase):
   """A social decision says who it was about, and which encounter it was part
   of.
