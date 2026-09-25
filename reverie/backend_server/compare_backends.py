@@ -440,6 +440,7 @@ def summary(conditions, price_by_backend):
   rows = [
       ("trace files", lambda c: "%d" % len(c.files)),
       ("backend", lambda c: c.backend),
+      ("world", world_of),
       ("code", fmt_code),
       ("code tree", fmt_tree),
       ("seed", fmt_seed),
@@ -685,6 +686,36 @@ def answers(conditions, label):
   print("")
 
 
+class CrossWorldPair(Exception):
+  """Two conditions from two worlds. Raised, not warned (010-IP LK-G): the
+  one provenance check that is not a caveat, because a W1 rate and a W2 rate
+  are two experiments, and TR-1 says a table that sets them side by side is a
+  bug."""
+
+
+def world_of(condition):
+  """The condition's world. A trace written before the field existed is the
+  paper's Ville by construction -- every run before 010-IP was -- so it reads
+  W1; a condition whose stages disagree reads MIXED."""
+  if not condition.manifests:
+    return "W1"
+  world = condition.provenance("world")
+  return "W1" if world is None else str(world)
+
+
+def check_worlds(conditions):
+  """Raise CrossWorldPair when the conditions do not share one world."""
+  worlds = [(c.prefix, world_of(c)) for c in conditions]
+  if any(w == "MIXED" for _, w in worlds):
+    raise CrossWorldPair("a condition's stages ran in different worlds: %s"
+                         % ", ".join("%s=%s" % pw for pw in worlds))
+  if len(set(w for _, w in worlds)) > 1:
+    raise CrossWorldPair("the conditions are in different worlds (%s): a "
+                         "rate from one world is not compared with a rate "
+                         "from another (TR-1, 010-IP LK-G)"
+                         % ", ".join("%s=%s" % pw for pw in worlds))
+
+
 def provenance_warnings(conditions):
   """Everything that would make the table above a comparison of two things
   that are not the same experiment. Printed rather than raised: an old trace
@@ -747,6 +778,11 @@ def main():
   if missing:
     sys.exit("no trace file starts with: %s (in %s)"
              % (", ".join(missing), os.path.abspath(args.dir)))
+
+  try:
+    check_worlds(conditions)
+  except CrossWorldPair as e:
+    sys.exit("compare_backends: refused -- %s" % e)
 
   print("=" * 78)
   print("CONDITIONS: %s" % "  vs  ".join(c.prefix for c in conditions))
