@@ -194,13 +194,17 @@ def read(prefix, show_lines):
            len(gave_up)))
   answered = [r for r in dec if not r.get("gave_up")]
   print("   answered without the fail-safe at least once: %s" % bool(answered))
+  # p(reveal) is read from `probabilities`; `confidence` is the vendor's
+  # concentration statistic (the margin, for two options), not p(chosen).
+  def p_reveal(r):
+    return (r.get("probabilities") or {}).get("reveal")
   for ep, rs in episodes.items():
     print("   episode %s: %s" % (ep, " ".join(
-        "%s(%.2f)" % (r["answer"][0], r.get("confidence") or 0) for r in rs)))
+        "%s(p_reveal %.2f)" % (r["answer"][0], p_reveal(r) if p_reveal(r) is not None else -1) for r in rs)))
     for r in rs:
       comp = r.get("companions") or {}
-      print("      step %s %s conf %.2f%s companions asks %.2f offers %.2f trusts %.2f serves %.2f"
-            % (r["step"], r["answer"], r.get("confidence") or 0,
+      print("      step %s %s p(reveal) %.2f%s companions asks %.2f offers %.2f trusts %.2f serves %.2f"
+            % (r["step"], r["answer"], p_reveal(r) if p_reveal(r) is not None else -1,
                " FAIL-SAFE" if r.get("gave_up") else "",
                comp.get("other_asks_about_subject", -1), comp.get("other_offers_stake", -1),
                comp.get("self_trusts_other", -1), comp.get("reveal_serves_goal", -1)))
