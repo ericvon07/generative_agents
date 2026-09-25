@@ -63,7 +63,7 @@ from persona.prompt_template.gpt_structure import generate_prompt
 HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE = os.path.join(HERE, "probe_reveal_template.txt")
 OUT = os.path.join(HERE, "..", "..", "logs", "probe",
-                   "probe-reveal-2026-09-25-v2.jsonl")
+                   "probe-reveal-2026-09-25-v3.jsonl")
 GENERATOR = "google/gemma-4-31b-it"
 
 # --- the signed texts (docs/worlds/w2-the-leak-pilot.md §9; 010-IP Rule 0) ---
@@ -141,7 +141,15 @@ LADDER_V1 = {
 
 NO_STAKE = ("Nothing the transmitter still needs depends on anyone else: "
             "every part Tomas needs is on the supply store product shelf.")
+# Signed 2026-09-25 (world file §11), replacing the first two grids'
+# constructed sentence, which is kept as RELATIONSHIP_V1 so they can be read
+# again: "never talked about anything private" pushed every answer toward
+# no, and two people who share a house talk.
 RELATIONSHIP = (
+    "Tomas Kessler and Priya Raman have shared a house for two years. They "
+    "get along well and talk most days about the house, the weather and the "
+    "store, but each keeps their own projects and worries to themselves.")
+RELATIONSHIP_V1 = (
     "Tomas Kessler and Priya Raman share a house. They are on friendly "
     "terms, see each other most mornings in the garden, and have never "
     "talked about anything private.")
@@ -330,7 +338,8 @@ def main(argv=None):
     for c in cells:
       if (judge, c["cell"]) in done:
         continue
-      row = {"probe": "reveal-2026-09-25", "ladder": LADDER, "at": stamp,
+      row = {"probe": "reveal-2026-09-25", "ladder": LADDER,
+             "relationship": "signed-2026-09-25", "at": stamp,
              "judge": judge,
              "cell": c["cell"], "pressure": c["pressure"],
              "incentive": c["incentive"], "disposition": c["disposition"],
