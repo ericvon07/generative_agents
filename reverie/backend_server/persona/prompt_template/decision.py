@@ -122,6 +122,15 @@ def check_ready():
   """Called once at startup. Returns a human-readable line about how
   decisions will be resolved, and raises before a run begins rather than
   after twenty minutes of it if the chosen backend cannot work."""
+  from persona.prompt_template import world
+  if world.enabled() and _backend != "jev":
+    # 012-ST JF-A: the derived track is typed only. The reveal decision has
+    # no paper prompt to fall back to, so a world on the paper's backend
+    # would run a pilot whose central decision cannot be asked.
+    raise RuntimeError(
+        "the config has a \"world\" section (%s) but decision-backend is %r: "
+        "a world's decisions are asked on the typed backend only (012-ST "
+        "JF-A)" % (world.name(), _backend))
   if _backend == "llm":
     return "decisions: llm (the paper's prompts)"
   if _backend == "jev":
@@ -333,6 +342,62 @@ def _resolve_noul(label, spec, domain, state, fail_safe, social=None):
   llm_trace.record_decision(
       label, domain, answer, backend=_backend, fail_safe=fail_safe,
       gave_up=False, extra=extra)
+  return answer
+
+
+# --- several questions over one state, one of them acted on (010-IP LK-L) ----
+
+def ask_many(label, state, questions, act_on, domain, fail_safe,
+             counterparty=None):
+  """Ask a map of questions over one state in ONE request, act on one.
+
+  The derived track's entry point beside choose() (world_questions.py):
+  the question under <act_on> is a Choice over <domain> and its answer is
+  returned; every other question rides in the same request and is written
+  on the decision event under `companions`, raw, so a weight or a reading
+  can change later without a rerun. Nothing reads the companions back.
+
+  Typed backend only (012-ST JF-A): these questions mirror no paper prompt,
+  so there is nothing for the paper's backend to resolve.
+
+  RETURNS:
+    The answer under <act_on>, or <fail_safe> when the backend never
+    answered (recorded with gave_up: true and backend_error: true).
+  """
+  if _backend != "jev":
+    raise RuntimeError("decision '%s' is a derived-track question and is "
+                       "asked on the typed backend only" % label)
+  if state is None:
+    raise ValueError("decision '%s' reached ask_many without a state" % label)
+  social = _social_fields(counterparty, state)
+  try:
+    answers = jev.ask(state, questions, label=label)
+  except jev.JevError as e:
+    if _options["on-error"] == "raise":
+      raise
+    print("decision: %s fell back to %r (%s)" % (label, fail_safe, e))
+    return _failsafe(label, domain, fail_safe, social)
+
+  answer, probabilities, confidence = jev.read_choice(answers[act_on])
+  companions = {}
+  for key, question in questions.items():
+    if key == act_on:
+      continue
+    kind = question.get("type")
+    if kind == "noul":
+      companions[key] = jev.read_noul(answers[key])
+    elif kind == "score":
+      companions[key] = jev.read_score(answers[key])[0]
+    else:
+      picked, probs, conf = jev.read_choice(answers[key])
+      companions[key] = {"choice": picked, "probabilities": _top(probs)}
+  extra = {"confidence": confidence,
+           "probabilities": _top(probabilities),
+           "question_type": "choice",
+           "companions": companions}
+  extra.update(social or {})
+  llm_trace.record_decision(label, domain, answer, backend=_backend,
+                            fail_safe=fail_safe, gave_up=False, extra=extra)
   return answer
 
 

@@ -1,0 +1,36 @@
+probe_reveal_template.txt -- 010-IP LK-M, JF-A.
+
+The reveal decision in the shape of the paper's decide_to_talk_v2.txt, for
+the generator's curve beside the typed one on the same constructed states.
+No run ever reads this template: the reveal decision is asked on the typed
+backend only (JF-1). It lives beside the probe that uses it.
+
+Variables:
+!<INPUT 0>! -- who the subject is: name, profile, currently
+!<INPUT 1>! -- subject's name
+!<INPUT 2>! -- the secret
+!<INPUT 3>! -- the stake
+!<INPUT 4>! -- the relationship summary
+!<INPUT 5>! -- the time
+!<INPUT 6>! -- what the other is doing
+!<INPUT 7>! -- the conversation so far
+!<INPUT 8>! -- subject's name
+!<INPUT 9>! -- the other's name
+<commentblockmarker>###</commentblockmarker>
+Task -- given context, determine whether the subject will reveal a secret in the next thing they say.
+Format:
+Context: []
+Question: []
+Reasoning: []
+Answer in "yes" or "no": []
+---
+Context: !<INPUT 0>!
+What !<INPUT 1>! knows and has told no one: !<INPUT 2>! !<INPUT 3>!
+!<INPUT 4>!
+Right now, it is !<INPUT 5>!. !<INPUT 6>!
+Here is their conversation so far:
+!<INPUT 7>!
+
+Question: In the next thing !<INPUT 8>! says to !<INPUT 9>!, will !<INPUT 8>! reveal the secret?
+
+Reasoning: Let's think step by step.

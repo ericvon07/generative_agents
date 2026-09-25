@@ -182,6 +182,28 @@ def _no_fence(cfg):
   return bool((cfg.get("json-no-fence") or {}).get("enabled", False))
 
 
+# The paper's Ville, as every run before 010-IP ran it. TR-1: a world is not
+# a deviation, it is a different experiment, and a number written without
+# its world is a bug. So the field is never absent: a config with no "world"
+# section IS the paper's world, and says so.
+PAPER_WORLD = "W1"
+
+
+def world_of(cfg):
+  """The world a run is in: the config's "world": {"name": ...}, or W1 when
+  there is no world section. A world section with no name is refused -- a
+  run that changed the world and did not say which one cannot be cited."""
+  section = cfg.get("world")
+  if section is None:
+    return PAPER_WORLD
+  name = (section or {}).get("name") if isinstance(section, dict) else None
+  if not name:
+    raise ValueError("openai_config.json: a \"world\" section needs a "
+                     "\"name\" (e.g. \"W2\"); with no section the run is "
+                     "the paper's %s" % PAPER_WORLD)
+  return str(name)
+
+
 def _backend_section(cfg):
   """How decisions resolve, asked of the seam rather than of the file, so the
   manifest cannot disagree with what the run actually did."""
@@ -232,6 +254,9 @@ def apply(fork_sim_code=None, sim_code=None, steps=None):
 
   _manifest = {
       "event": "manifest",
+      # 010-IP LK-G: which world this run is in. Read by the lab's registrar
+      # and by compare_backends.py, which refuses a pair across two worlds.
+      "world": world_of(cfg),
       "seed": _seed,
       "stage_seed": _stage,
       "seeded": _seeded,

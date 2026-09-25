@@ -218,6 +218,50 @@ class RunManifest(unittest.TestCase):
     self.assertIn("provider_pin", manifest["model"])
     self.assertIsNone(manifest["model"]["provider_pin"])
 
+  # --- the world (010-IP LK-G, S1.2) -----------------------------------------
+
+  def _apply_with(self, cfg):
+    real = run_manifest._config
+    run_manifest._config = lambda: cfg
+    try:
+      return run_manifest.apply(sim_code=self.sim)
+    finally:
+      run_manifest._config = real
+
+  def test_no_world_section_is_the_papers_world(self):
+    """Every run before 010-IP was the paper's Ville; the field says so
+    rather than being absent."""
+    manifest = self._apply_with({"run": {"seed": 20260922}})
+    self.assertEqual("W1", manifest["world"])
+
+  def test_a_world_section_names_its_world(self):
+    manifest = self._apply_with({"run": {"seed": 20260922},
+                                 "world": {"name": "W2"}})
+    self.assertEqual("W2", manifest["world"])
+
+  def test_a_world_section_with_no_name_is_refused(self):
+    """A run that changed the world and did not say which one could not be
+    cited, so it does not start."""
+    with self.assertRaises(ValueError):
+      self._apply_with({"run": {"seed": 20260922}, "world": {"maze": "x"}})
+
+  def test_the_comparer_refuses_a_pair_across_worlds(self):
+    """S1.3: two worlds side by side is refused, not warned."""
+    import compare_backends as cb
+
+    class Fake(object):
+      def __init__(self, prefix, world):
+        self.prefix = prefix
+        self.manifests = [{"world": world}] if world else []
+      def provenance(self, *path):
+        vals = set(m.get(path[0]) for m in self.manifests)
+        return vals.pop() if len(vals) == 1 else ("MIXED" if vals else None)
+
+    cb.check_worlds([Fake("a", "W1"), Fake("b", "W1")])
+    cb.check_worlds([Fake("a", None), Fake("b", "W1")])  # pre-field trace is W1
+    with self.assertRaises(cb.CrossWorldPair):
+      cb.check_worlds([Fake("a", "W1"), Fake("b", "W2")])
+
   def test_a_call_records_what_answered_beside_what_was_asked_for(self):
     """The pin is what the request asked for; "provider" is what the response
     says actually served it. They ride on the same record precisely so a

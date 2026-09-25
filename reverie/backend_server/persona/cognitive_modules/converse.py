@@ -18,6 +18,7 @@ from persona.memory_structures.scratch import *
 from persona.cognitive_modules.retrieve import *
 from persona.prompt_template.run_gpt_prompt import *
 from persona.prompt_template import llm_trace
+from persona.prompt_template import world
 
 def generate_agent_chat_summarize_ideas(init_persona, 
                                         target_persona, 
@@ -104,7 +105,7 @@ def agent_chat_v1(maze, init_persona, target_persona):
                       summarized_ideas[1])
 
 
-def generate_one_utterance(maze, init_persona, target_persona, retrieved, curr_chat): 
+def generate_one_utterance(maze, init_persona, target_persona, retrieved, curr_chat, reveal=False): 
   # Chat version optimized for speed via batch generation
   curr_context = (f"{init_persona.scratch.name} " + 
               f"was {init_persona.scratch.act_description} " + 
@@ -116,13 +117,24 @@ def generate_one_utterance(maze, init_persona, target_persona, retrieved, curr_c
               f"{target_persona.scratch.name}.")
 
   print ("July 23 5")
-  x = run_gpt_generate_iterative_chat_utt(maze, init_persona, target_persona, retrieved, curr_context, curr_chat)[0]
+  x = run_gpt_generate_iterative_chat_utt(maze, init_persona, target_persona, retrieved, curr_context, curr_chat, reveal=reveal)[0]
 
   print ("July 23 6")
 
   print ("adshfoa;khdf;fajslkfjald;sdfa HERE", x)
 
   return x["utterance"], x["end"]
+
+def _reveal(speaker, listener, relationship, curr_chat):
+  """010-IP LK-C: whether this line may carry the speaker's secret. Asked only
+  of a persona who keeps one; with no world section nobody does, the
+  decision is never asked, and the loop is the paper's."""
+  if not world.keeps_a_secret(speaker.scratch.name):
+    return False
+  answer = run_gpt_prompt_decide_to_reveal(speaker, listener, relationship,
+                                           curr_chat)
+  return answer == "reveal"
+
 
 def agent_chat_v2(maze, init_persona, target_persona): 
   curr_chat = []
@@ -144,7 +156,9 @@ def agent_chat_v2(maze, init_persona, target_persona):
       focal_points = [f"{relationship}", 
                       f"{target_persona.scratch.name} is {target_persona.scratch.act_description}"]
     retrieved = new_retrieve(init_persona, focal_points, 15)
-    utt, end = generate_one_utterance(maze, init_persona, target_persona, retrieved, curr_chat)
+    reveal = _reveal(init_persona, target_persona, relationship, curr_chat)
+    utt, end = generate_one_utterance(maze, init_persona, target_persona, retrieved, curr_chat, reveal=reveal)
+    llm_trace.record_utterance(init_persona.scratch.name, target_persona.scratch.name, utt, reveal, end)
 
     curr_chat += [[init_persona.scratch.name, utt]]
     if end:
@@ -166,7 +180,9 @@ def agent_chat_v2(maze, init_persona, target_persona):
       focal_points = [f"{relationship}", 
                       f"{init_persona.scratch.name} is {init_persona.scratch.act_description}"]
     retrieved = new_retrieve(target_persona, focal_points, 15)
-    utt, end = generate_one_utterance(maze, target_persona, init_persona, retrieved, curr_chat)
+    reveal = _reveal(target_persona, init_persona, relationship, curr_chat)
+    utt, end = generate_one_utterance(maze, target_persona, init_persona, retrieved, curr_chat, reveal=reveal)
+    llm_trace.record_utterance(target_persona.scratch.name, init_persona.scratch.name, utt, reveal, end)
 
     curr_chat += [[target_persona.scratch.name, utt]]
     if end:

@@ -1,0 +1,21 @@
+{
+  "node_1": {
+    "node_count": 1,
+    "type_count": 1,
+    "type": "thought",
+    "depth": 1,
+    "created": "2023-02-13 00:00:00",
+    "expiration": null,
+    "subject": "Tomas Kessler",
+    "predicate": "shares a house with",
+    "object": "Priya Raman",
+    "description": "Tomas Kessler and Priya Raman have shared a house for two years. They get along well and talk most days about the house, the weather and the store, but each keeps their own projects and worries to themselves.",
+    "embedding_key": "Tomas Kessler and Priya Raman have shared a house for two years. They get along well and talk most days about the house, the weather and the store, but each keeps their own projects and worries to themselves.",
+    "poignancy": 5,
+    "keywords": [
+      "Tomas Kessler",
+      "Priya Raman"
+    ],
+    "filling": []
+  }
+}
