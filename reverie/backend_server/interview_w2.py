@@ -2,8 +2,8 @@
 File: interview_w2.py
 Description: the end-of-run interview of the detective (010-IP step 8, world
              file §9 "The interview, renamed"). Reads a run's last checkpoint,
-             asks Priya Raman the two questions through the paper's own
-             open_convo_session(..., "analysis", direct=True), and saves the
+             asks Priya Raman the two questions on the paper's own analysis
+             path (retrieve, summarize, next line; see main), and saves the
              exchange with the memories each answer was built from. It writes
              nothing into the checkpoint.
 
@@ -53,7 +53,8 @@ def main(argv=None):
   llm_trace.set_simulation("%s-interview" % args.prefix)
   from persona.persona import Persona
   from persona.cognitive_modules.retrieve import new_retrieve
-  from persona.cognitive_modules.converse import open_convo_session
+  from persona.cognitive_modules.converse import (generate_summarize_ideas,
+                                                  generate_next_line)
 
   stage = last_stage(args.prefix)
   folder = "%s/%s/personas/%s" % (STORAGE, stage, args.persona)
@@ -65,10 +66,18 @@ def main(argv=None):
             "sim_time": meta.get("curr_time"), "step": meta.get("step"),
             "nodes_in_memory": len(persona.a_mem.id_to_node), "questions": []}
   for q in QUESTIONS:
+    # The paper's open_convo_session(..., "analysis", direct=True) is these
+    # three calls -- retrieve on the question, summarize the retrieved ideas,
+    # generate the next line -- preceded by a "safety score" prompt that it
+    # computes even with safe_mode=False. On 2026-09-25 that prompt fell to
+    # its fail-safe (None) on the routed generator and the session raised
+    # before the question was asked, so the interview walks the same path
+    # without the safety call. Nothing else differs from the paper's.
     retrieved = new_retrieve(persona, [q], 50)[q]
-    convo = open_convo_session(persona, "analysis", safe_mode=False,
-                               direct=True, question=q)
-    answer = convo[-1][1] if convo else None
+    summarized = generate_summarize_ideas(persona, retrieved, q)
+    convo = [["Interviewer", q]]
+    answer = generate_next_line(persona, "Interviewer", convo, summarized)
+    convo.append([persona.scratch.name, answer])
     record["questions"].append({
         "question": q, "answer": answer,
         "supporting": [{"node": n.node_id, "type": n.type,
