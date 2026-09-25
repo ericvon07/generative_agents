@@ -25,6 +25,9 @@ What it holds (010-IP S2.4):
   - LK-O: the map folder is the paper's with no world section, the copy
     the section names with one, and a folder that does not exist is
     refused before a persona is loaded.
+  - 015-IP S1.2: the W3 map copy (the_ville_w3, build_w3.py) is the paper's
+    folder with two houses renamed in the special-blocks CSVs and one
+    object added -- the radio's row and its two tiles -- and nothing else.
 """
 import datetime
 import json
@@ -196,6 +199,66 @@ class NoWorld(unittest.TestCase):
   def test_the_map_is_the_papers(self):
     """LK-O, LK-H: no section, the paper's matrix folder."""
     self.assertEqual(utils.env_matrix, utils.matrix_folder())
+
+
+class W3Map(unittest.TestCase):
+  """015-IP S1.2: the_ville_w3 against the paper's folder, file by file."""
+
+  RENAMES = [("Yuriko Yamamoto's house", "Daniel Okafor's house"),
+             ("Tamara Taylor and Carmen Ortiz's house", "Tomas Kessler's house"),
+             ("Carmen Ortiz's room", "Tomas Kessler's room"),
+             ("Tamara Taylor's room", "spare room")]
+  RADIO_ROW = "32283, the Ville, <all>, shortwave radio"
+  RADIO_TILES = [(53, 20), (54, 20)]
+
+  def setUp(self):
+    world.configure({"name": "W3", "maze": "the_ville_w3"})
+    self.folder = utils.matrix_folder()
+    self.assertEqual("%s/the_ville_w3/matrix" % utils.maze_assets_loc,
+                     self.folder)
+
+  def tearDown(self):
+    world.configure(None)
+
+  def _pair(self, rel):
+    with open(os.path.join(self.folder, rel)) as f:
+      ours = f.read()
+    with open(os.path.join(utils.env_matrix, rel)) as f:
+      papers = f.read()
+    return papers, ours
+
+  def test_the_same_files_as_the_paper(self):
+    def listing(folder):
+      return sorted(os.path.relpath(os.path.join(r, n), folder)
+                    for r, _, ns in os.walk(folder) for n in ns
+                    if n != ".DS_Store")
+    self.assertEqual(listing(utils.env_matrix), listing(self.folder))
+    self.assertEqual(*self._pair("maze_meta_info.json"))
+
+  def test_two_houses_renamed_and_the_radio_row_and_nothing_else(self):
+    for name in os.listdir(os.path.join(self.folder, "special_blocks")):
+      papers, ours = self._pair(os.path.join("special_blocks", name))
+      for old, new in self.RENAMES:
+        papers = papers.replace(old, new)
+      if name == "game_object_blocks.csv":
+        papers += "\n" + self.RADIO_ROW
+      self.assertEqual(papers, ours, name)
+
+  def test_the_radios_two_tiles_and_no_other_cell(self):
+    with open(os.path.join(self.folder, "maze_meta_info.json")) as f:
+      width = int(json.load(f)["maze_width"])
+    for name in os.listdir(os.path.join(self.folder, "maze")):
+      papers, ours = self._pair(os.path.join("maze", name))
+      if name != "game_object_maze.csv":
+        self.assertEqual(papers, ours, name)
+        continue
+      a, b = papers.split(", "), ours.split(", ")
+      self.assertEqual(len(a), len(b))
+      changed = [(i % width, i // width) for i in range(len(a)) if a[i] != b[i]]
+      self.assertEqual(self.RADIO_TILES, changed)
+      for x, y in self.RADIO_TILES:
+        self.assertEqual("0", a[y * width + x])
+        self.assertEqual("32283", b[y * width + x])
 
 
 class WithWorld(unittest.TestCase):

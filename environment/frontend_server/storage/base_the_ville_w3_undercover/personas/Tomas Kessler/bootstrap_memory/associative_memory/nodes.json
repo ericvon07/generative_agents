@@ -1,0 +1,40 @@
+{
+  "node_1": {
+    "node_count": 1,
+    "type_count": 1,
+    "type": "thought",
+    "depth": 1,
+    "created": "2023-02-13 00:00:00",
+    "expiration": null,
+    "subject": "Tomas Kessler",
+    "predicate": "knows",
+    "object": "Arthur Burton",
+    "description": "Arthur Burton is the owner of The Rose and Crown Pub. Tomas Kessler knows him by sight and by name, and no more.",
+    "embedding_key": "Arthur Burton is the owner of The Rose and Crown Pub. Tomas Kessler knows him by sight and by name, and no more.",
+    "poignancy": 5,
+    "keywords": [
+      "Tomas Kessler",
+      "Arthur Burton"
+    ],
+    "filling": []
+  },
+  "node_2": {
+    "node_count": 2,
+    "type_count": 2,
+    "type": "thought",
+    "depth": 1,
+    "created": "2023-02-13 00:00:00",
+    "expiration": null,
+    "subject": "Tomas Kessler",
+    "predicate": "knows",
+    "object": "Sam Moore",
+    "description": "Sam Moore is a retired navy officer who lives in the Ville. Tomas Kessler knows him by sight and by name, and no more.",
+    "embedding_key": "Sam Moore is a retired navy officer who lives in the Ville. Tomas Kessler knows him by sight and by name, and no more.",
+    "poignancy": 5,
+    "keywords": [
+      "Tomas Kessler",
+      "Sam Moore"
+    ],
+    "filling": []
+  }
+}

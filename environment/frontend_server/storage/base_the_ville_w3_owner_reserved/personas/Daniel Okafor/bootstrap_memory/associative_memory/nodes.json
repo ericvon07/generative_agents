@@ -1,0 +1,59 @@
+{
+  "node_1": {
+    "node_count": 1,
+    "type_count": 1,
+    "type": "thought",
+    "depth": 1,
+    "created": "2023-02-13 00:00:00",
+    "expiration": null,
+    "subject": "Daniel Okafor",
+    "predicate": "knows",
+    "object": "Arthur Burton",
+    "description": "Arthur Burton is the owner of The Rose and Crown Pub. Daniel Okafor knows him by name and by trade, and no more.",
+    "embedding_key": "Arthur Burton is the owner of The Rose and Crown Pub. Daniel Okafor knows him by name and by trade, and no more.",
+    "poignancy": 5,
+    "keywords": [
+      "Daniel Okafor",
+      "Arthur Burton"
+    ],
+    "filling": []
+  },
+  "node_2": {
+    "node_count": 2,
+    "type_count": 2,
+    "type": "thought",
+    "depth": 1,
+    "created": "2023-02-13 00:00:00",
+    "expiration": null,
+    "subject": "Daniel Okafor",
+    "predicate": "knows",
+    "object": "Tomas Kessler",
+    "description": "Tomas Kessler runs Harvey Oak Supply Store. Daniel Okafor knows him by name and by trade, and no more.",
+    "embedding_key": "Tomas Kessler runs Harvey Oak Supply Store. Daniel Okafor knows him by name and by trade, and no more.",
+    "poignancy": 5,
+    "keywords": [
+      "Daniel Okafor",
+      "Tomas Kessler"
+    ],
+    "filling": []
+  },
+  "node_3": {
+    "node_count": 3,
+    "type_count": 3,
+    "type": "thought",
+    "depth": 1,
+    "created": "2023-02-13 00:00:00",
+    "expiration": null,
+    "subject": "Daniel Okafor",
+    "predicate": "knows",
+    "object": "Sam Moore",
+    "description": "Sam Moore is a retired navy officer who lives in the Ville. Daniel Okafor knows him by name and by trade, and no more.",
+    "embedding_key": "Sam Moore is a retired navy officer who lives in the Ville. Daniel Okafor knows him by name and by trade, and no more.",
+    "poignancy": 5,
+    "keywords": [
+      "Daniel Okafor",
+      "Sam Moore"
+    ],
+    "filling": []
+  }
+}
