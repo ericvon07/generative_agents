@@ -22,6 +22,9 @@ What it holds (010-IP S2.4):
     the decision event; a backend error is the fail-safe withhold with
     gave_up: true.
   - JF-A: a world on the paper's backend refuses to start.
+  - LK-O: the map folder is the paper's with no world section, the copy
+    the section names with one, and a folder that does not exist is
+    refused before a persona is loaded.
 """
 import datetime
 import json
@@ -43,6 +46,7 @@ from persona.prompt_template import decision
 from persona.prompt_template import jev
 from persona.prompt_template import run_gpt_prompt
 from persona.cognitive_modules import converse
+import utils
 
 SECRET = ("Tomas is secretly building a radio transmitter in the house "
           "garden to reach his brother outside the Ville.")
@@ -189,6 +193,10 @@ class NoWorld(unittest.TestCase):
   def test_the_paper_backend_starts(self):
     self.assertIn("llm", decision.check_ready())
 
+  def test_the_map_is_the_papers(self):
+    """LK-O, LK-H: no section, the paper's matrix folder."""
+    self.assertEqual(utils.env_matrix, utils.matrix_folder())
+
 
 class WithWorld(unittest.TestCase):
 
@@ -284,6 +292,37 @@ class WithWorld(unittest.TestCase):
     self.assertEqual(long_line, event["text"])
     self.assertTrue(event["injected"])
     self.assertEqual("Priya Raman", event["listener"])
+
+  def test_the_map_is_the_worlds_copy(self):
+    """LK-O: the section's maze selects the copy, and only the three
+    house strings differ from the paper's folder."""
+    folder = utils.matrix_folder()
+    self.assertEqual("%s/the_ville_w2/matrix" % utils.maze_assets_loc, folder)
+    self.assertTrue(os.path.isdir(folder))
+    for name in os.listdir(os.path.join(folder, "special_blocks")):
+      with open(os.path.join(folder, "special_blocks", name)) as f:
+        ours = f.read()
+      with open(os.path.join(utils.env_matrix, "special_blocks", name)) as f:
+        papers = f.read()
+      self.assertEqual(
+          papers.replace("Tamara Taylor and Carmen Ortiz's house",
+                         "Priya Raman and Tomas Kessler's house")
+                .replace("Tamara Taylor's room", "Priya Raman's room")
+                .replace("Carmen Ortiz's room", "Tomas Kessler's room"),
+          ours, name)
+    for name in os.listdir(os.path.join(folder, "maze")):
+      with open(os.path.join(folder, "maze", name)) as f:
+        ours = f.read()
+      with open(os.path.join(utils.env_matrix, "maze", name)) as f:
+        papers = f.read()
+      self.assertEqual(papers, ours, name)
+
+  def test_a_maze_that_does_not_exist_is_refused(self):
+    section = dict(W2)
+    section["maze"] = "the_ville_nowhere"
+    world.configure(section)
+    with self.assertRaises(ValueError):
+      utils.matrix_folder()
 
   def test_a_world_on_the_papers_backend_refuses_to_start(self):
     """012-ST JF-A: the derived track is typed only."""
