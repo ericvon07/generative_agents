@@ -3218,28 +3218,12 @@ def run_gpt_prompt_decide_to_reveal(persona, target_persona, relationship,
   RETURNS: "reveal" or "withhold"; withhold is the fail-safe.
   """
   name = persona.scratch.name
-  last = None
-  for speaker, line in reversed(curr_chat):
-    if speaker != name:
-      last = line
-      break
-  state = {
-      "secret": world.private_text(name),
-      "stake": world.stake(name),
-      "self": {"name": name,
-               "profile": world.profile(name),
-               "currently": persona.scratch.currently},
-      "other": {"name": target_persona.scratch.name,
-                "doing": target_persona.scratch.act_description,
-                "learned": target_persona.scratch.learned},
-      "relationship": relationship,
-      "conversation": [{"speaker": s_, "line": l_} for s_, l_ in curr_chat],
-      "last_utterance": last,
-      "time": persona.scratch.curr_time.strftime("%B %d, %Y, %I:%M %p"),
-      # _social_fields reads the subject from here, as on the other two
-      # social decisions.
-      "subject": name,
-  }
+  state = world.reveal_state(
+      world.private_text(name), world.stake(name), name, world.profile(name),
+      persona.scratch.currently, target_persona.scratch.name,
+      target_persona.scratch.act_description, target_persona.scratch.learned,
+      relationship, curr_chat,
+      persona.scratch.curr_time.strftime("%B %d, %Y, %I:%M %p"))
   return decision.ask_many(
       "decide_to_reveal", state, world_questions.reveal_questions(),
       world_questions.REVEAL_ACT_ON, world_questions.REVEAL_DOMAIN,

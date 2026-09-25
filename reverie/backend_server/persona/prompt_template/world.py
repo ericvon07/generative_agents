@@ -125,3 +125,31 @@ def inject(part_one, persona_name, reveal):
   if line is None:
     return part_one
   return "%s\n%s" % (part_one, line)
+
+
+def reveal_state(secret, stake, self_name, profile, currently, other_name,
+                 other_doing, other_learned, relationship, conversation, time):
+  """The eight-field state of the reveal decision (010-IP LK-C), built in
+  one place so the sim (run_gpt_prompt_decide_to_reveal) and the dose grid
+  (probe_reveal.py) send the same shape. <conversation> is a list of
+  [speaker, line]; the last line not spoken by <self_name> is
+  `last_utterance`."""
+  last = None
+  for speaker, line in reversed(conversation):
+    if speaker != self_name:
+      last = line
+      break
+  return {
+      "secret": secret,
+      "stake": stake,
+      "self": {"name": self_name, "profile": profile, "currently": currently},
+      "other": {"name": other_name, "doing": other_doing,
+                "learned": other_learned},
+      "relationship": relationship,
+      "conversation": [{"speaker": s_, "line": l_} for s_, l_ in conversation],
+      "last_utterance": last,
+      "time": time,
+      # decision._social_fields reads the subject from here, as on the
+      # paper's two social decisions.
+      "subject": self_name,
+  }
