@@ -46,6 +46,9 @@
     "json-no-fence": {
         "enabled": true
     },
+    "lenient-parser": {
+        "enabled": true
+    },
     "model-timeout": 120,
     "rate-limit": {
         "attempts": 40,

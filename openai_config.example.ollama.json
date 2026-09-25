@@ -33,6 +33,9 @@
     "domain-guard": {
         "enabled": true
     },
+    "lenient-parser": {
+        "enabled": false
+    },
     "run": {
         "seed": 20260922
     }

@@ -17,6 +17,7 @@ from persona.prompt_template.gpt_structure import *
 from persona.prompt_template.print_prompt import *
 from persona.prompt_template import decision
 from persona.prompt_template import domain_guard
+from persona.prompt_template import lenient_parser
 
 def get_random_alphanumeric(i=6, j=6): 
   """
@@ -605,10 +606,18 @@ def run_gpt_prompt_action_sector(action_description,
 
 
   def __func_clean_up(gpt_response, prompt=""):
+    if lenient_parser.enabled():
+      # D6, tolerance 3 (009-IP, LP-E): both braces come off, so the maze is
+      # never handed the "{" the template put in the model's mouth (GT-3).
+      return lenient_parser.location_clean_up(gpt_response)
     cleaned_response = gpt_response.split("}")[0]
     return cleaned_response
 
   def __func_validate(gpt_response, prompt=""): 
+    if lenient_parser.enabled():
+      # D6, tolerance 3: a missing closing brace is no longer a rejection;
+      # a comma still is (LP-A).
+      return lenient_parser.location_validate(gpt_response)
     if len(gpt_response.strip()) < 1: 
       return False
     if "}" not in gpt_response:
@@ -758,10 +767,18 @@ def run_gpt_prompt_action_arena(action_description,
     return prompt_input
 
   def __func_clean_up(gpt_response, prompt=""):
+    if lenient_parser.enabled():
+      # D6, tolerance 3 (009-IP, LP-E): both braces come off, so the maze is
+      # never handed the "{" the template put in the model's mouth (GT-3).
+      return lenient_parser.location_clean_up(gpt_response)
     cleaned_response = gpt_response.split("}")[0]
     return cleaned_response
 
   def __func_validate(gpt_response, prompt=""): 
+    if lenient_parser.enabled():
+      # D6, tolerance 3: a missing closing brace is no longer a rejection;
+      # a comma still is (LP-A).
+      return lenient_parser.location_validate(gpt_response)
     if len(gpt_response.strip()) < 1: 
       return False
     if "}" not in gpt_response:
@@ -2397,10 +2414,17 @@ def run_gpt_prompt_focal_pt(persona, statements, n, test_input=None, verbose=Fal
 
   # ChatGPT Plugin ===========================================================
   def __chat_func_clean_up(gpt_response, prompt=""): ############
+    if lenient_parser.enabled():
+      # D6, tolerance 1 (009-IP, GT-8): the list is kept as the list it is.
+      return lenient_parser.focal_pt_clean_up(gpt_response)
     ret = ast.literal_eval(gpt_response)
     return ret
 
   def __chat_func_validate(gpt_response, prompt=""): ############
+    if lenient_parser.enabled():
+      # D6, tolerance 1: validated by the chat path's own cleanup, not the
+      # text path's, which raises on a list (GT-8).
+      return lenient_parser.focal_pt_validate(gpt_response)
     try: 
       __func_clean_up(gpt_response, prompt)
       return True
