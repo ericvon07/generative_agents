@@ -1,14 +1,19 @@
 {
     "client": "openai",
-    "model": "meta-llama/llama-3.1-8b-instruct",
+    "model": "google/gemma-4-31b-it",
     "model-key-env": "OPEN_ROUTER_API",
     "model-base-url": "https://openrouter.ai/api/v1",
     "model-provider": {
-        "order": ["deepinfra"],
-        "allow_fallbacks": false,
-        "quantizations": ["fp8"]
+        "order": ["novita"],
+        "allow_fallbacks": false
     },
-    "model-costs": { "input": 0.02, "output": 0.04 },
+    "model-provider-fallbacks": ["crusoe", "friendli"],
+    "_model-provider-note": "AP-3 as amended 2026-09-24: the first provider is the one the account holds its own key for (OpenRouter BYOK); on the shared pool every provider rate-limited every call.",
+    "provider-fallback": {
+        "waits-per-provider": 10,
+        "retry-primary-after-s": 900
+    },
+    "model-costs": { "input": 0.14, "output": 0.4 },
     "embeddings-client": "openai",
     "embeddings": "nomic-embed-text",
     "embeddings-key": "ollama",
@@ -37,6 +42,15 @@
     },
     "domain-guard": {
         "enabled": true
+    },
+    "json-no-fence": {
+        "enabled": true
+    },
+    "model-timeout": 120,
+    "rate-limit": {
+        "attempts": 40,
+        "base-delay": 2.0,
+        "max-delay": 120.0
     },
     "run": {
         "seed": 20260922

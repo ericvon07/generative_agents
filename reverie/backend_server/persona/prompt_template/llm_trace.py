@@ -428,8 +428,22 @@ def response_facts(response):
   except Exception:
     pass
   try:
-    cost = getattr(getattr(response, "usage", None), "cost", None)
+    usage = getattr(response, "usage", None)
+    cost = getattr(usage, "cost", None)
     facts["cost"] = None if cost is None else float(cost)
+    # With the account's own provider key (BYOK, AP-3), OpenRouter reports
+    # only its own fee in "cost" -- 0 inside the free allowance -- and the
+    # provider's charge in cost_details.upstream_inference_cost, billed to
+    # the provider account. The call cost both; a ledger that read "cost"
+    # alone would book every call as free and the bill guard would go blind.
+    if getattr(usage, "is_byok", False):
+      details = getattr(usage, "cost_details", None) or {}
+      upstream = (details.get("upstream_inference_cost")
+                  if isinstance(details, dict)
+                  else getattr(details, "upstream_inference_cost", None))
+      if upstream is not None:
+        facts["cost"] = (facts["cost"] or 0.0) + float(upstream)
+      facts["byok"] = True
   except Exception:
     pass
   return facts
@@ -517,6 +531,13 @@ def record_call(path, model, prompt, response=None, latency=None,
         # must agree for the run to be one condition. None on any backend
         # that does not route (every local one).
         "provider": facts["provider"],
+        # What this call cost, in USD, as response_facts reads it: the
+        # router's figure, plus the provider's own charge under BYOK. None
+        # on a backend that reports nothing. It was only in the ledger until
+        # 2026-09-24, and a trace that cannot be audited for cost is a trace
+        # that cannot check the ledger.
+        "cost": facts["cost"],
+        "byok": bool(facts.get("byok")),
     }
     if extra:
       record.update(extra)
@@ -663,7 +684,7 @@ def record_decision(label, domain, answer, backend=None, fail_safe=None,
 
 
 def record_rate_limit(path, status, attempt, of, delay, error=None,
-                      label=None):
+                      label=None, provider=None):
   """A provider said 429, and the request is about to be made again.
 
   Deliberately its own event rather than a failed "call". Nothing came back
@@ -693,6 +714,34 @@ def record_rate_limit(path, status, attempt, of, delay, error=None,
         "ride_attempt": attempt,
         "ride_budget": of,
         "delay_s": None if delay is None else round(float(delay), 3),
+        # Which pin the request carried when it was refused (AP-3): a wait on
+        # a fallback and a wait on the configured provider are two things.
+        "provider": provider,
+        "error": _head(error),
+    })
+  except Exception:
+    pass
+
+
+def record_provider_switch(path, frm, to, reason, error=None, label=None):
+  """A request moved from one provider to another (AP-3).
+
+  reason "fallback": <frm> failed for its whole budget and the request is
+  being resent pinned to <to>. reason "return": the run spent its cooldown on
+  a fallback and the next request tries the configured provider again. The
+  provider that actually answered each call stays on its call record; this
+  is the moment the run chose to ask someone else.
+  """
+  if not _config["enabled"]:
+    return
+  try:
+    _emit({
+        "event": "provider_switch",
+        "label": label or _caller_label(),
+        "path": path,
+        "from": frm,
+        "to": to,
+        "reason": reason,
         "error": _head(error),
     })
   except Exception:

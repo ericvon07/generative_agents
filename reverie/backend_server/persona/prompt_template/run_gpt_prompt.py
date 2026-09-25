@@ -672,16 +672,16 @@ def run_gpt_prompt_action_sector(action_description,
                                prompt, gpt_param, 5, fail_safe,
                                __func_validate, __func_clean_up),
                            fail_safe=fail_safe,
-                           state={
-                               "persona": prompt_input[0],
-                               "lives_in": prompt_input[1],
-                               "areas_where_they_live": prompt_input[2],
-                               "currently_in": prompt_input[4],
-                               "areas_where_they_are": prompt_input[5],
-                               "daily_plan_requirement": prompt_input[6].strip(),
-                               "current_action": prompt_input[9],
-                               "task": prompt_input[10],
-                           })
+                           # D7: the paper's own last block, rendered from
+                           # the SAME prompt_input `prompt` is built from,
+                           # with the answer cue stripped -- a substring of
+                           # that prompt, character for character. The
+                           # dictionary this replaced is still readable, on
+                           # the question's own entry, under
+                           # `instructions_before_d7`. Chosen by the probe of
+                           # 011-IP step 4; the reasoning is in
+                           # jev_questions.py beside the deviation.
+                           state=composed_state(prompt_input, prompt_template))
   y = f"{maze.access_tile(persona.scratch.curr_tile)['world']}"
   x = [i.strip() for i in persona.s_mem.get_str_accessible_sectors(y).split(",")]
   if output not in x: 
@@ -792,13 +792,16 @@ def run_gpt_prompt_action_arena(action_description,
                                prompt, gpt_param, 5, fail_safe,
                                __func_validate, __func_clean_up),
                            fail_safe=fail_safe,
-                           state={
-                               "persona": prompt_input[0],
-                               "going_to": prompt_input[1],
-                               "areas_there": prompt_input[2],
-                               "current_action": prompt_input[4],
-                               "task": prompt_input[5],
-                           })
+                           # D7: the paper's own last block, rendered from
+                           # the SAME prompt_input `prompt` is built from,
+                           # with the answer cue stripped -- a substring of
+                           # that prompt, character for character. The
+                           # dictionary this replaced is still readable, on
+                           # the question's own entry, under
+                           # `instructions_before_d7`. Chosen by the probe of
+                           # 011-IP step 4; the reasoning is in
+                           # jev_questions.py beside the deviation.
+                           state=composed_state(prompt_input, prompt_template))
   print (output)
   # The authors' domain guard, restored (deviation D4). It stood here, live,
   # in defunct_run_gpt_prompt.py:612-615 and was commented out when the MAR 11
@@ -1358,6 +1361,54 @@ def run_gpt_prompt_new_decomp_schedule(persona,
 
 
 
+# D10: the sentence `decide_to_talk` asks for, read the way it is written.
+#
+# The paper's template ends its format block with `Answer in "yes" or "no": []`
+# and the paper's validator split the response on `Answer in yes or no:` --
+# the same words without the quotes. The split therefore found nothing,
+# returned the whole response, and the whole response is not the word "yes"
+# or the word "no", so a correct answer was rejected five times and the call
+# site's own fail-safe -- which is "yes" -- entered the world.
+#
+# Measured before this was written (CU-1, 011-IP step 6): given 512 tokens,
+# five models wrote 227 answers to this prompt across 546 responses on the
+# fork's own model, and the validator accepted NONE of them, at any model
+# size. Repairing the quotes alone would have accepted none of them either:
+# the small model writes `Answer: no`, the large ones write the template's
+# own sentence and then keep writing, and an exact split fails on both.
+#
+# So this reads the LAST answer the response states and takes the word after
+# it. Deliberately narrow -- one call site, one question, two words -- and
+# deliberately NOT the general lenient parser, which 009-IP designs for all
+# five closed-set decisions and which should absorb this when it lands.
+# `decide_to_react` does not need it: its cue is `Answer: Option`, models
+# write exactly that, and it is read.
+_YES_NO = re.compile(r'\*{0,2}answer\*{0,2}'
+                     r'(?:\s*in\s*"?yes"?\s*or\s*"?no"?)?'
+                     r'\s*\*{0,2}\s*:\s*\*{0,2}\s*(yes|no)\b', re.I)
+
+
+def read_yes_no(gpt_response):
+  """The answer `decide_to_talk` gave, or None.
+
+  RETURNS: "yes", "no", or None when the response states neither.
+  """
+  # The template's own Format block shows the answer in brackets, and a model
+  # that copies it -- `Answer in "yes" or "no": [no]` -- or quotes or bolds
+  # the word is still answering. Punctuation around the word is not the
+  # answer, so it comes off before the cue is read.
+  text = re.sub(r"[\[\]\"'*()]", " ", gpt_response or "")
+  found = None
+  for match in _YES_NO.finditer(text):
+    found = match
+  if found is not None:
+    return found.group(1).lower()
+  # A response that is nothing but the answer -- what the paper's own split
+  # accepted when its cue was absent, kept so that behaviour does not move.
+  bare = text.strip().lower()
+  return bare if bare in ("yes", "no") else None
+
+
 def run_gpt_prompt_decide_to_talk(persona, target_persona, retrieved,test_input=None, 
                                        verbose=False): 
   def create_prompt_input(init_persona, target_persona, retrieved, 
@@ -1395,10 +1446,25 @@ def run_gpt_prompt_decide_to_talk(persona, target_persona, retrieved,test_input=
     if "(" in target_act_desc: 
       target_act_desc = target_act_desc.split("(")[-1][:-1]
     
-    if len(target_persona.scratch.planned_path) == 0 and "waiting" not in init_act_desc: 
+    # D8 (011-IP, TS-D): the target's sentence describes the TARGET.
+    #
+    # The paper built this branch by testing the INITIATOR's activity for
+    # "waiting", and in the middle branch wrote the initiator's name and the
+    # initiator's activity where the target's belong. Whenever the initiator
+    # was waiting, prompt_input[7] therefore said what the initiator was
+    # doing -- a second time -- and the prompt never said what the target was
+    # doing at all. Compare the initiator's own block above, which this now
+    # mirrors line for line. run_gpt_prompt_decide_to_react's builder does
+    # not have the slip (inspected 2026-09-23).
+    #
+    # The repair lands in BOTH arms: law 2 says both conditions receive the
+    # same information, and this is information. The control's prompt text
+    # moves, so a control run after D8 is a NEW CONDITION and never a rerun
+    # of cmpD2-llm.
+    if len(target_persona.scratch.planned_path) == 0 and "waiting" not in target_act_desc: 
       target_p_desc = f"{target_persona.name} is already {target_act_desc}"
-    elif "waiting" in init_act_desc:
-      target_p_desc = f"{init_persona.name} is {init_act_desc}"
+    elif "waiting" in target_act_desc:
+      target_p_desc = f"{target_persona.name} is {target_act_desc}"
     else: 
       target_p_desc = f"{target_persona.name} is on the way to {target_act_desc}"
 
@@ -1422,14 +1488,15 @@ def run_gpt_prompt_decide_to_talk(persona, target_persona, retrieved,test_input=
   
   def __func_validate(gpt_response, prompt=""): 
     try: 
-      if gpt_response.split("Answer in yes or no:")[-1].strip().lower() in ["yes", "no"]: 
-        return True
-      return False     
+      # D10: this used to be a split of the response on the cue
+      # `Answer in yes or no:`, which the paper's own template never writes.
+      # See read_yes_no above.
+      return read_yes_no(gpt_response) is not None
     except:
       return False 
 
   def __func_clean_up(gpt_response, prompt=""):
-    return gpt_response.split("Answer in yes or no:")[-1].strip().lower()
+    return read_yes_no(gpt_response)
 
   def get_fail_safe(): 
     fs = "yes"
@@ -1437,7 +1504,23 @@ def run_gpt_prompt_decide_to_talk(persona, target_persona, retrieved,test_input=
 
 
 
-  gpt_param = {"engine": "gpt-35-turbo-0125", "max_tokens": 20, 
+  # D9 (011-IP, TS-E): the budget, from a measurement.
+  #
+  # Was max_tokens: 20, which does not reach the end of a sentence of
+  # reasoning, so the answer never arrived and the call site's own fail-safe
+  # entered the world -- measured at the token level on cmpD2-llm and
+  # rtrA-llm, where every one of these calls returned exactly 20 output
+  # tokens (SR-1). 160 comes from the probe of 011-IP step 6 on
+  # google/gemma-4-31b-it, the generator the benchmark chose: the answer
+  # lands by token 101 at the 95th percentile on decide_to_talk and 104 on
+  # decide_to_react, and the longest response the probe saw ran to 151. The
+  # margin is chosen to cover that one too, because max_tokens is a ceiling
+  # and costs nothing unless it is used, while a truncation costs a fail-safe.
+  #
+  # The location trio keeps 15 and 20 (SC-C, SR-1): their answers arrive in
+  # 3 to 7 tokens and their budget belongs to the study that owns the model
+  # sweep, not here.
+  gpt_param = {"engine": "gpt-35-turbo-0125", "max_tokens": 160, 
                "temperature": 0, "top_p": 1, "stream": False,
                "frequency_penalty": 0, "presence_penalty": 0, "stop": None}
   prompt_template = "persona/prompt_template/v2/decide_to_talk_v2.txt"
@@ -1456,16 +1539,16 @@ def run_gpt_prompt_decide_to_talk(persona, target_persona, retrieved,test_input=
                            # Who the decision is about. Recorded, never read
                            # back: the answer is the same with it (SV-B).
                            counterparty=target_persona.name,
-                           state={
-                               "subject": prompt_input[2],
-                               "other": prompt_input[3],
-                               "context": prompt_input[0],
-                               "now": prompt_input[1],
-                               "last_chatted_at": prompt_input[4],
-                               "last_chatted_about": prompt_input[5],
-                               "subject_is": prompt_input[6],
-                               "other_is": prompt_input[7],
-                           })
+                           # D7: the paper's own last block, rendered from
+                           # the SAME prompt_input `prompt` is built from,
+                           # with the answer cue stripped -- a substring of
+                           # that prompt, character for character. The
+                           # dictionary this replaced is still readable, on
+                           # the question's own entry, under
+                           # `instructions_before_d7`. Chosen by the probe of
+                           # 011-IP step 4; the reasoning is in
+                           # jev_questions.py beside the deviation.
+                           state=composed_state(prompt_input, prompt_template))
 
   if debug or verbose: 
     print_run_prompts(prompt_template, persona, gpt_param, 
@@ -1553,7 +1636,23 @@ def run_gpt_prompt_decide_to_react(persona, target_persona, retrieved,test_input
     return fs
 
 
-  gpt_param = {"engine": "gpt-35-turbo-0125", "max_tokens": 20, 
+  # D9 (011-IP, TS-E): the budget, from a measurement.
+  #
+  # Was max_tokens: 20, which does not reach the end of a sentence of
+  # reasoning, so the answer never arrived and the call site's own fail-safe
+  # entered the world -- measured at the token level on cmpD2-llm and
+  # rtrA-llm, where every one of these calls returned exactly 20 output
+  # tokens (SR-1). 160 comes from the probe of 011-IP step 6 on
+  # google/gemma-4-31b-it, the generator the benchmark chose: the answer
+  # lands by token 101 at the 95th percentile on decide_to_talk and 104 on
+  # decide_to_react, and the longest response the probe saw ran to 151. The
+  # margin is chosen to cover that one too, because max_tokens is a ceiling
+  # and costs nothing unless it is used, while a truncation costs a fail-safe.
+  #
+  # The location trio keeps 15 and 20 (SC-C, SR-1): their answers arrive in
+  # 3 to 7 tokens and their budget belongs to the study that owns the model
+  # sweep, not here.
+  gpt_param = {"engine": "gpt-35-turbo-0125", "max_tokens": 160, 
                "temperature": 0, "top_p": 1, "stream": False,
                "frequency_penalty": 0, "presence_penalty": 0, "stop": None}
   prompt_template = "persona/prompt_template/v2/decide_to_react_v1.txt"
@@ -1579,14 +1678,16 @@ def run_gpt_prompt_decide_to_react(persona, target_persona, retrieved,test_input
                                        prompt_input[7]),
                                "2": "Continue on to %s now" % prompt_input[8],
                            },
-                           state={
-                               "subject": prompt_input[4],
-                               "other": prompt_input[6],
-                               "context": prompt_input[0],
-                               "now": prompt_input[1],
-                               "subject_is": prompt_input[2],
-                               "other_is": prompt_input[3],
-                           })
+                           # D7: the paper's own last block, rendered from
+                           # the SAME prompt_input `prompt` is built from,
+                           # with the answer cue stripped -- a substring of
+                           # that prompt, character for character. The
+                           # dictionary this replaced is still readable, on
+                           # the question's own entry, under
+                           # `instructions_before_d7`. Chosen by the probe of
+                           # 011-IP step 4; the reasoning is in
+                           # jev_questions.py beside the deviation.
+                           state=composed_state(prompt_input, prompt_template))
 
   if debug or verbose: 
     print_run_prompts(prompt_template, persona, gpt_param, 
@@ -2349,6 +2450,17 @@ def run_gpt_prompt_focal_pt(persona, statements, n, test_input=None, verbose=Fal
 
 
   
+# D12: see run_gpt_prompt_insight_and_guidance.
+INSIGHT_LENGTH_SENTENCE = ("Keep each numbered insight to one sentence "
+                           "followed by its evidence, and write nothing after "
+                           "the last one.")
+
+
+def with_insight_length(prompt):
+  head, tail = prompt.rsplit("\n1.", 1)
+  return head + " " + INSIGHT_LENGTH_SENTENCE + "\n1." + tail
+
+
 def run_gpt_prompt_insight_and_guidance(persona, statements, n, test_input=None, verbose=False): 
   def create_prompt_input(persona, statements, n, test_input=None): 
     prompt_input = [statements, str(n)]
@@ -2379,12 +2491,27 @@ def run_gpt_prompt_insight_and_guidance(persona, statements, n, test_input=None,
 
 
 
-  gpt_param = {"engine": "gpt-35-turbo-0125", "max_tokens": 150, 
+  # D12 (011-IP, found in the first minutes of the typed window, 2026-09-23):
+  # a length the model is told, and a budget that lets it arrive.
+  #
+  # Was max_tokens: 150, sized for gpt-3.5's terse insights. On
+  # google/gemma-4-31b-it every one of the 18 calls in the aborted window
+  # returned exactly 150 tokens: 10 were cut mid-insight, rejected as
+  # truncated and retried identically, and one reflection in nine fell to
+  # "I am hungry". Asked the same 12 real prompts three times at 500, the
+  # model needed 205 tokens at the median, 243 at p95, 260 at most -- five
+  # insights, all 36 valid. 400 covers the longest with margin; a ceiling
+  # costs nothing unless it is used, and a truncation is still named as one.
+  #
+  # The sentence is the north, not the fix (the author's call): with it the
+  # same probe gave 191 / 219 / 236, all 36 valid. It goes before the
+  # trailing "1." so the completion still starts where the paper's does.
+  gpt_param = {"engine": "gpt-35-turbo-0125", "max_tokens": 400, 
                "temperature": 0.5, "top_p": 1, "stream": False,
                "frequency_penalty": 0, "presence_penalty": 0, "stop": None}
   prompt_template = "persona/prompt_template/v2/insight_and_evidence_v1.txt"
   prompt_input = create_prompt_input(persona, statements, n)
-  prompt = generate_prompt(prompt_input, prompt_template)
+  prompt = with_insight_length(generate_prompt(prompt_input, prompt_template))
 
   fail_safe = get_fail_safe(n)
   output = safe_generate_response(prompt, gpt_param, 5, fail_safe,

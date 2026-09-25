@@ -173,6 +173,15 @@ def _config_fingerprint(cfg):
     return None
 
 
+def _no_fence(cfg):
+  """The same rule gpt_structure.no_fence_enabled applies, without importing
+  the client at manifest time."""
+  flag = os.environ.get("JSON_NO_FENCE")
+  if flag is not None:
+    return flag.strip().lower() in ("1", "true", "yes", "on")
+  return bool((cfg.get("json-no-fence") or {}).get("enabled", False))
+
+
 def _backend_section(cfg):
   """How decisions resolve, asked of the seam rather than of the file, so the
   manifest cannot disagree with what the run actually did."""
@@ -239,10 +248,18 @@ def apply(fork_sim_code=None, sim_code=None, steps=None):
           # quantizations and two serving stacks (RB-E). Null on a run that
           # does not route.
           "provider_pin": cfg.get("model-provider"),
+          # AP-3: the providers this run's own code may move a request to,
+          # in order, after the pinned one fails for its budget. Absent
+          # when none are configured.
+          "provider_fallbacks": cfg.get("model-provider-fallbacks") or None,
           "embeddings": cfg.get("embeddings"),
           "embeddings_base_url": cfg.get("embeddings-base-url"),
       },
       "domain_guard": _safe(domain_guard.enabled),
+      # D11 can be switched from the environment, which the config
+      # fingerprint cannot see; the effective value is recorded so two runs
+      # whose JSON prompts differ never share an identity.
+      "json_no_fence": _no_fence(cfg),
       "config_sha1": _config_fingerprint(cfg),
       "python": platform.python_version(),
       "platform": "%s %s" % (platform.system().lower(), platform.machine()),

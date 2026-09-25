@@ -179,6 +179,198 @@ QUESTIONS = {
 }
 
 
+# --- the orphan keys, and the two mechanisms that close them (011-IP TS-A) ---
+#
+# The audit of 2026-09-23: an ORPHAN KEY is a key in the `state` a call site
+# sends that the question's instruction never mentions. The model may look at
+# it; nothing says it should. Every orphan below is a fact the paper's prompt
+# states in a sentence of its own -- nothing is missing from the payload, but
+# nothing tells the model what the fact is for.
+#
+# Two mechanisms are candidates, and the probe of 011-IP step 4 chooses per
+# question:
+#
+#   descriptive criteria  the option descriptions name the orphan keys. The
+#                         instruction does not change, the state does not
+#                         change, the payload grows by two sentences. It fits
+#                         a binary question and not a twelve-option one, so
+#                         only the two social questions get it.
+#   the composed state    the state becomes the paper's own last block,
+#                         rendered from the same prompt_input with the answer
+#                         cue stripped (gpt_structure.composed_state).
+#
+# ON THE RUN PATH SINCE D7 (011-IP step 5, 2026-09-23): the composed state is
+# what the simulation sends for the four questions, put into QUESTIONS by the
+# landing loop at the end of this file, which keeps the instruction it
+# replaced under instructions_before_d7 for the probe. The descriptive form
+# below lost the probe and stays as the record of what was compared; the
+# entry in decision-seam.md quotes what landed so it can be audited against
+# the prompt it paraphrases.
+
+ORPHAN_KEYS = {
+    "action_sector": ("lives_in", "areas_where_they_live",
+                      "areas_where_they_are", "daily_plan_requirement",
+                      "current_action"),
+    "action_arena": ("areas_there", "current_action"),
+    "action_game_object": (),
+    "decide_to_talk": ("last_chatted_at", "last_chatted_about", "subject_is",
+                       "other_is"),
+    "decide_to_react": ("other", "subject_is", "other_is"),
+    "event_poignancy": (),
+    "thought_poignancy": (),
+    "chat_poignancy": (),
+}
+
+
+# The line between naming a fact and steering the answer is thin, and it is
+# the reason these sentences are quoted in the deviation entry rather than
+# only committed. Each one NAMES the keys that bear on the option and asserts
+# nothing about them: no "so they probably would", no "it has been a while".
+# The two descriptions are each other's mirror for exactly that reason -- if
+# one carried a reason the other does not, the payload would be arguing. The
+# two are therefore the SAME SENTENCE apart from "would" / "would not", and
+# test_decision.py holds that character for character.
+_DESCRIPTIVE = {
+    "decide_to_talk": {
+        "yes": ("`subject` would start a conversation with `other` now, "
+                "reading `subject_is` and `other_is` for what each of them is "
+                "doing at `now`, and `last_chatted_at` and "
+                "`last_chatted_about` for when they last spoke and what "
+                "about."),
+        "no": ("`subject` would not start a conversation with `other` now, "
+               "reading `subject_is` and `other_is` for what each of them is "
+               "doing at `now`, and `last_chatted_at` and "
+               "`last_chatted_about` for when they last spoke and what "
+               "about."),
+    },
+}
+
+# decide_to_react's options are built at the call site out of its own
+# prompt_input -- they ARE the paper's Option 1 and Option 2 and nothing here
+# rewrites them. The naming clause is appended instead, so the option text
+# survives verbatim and the orphan keys stop being orphans.
+_DESCRIPTIVE_SUFFIX = {
+    "decide_to_react": (" -- weighed by reading `subject_is` for what "
+                        "`subject` is doing at `now` and `other_is` for what "
+                        "`other` is doing."),
+}
+
+
+def descriptive_criteria(label, criteria=None):
+  """The option descriptions that name <label>'s orphan keys, or None.
+
+  ARGS:
+    label: the decision's name.
+    criteria: what the call site already passes, when it passes any --
+              decide_to_react builds its two options from its prompt_input,
+              and those are appended to, never replaced.
+  RETURNS:
+    {option: description}, or None when this question has no descriptive
+    form (every question whose instruction already names every key, and the
+    location pair, which has too many options for a description each).
+  """
+  if label in _DESCRIPTIVE:
+    return dict(_DESCRIPTIVE[label])
+  suffix = _DESCRIPTIVE_SUFFIX.get(label)
+  if suffix and criteria:
+    return {k: "%s%s" % (v, suffix) for k, v in criteria.items()}
+  return None
+
+
+def orphan_keys(label):
+  """The keys <label>'s state carries that its instruction never names."""
+  return ORPHAN_KEYS.get(label, ())
+
+
+# When the state IS the paper's last block, the instruction cannot go on
+# naming keys in backticks -- there are no keys any more. These point at the
+# paper's own sentence instead of restating it, which is the whole reason the
+# composed form exists: the task line, the "* Stay in the current area"
+# bullets, the "Question: Would ... ?" and the "Of the following three
+# options" are all already IN the state, in the paper's wording. Nothing here
+# adds a criterion; each one says "the answer is to the question already
+# written above".
+COMPOSED_INSTRUCTIONS = {
+    "action_sector": ("The text above ends by naming a task and the area "
+                      "options for it. Which area should the person go to?"),
+    "action_arena": ("The text above ends by naming a task and the areas "
+                     "available for it. Which area should the person go to?"),
+    "decide_to_talk": "Answer the question the text above asks.",
+    "decide_to_react": ("Answer the question the text above asks, choosing "
+                        "one of the options it lists."),
+}
+
+
+def composed_instructions(label):
+  """The instruction that goes with a composed state, or None."""
+  return COMPOSED_INSTRUCTIONS.get(label)
+
+
+# --- D7 LANDS: the four questions take the composed state -------------------
+#
+# 011-IP step 5, on the probe of step 4 (docs/research/, 2026-09-23). The probe
+# asked 260 decide_to_talk, 22 decide_to_react, 182 action_sector and 182
+# action_arena REAL states in every form that applies, plus six hand-written
+# states with two anchors among them.
+#
+# What decided it, on decide_to_talk, was the reciprocal reading: the same
+# encounter asked in both directions at the SAME step, where only the
+# direction differs. The dictionary put a median 0.030 between the two
+# directions; the composed state put 0.180, six times wider, with the widest
+# pair at 0.720. A form that merely pushed every answer upward would move both
+# directions together and leave the gap alone. It did not. That is
+# discrimination and not displacement, and it is the one reading in the probe
+# that could have falsified this deviation.
+#
+# The anchors agree and add a second, independent fact: the separation between
+# the state a reader calls "no" and the one a reader calls "yes" is 0.740 for
+# a Choice on the dictionary and 0.900 for a Choice on the composed state --
+# and 0.470 / 0.600 for a Noul on the same two. D5 (the type) and D7 (the
+# state) are separate effects and they add.
+#
+# THE CRITERION WAS AMENDED, AFTER THE DATA, AND THIS SAYS SO. TS-A said "the
+# form with the wider SPREAD". On the location pair the two ways of measuring
+# spread disagreed: the literal range picked the dictionary, the p10-p90 band
+# picked the composed state. The range picked the dictionary because the
+# dictionary is SATURATED -- it answers 69% of action_arena states at above
+# 0.99 confidence, its body pinned at 1.000, its range bought by a few extreme
+# lows. Saturation is the failure the criterion existed to catch, so the
+# author amended "spread" to mean the p10-p90 band and the amendment is
+# recorded in the plan beside TS-A.
+#
+# decide_to_react IS AN OVERRIDE, NOT A RESULT. Under the amended criterion it
+# tied -- 0.392 for the dictionary against 0.397 for the composed state, well
+# inside TS-A's own 0.05 tie -- and the tie-break sends a tie to the cheaper
+# form, which is the dictionary. The author took the composed state there
+# anyway, for uniformity: a typed arm where three questions read prose and the
+# fourth reads a dictionary is a mixture, not a condition. That is a decision
+# about comparability and not a reading of the probe, and nothing here claims
+# the probe chose it.
+#
+# What each question now sends: the paper's own last block, rendered from the
+# same prompt_input with the answer cue stripped (gpt_structure.composed_state),
+# and an instruction that points at the paper's sentence rather than restating
+# it. `criteria` are untouched -- decide_to_talk keeps D5's two neutral
+# descriptions and decide_to_react keeps the paper's Option 1 and Option 2,
+# which the call site still builds. The `mirrors:` line on each entry still
+# names the template the sentences come from, and it is now load-bearing:
+# composed_state reads that same file.
+
+for _label, _composed in COMPOSED_INSTRUCTIONS.items():
+  _entry = QUESTIONS[_label]
+  # kept so the wording D7 replaced can be read off the entry itself
+  _entry["instructions_before_d7"] = _entry["instructions"]
+  _entry["instructions"] = _composed
+  _entry["state_form"] = "composed"
+del _label, _composed, _entry
+
+
+def state_form(label):
+  """"composed" when the call site must send the paper's last block instead of
+  the dictionary it used to send, else None."""
+  return (QUESTIONS.get(label) or {}).get("state_form")
+
+
 def spec(label):
   """The typed question registered for <label>, or None if this decision has
   not been given a typed form yet."""

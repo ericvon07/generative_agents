@@ -9,7 +9,8 @@ import re
 import time 
 import json
 from pathlib import Path
-from openai import AzureOpenAI, OpenAI, RateLimitError
+from openai import (AzureOpenAI, OpenAI, RateLimitError, APITimeoutError,
+                    APIConnectionError, Stream)
 
 from utils import *
 from openai_cost_logger import DEFAULT_LOG_PATH
@@ -75,17 +76,92 @@ def _resolve_key(config, key_field, env_field):
   return value
 
 
+def _provider_chain():
+  """The pins this run may send, in order: the configured one, then one per
+  name in "model-provider-fallbacks", each the same block with its "order"
+  replaced. Empty when nothing is pinned.
+
+  AP-3: the fallback is ours, not the router's. Each request is pinned to
+  ONE provider with allow_fallbacks off, so the router never moves a call on
+  its own; this code moves it, only after a sustained failure, and says so
+  in the trace.
+  """
+  pin = openai_config.get("model-provider")
+  if not (isinstance(pin, dict) and pin):
+    return []
+  chain = [pin]
+  for name in openai_config.get("model-provider-fallbacks") or []:
+    fallback = dict(pin)
+    fallback["order"] = [name]
+    chain.append(fallback)
+  return chain
+
+
+def _fallback_policy(config):
+  """How long a provider is waited on before the call moves to the next,
+  and how long the call stays there before the first is tried again."""
+  block = config.get("provider-fallback") or {}
+  return {"waits": int(block.get("waits-per-provider", 10)),
+          "return_after": float(block.get("retry-primary-after-s", 900))}
+
+
+fallback_policy = _fallback_policy(openai_config)
+
+# Which link of the chain requests go to now, and since when. Module state
+# because a run is one process; swapped by the tests.
+_provider_state = {"index": 0, "since": None, "probing": False}
+_clock = time.time
+
+
 def provider_pin():
-  """The `provider` block sent with every request to the router, or None.
+  """The `provider` block sent with THIS request to the router, or None.
 
   One entry in `order` with `allow_fallbacks: false` is what makes a remote
   run one condition rather than an average over whoever was cheapest that
   minute: the weights, the quantization and the serving stack all move when
   the provider does. It is sent only when configured, so the Ollama path
-  keeps sending exactly the body it sent before this plan (law 2).
+  keeps sending exactly the body it sent before this plan (law 2). Under
+  AP-3 it is the link of the chain the run is on; without fallbacks
+  configured that is always the configured pin.
   """
-  pin = openai_config.get("model-provider")
-  return pin if isinstance(pin, dict) and pin else None
+  chain = _provider_chain()
+  if not chain:
+    return None
+  return chain[min(_provider_state["index"], len(chain) - 1)]
+
+
+def _provider_name(pin):
+  return ((pin or {}).get("order") or [None])[0]
+
+
+def _maybe_return_to_primary(path):
+  """After return_after seconds on a fallback, the next request tries the
+  configured provider again."""
+  if _provider_state["index"] == 0:
+    return
+  if _clock() - (_provider_state["since"] or 0) < fallback_policy["return_after"]:
+    return
+  frm = _provider_name(provider_pin())
+  _provider_state["index"] = 0
+  _provider_state["since"] = None
+  # The return is a probe: one request. If the configured provider is still
+  # failing, the next failure moves the request on at once rather than
+  # spending the whole per-provider budget on a provider known to be down
+  # (ten minutes every fifteen, on the example config).
+  _provider_state["probing"] = True
+  llm_trace.record_provider_switch(path, frm, _provider_name(provider_pin()),
+                                   reason="return")
+
+
+def _fall_back(path, error):
+  frm = _provider_name(provider_pin())
+  _provider_state["index"] += 1
+  _provider_state["since"] = _clock()
+  _provider_state["probing"] = False
+  to = _provider_name(provider_pin())
+  llm_trace.record_provider_switch(path, frm, to, reason="fallback",
+                                   error=error)
+  print("provider %s kept failing on %s: moving to %s" % (frm, path, to))
 
 
 def _extra_body():
@@ -127,9 +203,14 @@ def setup_client(type: str, config: dict):
   elif type == "openai":
     # base_url is optional: None -> api.openai.com. Set it to point at any
     # OpenAI-compatible server (Ollama: http://localhost:11434/v1, vLLM, ...).
+    # "timeout" is set for the generator only (011-IP, the night of the
+    # windows): the SDK's default is 600 s, and a request the router left
+    # hanging held a run for five minutes before it came back empty.
+    kwargs = {"timeout": config["timeout"]} if config.get("timeout") else {}
     client = OpenAI(
         api_key=config["key"],
         base_url=config.get("base_url"),
+        **kwargs
     )
   else:
     raise ValueError("Invalid client")
@@ -145,6 +226,7 @@ elif openai_config["client"] == "openai":
   client = setup_client("openai", {
       "key": _resolve_key(openai_config, "model-key", "model-key-env"),
       "base_url": openai_config.get("model-base-url"),
+      "timeout": openai_config.get("model-timeout"),
   })
 else:
   raise ValueError("Invalid client")
@@ -273,6 +355,41 @@ def _is_rate_limit(e):
   return isinstance(e, RateLimitError) or _status_of(e) == 429
 
 
+class EmptyResponse(Exception):
+  """The router answered 200 with no choices and no usage.
+
+  Seen twice in the first hour of 011-IP's typed window, each after exactly
+  ~300 s: the router's own cut of a request the provider left hanging. Nothing
+  came back that anyone could read, so it is ridden out like a 429 -- the
+  paper's code used to reach the cost ledger with it and die there.
+  """
+
+
+# The statuses no amount of waiting fixes: a malformed request, a key, a
+# balance, a permission. Everything else a provider can say is ridden out --
+# the night of 011-IP's windows Crusoe answered 429, 502, 412 ("no available
+# servers") and 404 ("model not found", two hours into a window that had
+# been served by it all along) in turn, and each one ended a window the
+# first time it was met. A model name that is wrong from the start is
+# caught before a run by asking it once, not by this list.
+# 405, 413, 415 and 422 are the other shapes of "this request": a method, a
+# body too large, a media type, an unprocessable entity -- deterministic, so a
+# wait would be a wait for nothing.
+_PERMANENT = (400, 401, 402, 403, 405, 413, 415, 422)
+
+
+def _is_transient(e):
+  """A request that got no answer, or an answer that says come back later:
+  the router's empty body, the client's timeout, a dropped connection, and
+  any status that is not in _PERMANENT. Ridden out from the same budget as
+  a 429 and recorded the same way; when the budget runs out it raises,
+  unchanged, exactly as a 429 does."""
+  if isinstance(e, (EmptyResponse, APITimeoutError, APIConnectionError)):
+    return True
+  status = _status_of(e)
+  return status is not None and status not in _PERMANENT
+
+
 def _retry_after(e):
   """The provider's own instruction, when it sends one. Preferred over the
   backoff: a number the provider chose beats a number we guessed."""
@@ -319,25 +436,62 @@ def _send(path, attempt, create):
   reproducibility and a wait is not allowed to draw from that stream.
   """
   policy = rate_limit_policy
+  chain = len(_provider_chain())
+  _maybe_return_to_primary(path)
+  # AP-3: every link but the last is waited on for its own budget, then the
+  # request moves on at once; the last link gets the run's whole patience, so
+  # a run with no fallbacks behaves exactly as before. The per-provider
+  # budget is clamped to the run's, or a config whose fallback budget is the
+  # larger one would raise before it ever fell back (the review of
+  # 2026-09-24 found exactly that under the defaults). A return probe gets
+  # no waits at all: one request, and on failure it moves on.
   waits = 0
   while True:
     attempt.start()
     try:
       response = create()
       attempt.stop()
+      if (not isinstance(response, Stream)
+          and not getattr(response, "choices", None)):
+        raise EmptyResponse("the router answered with no choices")
+      if _provider_state["probing"]:
+        _provider_state["probing"] = False
       return response
     except Exception as e:
       attempt.stop()
-      if not _is_rate_limit(e) or waits >= policy["attempts"]:
+      more_links = _provider_state["index"] < chain - 1
+      if not (_is_rate_limit(e) or _is_transient(e)):
+        # A status no wait fixes. For THIS provider: a key, a balance or a
+        # permission is per provider when a fallback list exists, and the
+        # next link may well accept the same request. On the last link it
+        # is what it always was: the run stops and says so (RB-C). Only an
+        # HTTP status moves a request; an exception with no status is the
+        # client's or ours, and asking another provider would hide it.
+        if more_links and _status_of(e) is not None:
+          _fall_back(path, e)
+          waits = 0
+          continue
+        raise
+      budget = (0 if _provider_state["probing"]
+                else min(fallback_policy["waits"], policy["attempts"]))
+      if more_links and waits >= budget:
+        _fall_back(path, e)
+        waits = 0
+        continue
+      if waits >= policy["attempts"]:
         raise
       waits += 1
       delay = _retry_after(e)
       if delay is None:
-        delay = min(policy["max_delay"],
-                    policy["base_delay"] * (2 ** (waits - 1)))
-      llm_trace.record_rate_limit(path, status=_status_of(e) or 429,
+        delay = policy["base_delay"] * (2 ** (waits - 1))
+      # The provider's own number is obeyed, but not past the run's cap: a
+      # Retry-After of an hour is one call holding the whole simulation.
+      delay = min(policy["max_delay"], delay)
+      llm_trace.record_rate_limit(path, status=_status_of(e) or
+                                  (429 if _is_rate_limit(e) else None),
                                   attempt=waits, of=policy["attempts"],
-                                  delay=delay, error=e)
+                                  delay=delay, error=e,
+                                  provider=_provider_name(provider_pin()))
       print("rate limit on %s: waiting %.1fs (%d of %d)"
             % (path, delay, waits, policy["attempts"]))
       _sleep(delay)
@@ -411,6 +565,31 @@ def ChatGPT_request(prompt):
   return completion.choices[0].message.content
 
 
+# Deviation D11 (011-IP, GT-8). gemma-4-31b-it wraps its JSON in a markdown
+# fence, and the parser below cuts at the last "}" but never at the first "{",
+# so a correct answer is thrown away -- 213 of 213 responses on the 011-IP
+# shakedown, 0 of 76 once this sentence was added. The parser's own repair
+# belongs to 009-IP; this asks the model instead.
+#
+# Off by default, so the paper's prompt is byte-identical without it. When on,
+# it is on for EVERY prompt on this path, in both arms -- the generator's own
+# prompts, and on the llm arm the decisions that travel this path (the three
+# poignancy scores). The typed backend never sees it: a jev decision sends a
+# state, not this prompt.
+NO_FENCE_SENTENCE = ("Reply with the JSON object only: no markdown, "
+                     "no code fence.")
+
+
+def no_fence_enabled():
+  """`"json-no-fence": {"enabled": true}` in the config, or JSON_NO_FENCE=1
+  in the environment. Off when neither says otherwise."""
+  flag = os.environ.get("JSON_NO_FENCE")
+  if flag is not None:
+    return flag.strip().lower() in ("1", "true", "yes", "on")
+  block = openai_config.get("json-no-fence") or {}
+  return bool(block.get("enabled", False))
+
+
 def ChatGPT_safe_generate_response(prompt, 
                                    example_output,
                                    special_instruction,
@@ -422,6 +601,8 @@ def ChatGPT_safe_generate_response(prompt,
   # prompt = 'GPT-3 Prompt:\n"""\n' + prompt + '\n"""\n'
   prompt = '"""\n' + prompt + '\n"""\n'
   prompt += f"Output the response to the prompt above in json. {special_instruction}\n"
+  if no_fence_enabled():
+    prompt += NO_FENCE_SENTENCE + "\n"
   prompt += "Example output json:\n"
   prompt += '{"output": "' + str(example_output) + '"}'
 
@@ -594,6 +775,86 @@ def generate_prompt(curr_input, prompt_lib_file):
   if "<commentblockmarker>###</commentblockmarker>" in prompt: 
     prompt = prompt.split("<commentblockmarker>###</commentblockmarker>")[1]
   return prompt.strip()
+
+
+# --- the composed state (011-IP, TS-A) --------------------------------------
+# A typed question hands the backend a `state`. Until now that state was the
+# dictionary the call site read out of prompt_input, and the audit of
+# 2026-09-23 found that five of the eight typed questions carry keys their
+# instruction never names -- facts the paper states in a sentence of its own
+# and the dictionary hands over as a bare key. This is the other mechanism
+# 011-IP weighs against descriptive criteria: give the backend the paper's own
+# sentences, rendered from the same prompt_input the prompt is built from.
+#
+# Two things are deliberately dropped:
+#
+#   the few-shot examples   jev_questions.py already gives the reason -- they
+#                           teach a format a typed answer does not have, and
+#                           they are where "kitchen" came from.
+#   the answer cue          the trailing "Answer: {", "{", "Reasoning:" or
+#                           "Reasoning: Let's think step by step." that tells
+#                           an LLM where to write. A Choice writes nowhere.
+#
+# What is left is a SUBSTRING of the prompt the llm backend would have sent
+# from the same prompt_input, character for character (S2.1). That is the
+# whole point: the audit that checks this wording is a string comparison, not
+# a reading. The split is done on the TEMPLATE, before substitution, so a
+# rendered value that happens to contain a "---" line cannot move the seam.
+
+# Longest first: "Answer: {" must win over "{", and "Reasoning: Let's think
+# step by step." over "Reasoning:".
+_ANSWER_CUES = (
+    "Reasoning: Let's think step by step.",
+    'Answer in "yes" or "no":',
+    "Answer: {",
+    "Reasoning:",
+    "{",
+)
+
+
+def last_block(prompt_lib_file):
+  """The template's live block: what follows its last few-shot separator.
+
+  Returns the block with its !<INPUT n>! slots still in it, so the caller
+  substitutes exactly as generate_prompt does.
+  """
+  with open(prompt_lib_file, "r") as f:
+    prompt = f.read()
+  if "<commentblockmarker>###</commentblockmarker>" in prompt:
+    prompt = prompt.split("<commentblockmarker>###</commentblockmarker>")[1]
+  return re.split(r"(?m)^-{3,}[ \t]*$", prompt)[-1]
+
+
+def strip_answer_cue(block):
+  """Remove the one trailing cue that tells an LLM where to write, if any."""
+  text = block.rstrip()
+  for cue in _ANSWER_CUES:
+    if text.endswith(cue):
+      return text[:-len(cue)].rstrip()
+  return text
+
+
+def composed_state(curr_input, prompt_lib_file):
+  """The paper's own sentences about THIS state, as a string.
+
+  Same arguments as generate_prompt, and built by the same substitution in
+  the same order, so the two cannot drift: this is that function's last
+  block with the answer cue taken off.
+
+  ARGS:
+    curr_input: the prompt_input the call site built (a list, or one string).
+    prompt_lib_file: the path to the same template generate_prompt is given.
+  RETURNS:
+    a str -- a substring of generate_prompt(curr_input, prompt_lib_file).
+  """
+  if type(curr_input) == type("string"):
+    curr_input = [curr_input]
+  curr_input = [str(i) for i in curr_input]
+
+  block = last_block(prompt_lib_file)
+  for count, i in enumerate(curr_input):
+    block = block.replace(f"!<INPUT {count}>!", i)
+  return strip_answer_cue(block).strip()
 
 
 def safe_generate_response(prompt, 

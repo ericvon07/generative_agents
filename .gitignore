@@ -119,3 +119,7 @@ ENV/
 # Rope project settings
 .ropeproject
 .gstack/
+
+# The probe writes its answers beside itself; the rows are evidence and live
+# in the lab, gzipped, next to the readout that reads them.
+reverie/backend_server/probe_*.jsonl
