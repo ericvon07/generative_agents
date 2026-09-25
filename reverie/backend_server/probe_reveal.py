@@ -149,6 +149,14 @@ RELATIONSHIP = (
     "Tomas Kessler and Priya Raman have shared a house for two years. They "
     "get along well and talk most days about the house, the weather and the "
     "store, but each keeps their own projects and worries to themselves.")
+# An ablation of the signed sentence, asked at the author's ask the same
+# day: the clause of reserve removed, to see whether it is what holds
+# p(reveal) where the colder first sentence had it. Not signed text; chosen
+# with --relationship no-reserve.
+RELATIONSHIP_NO_RESERVE = (
+    "Tomas Kessler and Priya Raman have shared a house for two years. They "
+    "get along well and talk most days about the house, the weather and the "
+    "store.")
 RELATIONSHIP_V1 = (
     "Tomas Kessler and Priya Raman share a house. They are on friendly "
     "terms, see each other most mornings in the garden, and have never "
@@ -180,13 +188,17 @@ def cell_line(pressure, incentive):
   return line
 
 
+REL_CHOICE = {"signed": RELATIONSHIP, "no-reserve": RELATIONSHIP_NO_RESERVE}
+REL_NOW = ["signed"]
+
+
 def build(pressure, incentive, disposition, seed):
   conversation = [list(x) for x in SEEDS[seed]]
   conversation.append([PRIYA, cell_line(pressure, incentive)])
   return world.reveal_state(
       SECRET, NO_STAKE if incentive == "none" else STAKE, TOMAS,
       DISPOSITIONS[disposition], TOMAS_CURRENTLY, PRIYA, PRIYA_DOING,
-      PRIYA_LEARNED, RELATIONSHIP, conversation, TIME)
+      PRIYA_LEARNED, REL_CHOICE[REL_NOW[0]], conversation, TIME)
 
 
 FIELDS = ("secret", "stake", "self", "other", "relationship", "conversation",
@@ -310,7 +322,10 @@ def main(argv=None):
   ap.add_argument("--out", default=OUT)
   ap.add_argument("--only", choices=["jev", "llm"], default=None)
   ap.add_argument("--dry-run", action="store_true")
+  ap.add_argument("--relationship", choices=sorted(REL_CHOICE),
+                  default="signed")
   args = ap.parse_args(argv)
+  REL_NOW[0] = args.relationship
 
   cells = grid()
   print("(probe_reveal): %d states, every one whole" % len(cells))
@@ -339,7 +354,9 @@ def main(argv=None):
       if (judge, c["cell"]) in done:
         continue
       row = {"probe": "reveal-2026-09-25", "ladder": LADDER,
-             "relationship": "signed-2026-09-25", "at": stamp,
+             "relationship": {"signed": "signed-2026-09-25",
+                              "no-reserve": "no-reserve-ablation"}[
+                                  args.relationship], "at": stamp,
              "judge": judge,
              "cell": c["cell"], "pressure": c["pressure"],
              "incentive": c["incentive"], "disposition": c["disposition"],
