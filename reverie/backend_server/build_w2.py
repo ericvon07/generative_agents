@@ -60,7 +60,9 @@ RENAMES = [
     ("Carmen Ortiz's room", "Tomas Kessler's room"),
 ]
 
-# The signed texts, world file §9 (2026-09-25, "aprovado"), byte for byte.
+# The signed texts, world file §9 (2026-09-25, "aprovado"), byte for byte;
+# Priya's lifestyle re-signed the same day ("pode ser 6am"): the paper's
+# wake_up_hour reads whole hours, and 5:30am fell to its fail-safe 8.
 SIGNED = {
     "Tomas Kessler": {
         "first_name": "Tomas", "last_name": "Kessler", "age": 29,
@@ -101,7 +103,7 @@ SIGNED = {
                       "attention to who goes where at odd hours and asking "
                       "people about it, one question at a time."),
         "lifestyle": ("Priya Raman goes to bed around 10pm, awakes up around "
-                      "5:30am, eats dinner around 6pm."),
+                      "6am, eats dinner around 6pm."),
         "daily_plan_req": ("Priya prepares lessons at the desk in her room "
                            "from 6am, takes her coffee out to the house "
                            "garden around 6:30am and keeps working there "
