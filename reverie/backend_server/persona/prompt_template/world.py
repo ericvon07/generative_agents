@@ -153,3 +153,60 @@ def reveal_state(secret, stake, self_name, profile, currently, other_name,
       # paper's two social decisions.
       "subject": self_name,
   }
+
+
+def route_state(secret, stake, self_name, profile, currently, other_name,
+                other_doing, other_learned, relationship, time, known,
+                present, last_conversation):
+  """The nine-field state of the route decision (015-IP RP-D), built in
+  one place so the sim and the route grid (probe_route.py) send the same
+  shape: the reveal state's fields but the conversation buffer, plus
+
+    known             what the subject knows of the radio and its owner --
+                      where it is, whose, and what the owner said of it if
+                      asked (from spatial memory and the memos of dialogues
+                      with the owner)
+    present           who is in the pub now, with the trade of each as the
+                      subject's memory holds it
+    last_conversation the last dialogue with the owner and whether the radio
+                      came up: {"with", "when", "lines", "radio_came_up"},
+                      or the string "none" before one
+
+  <other_learned> is the owner's identity AS THE SUBJECT'S DECISION MAY SEE
+  IT: the facts of the radio (that it exists, that the owner will not part
+  with it) travel in `known` alone, never here -- otherwise `known` is not
+  the lever (the route grid's finding, 015-IP step 2)."""
+  return {
+      "secret": secret,
+      "stake": stake,
+      "self": {"name": self_name, "profile": profile, "currently": currently},
+      "other": {"name": other_name, "doing": other_doing,
+                "learned": other_learned},
+      "relationship": relationship,
+      "time": time,
+      "known": known,
+      "present": present,
+      "last_conversation": last_conversation,
+      "subject": self_name,
+  }
+
+
+def take_state(secret, stake, self_name, profile, currently, other_name,
+               other_doing, other_learned, relationship, time, known,
+               present, last_conversation, object_, opportunity):
+  """The route state plus two fields (015-IP RP-F), built in one place for
+  the sim and the take grid (probe_take.py):
+
+    object       the radio: where it is, its state, whose it is
+    opportunity  the owner is out; when he is expected back, as the
+                 subject's memory holds it
+
+  The refusal, when there was one, is in `known` and in `last_conversation`
+  and not in `object`, so the two `known` cells of the grid differ by the
+  refusal alone."""
+  state = route_state(secret, stake, self_name, profile, currently,
+                      other_name, other_doing, other_learned, relationship,
+                      time, known, present, last_conversation)
+  state["object"] = object_
+  state["opportunity"] = opportunity
+  return state

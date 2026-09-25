@@ -28,6 +28,11 @@ What it holds (010-IP S2.4):
   - 015-IP S1.2: the W3 map copy (the_ville_w3, build_w3.py) is the paper's
     folder with two houses renamed in the special-blocks CSVs and one
     object added -- the radio's row and its two tiles -- and nothing else.
+  - 015-IP S5.1: the route and take states (world.route_state,
+    world.take_state) carry their named fields; the two grids
+    (probe_route.py, probe_take.py) build 90 and 120 states, every one
+    whole, no two alike; the questions are one Choice over the declared
+    domain and its companions.
 """
 import datetime
 import json
@@ -259,6 +264,69 @@ class W3Map(unittest.TestCase):
       for x, y in self.RADIO_TILES:
         self.assertEqual("0", a[y * width + x])
         self.assertEqual("32283", b[y * width + x])
+
+
+class W3States(unittest.TestCase):
+  """015-IP S5.1: the states of the route and the take, and the two grids."""
+
+  ROUTE_FIELDS = ("secret", "stake", "self", "other", "relationship", "time",
+                  "known", "present", "last_conversation")
+
+  def test_the_route_state_has_nine_named_fields_and_the_subject(self):
+    state = world.route_state("s", "k", "Tomas Kessler", "p", "c",
+                              "Arthur Burton", "d", "l", "r", "t", "kn",
+                              "pr", "none")
+    for key in self.ROUTE_FIELDS:
+      self.assertIn(key, state)
+    self.assertEqual(state["subject"], "Tomas Kessler")
+    self.assertEqual(state["other"]["learned"], "l")
+    self.assertNotIn("object", state)
+
+  def test_the_take_state_adds_the_object_and_the_opportunity(self):
+    state = world.take_state("s", "k", "Tomas Kessler", "p", "c",
+                             "Arthur Burton", "d", "l", "r", "t", "kn",
+                             "pr", "none", "obj", "opp")
+    for key in self.ROUTE_FIELDS + ("object", "opportunity"):
+      self.assertIn(key, state)
+    self.assertEqual(state["object"], "obj")
+    self.assertEqual(state["opportunity"], "opp")
+
+  def test_the_questions_are_one_choice_and_its_companions(self):
+    route = world_questions.route_questions()
+    self.assertEqual(route[world_questions.ROUTE_ACT_ON]["type"], "choice")
+    self.assertEqual(sorted(route[world_questions.ROUTE_ACT_ON]["criteria"]),
+                     sorted(world_questions.ROUTE_DOMAIN))
+    self.assertIn(world_questions.ROUTE_FAIL_SAFE, world_questions.ROUTE_DOMAIN)
+    for key in world_questions.ROUTE_COMPANIONS:
+      self.assertEqual(route[key]["type"], "noul")
+    self.assertEqual(len(route), 1 + len(world_questions.ROUTE_COMPANIONS))
+    take = world_questions.take_questions()
+    self.assertEqual(sorted(take[world_questions.TAKE_ACT_ON]["criteria"]),
+                     sorted(world_questions.TAKE_DOMAIN))
+    self.assertIn(world_questions.TAKE_FAIL_SAFE, world_questions.TAKE_DOMAIN)
+    self.assertEqual(len(take), 1 + len(world_questions.TAKE_COMPANIONS))
+
+  def test_the_two_grids_are_whole_and_of_the_declared_size(self):
+    import probe_route
+    import probe_take
+    route = probe_route.grid()
+    self.assertEqual(len(route), 90)
+    self.assertEqual(len(set(c["cell"] for c in route)), 90)
+    self.assertTrue(all(probe_route.whole(c["state"]) for c in route))
+    take = probe_take.grid()
+    self.assertEqual(len(take), 120)
+    self.assertEqual(len(set(c["cell"] for c in take)), 120)
+    self.assertTrue(all(probe_route.whole(c["state"], probe_take.FIELDS)
+                        for c in take))
+    # the refusal is in `known` and the conversation at refused, and nowhere
+    # in `object`
+    for c in take:
+      self.assertNotIn("will not", c["state"]["object"])
+      self.assertEqual(c["state"]["last_conversation"]["radio_came_up"],
+                       c["known"] == "refused")
+    # the wholeness rule refuses an emptied field
+    broken = dict(route[0]["state"], known="")
+    self.assertFalse(probe_route.whole(broken))
 
 
 class WithWorld(unittest.TestCase):
