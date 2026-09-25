@@ -77,9 +77,18 @@ def talk_parts():
   return {key: jev.noul(text) for key, text in TALK_PARTS.items()}
 
 
-# Fitted at 010-IP step 3 against the author's labels; None until the
-# readout is signed. See docs/research/ in the lab for the snapshot that
-# fixes them.
+# Read at 010-IP step 3 against the author's 31 labels (the lab's snapshot
+# probe-fields-the-state-a-person-would-use-2026-09-25.md): the weighted sum
+# TIED the single question (leave-one-out MAE 0.69 against 0.70-0.71 on the
+# same states), three of the four parts carried no rank information about
+# the labels, and the least-squares weights were intercept +2.90,
+# other_interruptible +0.59, has_something_to_say -0.53, plan_leaves_room
+# -1.50, same_place_or_activity +1.79 with a cut of 2.90 for "probably yes"
+# -- a fit spent on noise. Under JF-F a tie goes to the simpler form, so the
+# decomposition is NOT adopted: these stay None, combine_talk() refuses, and
+# W2 runs the fidelity track's single question. The parts remain as
+# diagnostics a probe may ask; the one that tracked the labels was
+# same_place_or_activity (Spearman 0.42 alone).
 TALK_WEIGHTS = None   # {part: weight}, plus "intercept"
 TALK_CUT = None       # the sum at or above which the answer is "yes"
 
