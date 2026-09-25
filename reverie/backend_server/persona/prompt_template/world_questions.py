@@ -154,9 +154,11 @@ REVEAL_COMPANIONS = {
     "other_asks_about_subject": (
         "`last_utterance` asks `self.name` about what `secret` is about, "
         "directly or indirectly."),
+    # Reworded 2026-09-25 after the first grid: "or is known to hold" was
+    # satisfied by the stake field alone, with no offer in the line.
     "other_offers_stake": (
-        "`other.name` offers `self.name`, or is known to hold, something "
-        "that `stake` says `self.name` needs."),
+        "`last_utterance` offers `self.name` something that `stake` says "
+        "`self.name` needs."),
     "self_trusts_other": (
         "`self.name` trusts `other.name` with private matters, given "
         "`relationship` and `self.profile`."),

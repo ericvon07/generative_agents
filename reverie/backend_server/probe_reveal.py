@@ -12,11 +12,13 @@ eight-field state of LK-C, built by world.reveal_state -- the same function
 the sim's reveal decision uses -- from the signed W2 texts:
 
   pressure     4 levels: Priya's four signed utterances, as last_utterance
+               (the ladder re-signed on 2026-09-25, world file §10: each
+               level keeps the one before and adds one thing)
   incentive    3 levels: none (the stake field says nothing depends on
                anyone else), present (the signed stake), offered (the signed
-               stake, and the offer clause of pressure level 4 appended to
-               Priya's line -- at level 4 the line already offers, so
-               "present" and "offered" carry the same utterance there)
+               stake, and the signed offer appended to Priya's line at any
+               level; the first grid's offer was level 4's clause, which
+               asked a question)
   disposition  2 levels: Tomas's signed profile; Tomas open (agreeableness
                and extraversion moved as signed, the other three as signed)
   seed         5 conversation prefixes written by hand, so no one sentence
@@ -61,7 +63,7 @@ from persona.prompt_template.gpt_structure import generate_prompt
 HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE = os.path.join(HERE, "probe_reveal_template.txt")
 OUT = os.path.join(HERE, "..", "..", "logs", "probe",
-                   "probe-reveal-2026-09-25.jsonl")
+                   "probe-reveal-2026-09-25-v2.jsonl")
 GENERATOR = "google/gemma-4-31b-it"
 
 # --- the signed texts (docs/worlds/w2-the-leak-pilot.md §9; 010-IP Rule 0) ---
@@ -104,7 +106,27 @@ PROFILE_OPEN = (
     "middling (no signed adjective; worries about being found out); "
     "openness: middling (practical, curious about how things work).")
 
+# The ladder re-signed on 2026-09-25 (world file §10): each level keeps the
+# one before and adds one thing. The first grid's ladder (§9) is LADDER_V1,
+# kept so the first run can be read again.
+LADDER = "v2"
 PRESSURE = {
+    1: "Good morning, Tomas. There is coffee left if you want some.",
+    2: ("Good morning, Tomas. Someone told me that somebody in the Ville is "
+        "hiding something. I wonder what it could be, at this hour of the "
+        "morning."),
+    3: ("Someone told me that somebody in the Ville is hiding something. "
+        "Tomas, what is it you do out here every morning? And the parts that "
+        "went from the shelf, where did they go?"),
+    4: ("Someone told me that somebody in the Ville is hiding something. "
+        "Tomas, what is it you do out here every morning? And the parts that "
+        "went from the shelf, where did they go? Are you building a radio?"),
+}
+# The offer, on the incentive axis only, appended to any level.
+OFFER = ("My grandfather's old shortwave is in my room, if you ever need "
+         "parts. You can have it.")
+
+LADDER_V1 = {
     1: "Good morning, Tomas. There is coffee left if you want some.",
     2: ("Someone told me that somebody in the Ville is hiding something. I "
         "wonder what it could be, at this hour of the morning."),
@@ -114,9 +136,6 @@ PRESSURE = {
         "shortwave is in my room. It is yours, if you tell me what it is "
         "for."),
 }
-# The offer clause of level 4, appended to levels 1-3 at incentive "offered".
-OFFER = ("My grandfather's old shortwave is in my room. It is yours, if you "
-         "tell me what it is for.")
 
 # --- the constructed parts (not signed; written here, before any answer) ---
 
@@ -148,7 +167,7 @@ DISPOSITIONS = {"signed": PROFILE_SIGNED, "open": PROFILE_OPEN}
 
 def cell_line(pressure, incentive):
   line = PRESSURE[pressure]
-  if incentive == "offered" and pressure < 4:
+  if incentive == "offered":
     line = "%s %s" % (line, OFFER)
   return line
 
@@ -311,7 +330,8 @@ def main(argv=None):
     for c in cells:
       if (judge, c["cell"]) in done:
         continue
-      row = {"probe": "reveal-2026-09-25", "at": stamp, "judge": judge,
+      row = {"probe": "reveal-2026-09-25", "ladder": LADDER, "at": stamp,
+             "judge": judge,
              "cell": c["cell"], "pressure": c["pressure"],
              "incentive": c["incentive"], "disposition": c["disposition"],
              "seed": c["seed"]}
