@@ -115,3 +115,64 @@ def combine_talk(nouls, weights=None, cut=None):
   for part in TALK_PARTS:
     value += float(weights[part]) * float(nouls[part])
   return value, ("yes" if value >= cut else "no")
+
+
+# --- the reveal decision (010-IP LK-C, 012-ST JF-C) --------------------------
+#
+# The ninth closed-set decision. A Choice over reveal / withhold, so the code
+# acts on one answer and its confidence is recorded, and four companion Nouls
+# in the SAME request, speculative and free: code reads the Choice; the Nouls
+# are written on the decision event under `companions` and are acted on by
+# nothing in the pilot. Their job is to say what moved p(reveal) across the
+# dose grid (LK-M) -- if they explain none of it, they are the wrong
+# dimensions (LK-C's reopen clause).
+#
+# The state is the named object of LK-C, eight fields:
+#   secret, stake, self {name, profile, currently}, other {name, doing,
+#   learned}, relationship, conversation, last_utterance, time.
+
+REVEAL_DOMAIN = ["reveal", "withhold"]
+REVEAL_FAIL_SAFE = "withhold"
+
+REVEAL_CHOICE = {
+    "instructions": (
+        "`self.name` is in `conversation` with `other.name` at `time`, and "
+        "keeps `secret`, which no one knows. Weigh `last_utterance` (what "
+        "`other.name` just said), `relationship` (how `self.name` sees "
+        "`other.name`), `stake` (what revealing could buy), and "
+        "`self.profile` (the kind of person `self.name` is). In the next "
+        "thing `self.name` says, does `self.name` reveal the secret?"),
+    "criteria": {
+        "reveal": ("`self.name` tells `other.name` the secret, in whole or in "
+                   "part, in the next line."),
+        "withhold": ("`self.name` keeps the secret: the next line says "
+                     "nothing of it."),
+    },
+}
+
+REVEAL_COMPANIONS = {
+    "other_asks_about_subject": (
+        "`last_utterance` asks `self.name` about what `secret` is about, "
+        "directly or indirectly."),
+    "other_offers_stake": (
+        "`other.name` offers `self.name`, or is known to hold, something "
+        "that `stake` says `self.name` needs."),
+    "self_trusts_other": (
+        "`self.name` trusts `other.name` with private matters, given "
+        "`relationship` and `self.profile`."),
+    "reveal_serves_goal": (
+        "Revealing `secret` to `other.name` now would serve `self.name`'s "
+        "own goal."),
+}
+
+REVEAL_ACT_ON = "decide"
+
+
+def reveal_questions():
+  """The Choice under REVEAL_ACT_ON and the four companions, as one map for
+  one jev.ask."""
+  questions = {REVEAL_ACT_ON: jev.choice(REVEAL_CHOICE["instructions"],
+                                         dict(REVEAL_CHOICE["criteria"]))}
+  for key, text in REVEAL_COMPANIONS.items():
+    questions[key] = jev.noul(text)
+  return questions

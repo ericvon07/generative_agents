@@ -18,6 +18,8 @@ from persona.prompt_template.print_prompt import *
 from persona.prompt_template import decision
 from persona.prompt_template import domain_guard
 from persona.prompt_template import lenient_parser
+from persona.prompt_template import world
+from persona.prompt_template import world_questions
 
 def get_random_alphanumeric(i=6, j=6): 
   """
@@ -3195,7 +3197,57 @@ def extract_first_json_dict(data_str):
         return None
 
 
-def run_gpt_generate_iterative_chat_utt(maze, init_persona, target_persona, retrieved, curr_context, curr_chat, test_input=None, verbose=False): 
+def run_gpt_prompt_decide_to_reveal(persona, target_persona, relationship,
+                                    curr_chat):
+  """010-IP LK-C: the ninth closed-set decision. Asked once per utterance of
+  a persona who keeps a secret, before its utterance prompt is built, on the
+  typed backend only; no paper prompt mirrors it (TR-1: a world is not a
+  deviation, so it takes no D number).
+
+  The state is a named object of eight fields, every one traceable to where
+  the run holds it (S3.3):
+    secret, stake       the config's world section (world.py)
+    self                name, the signed profile (world.py), `currently`
+                        (scratch)
+    other               name, what they are doing, `learned` (their scratch)
+    relationship        the summary the dialogue loop generated this round
+    conversation        the loop's buffer, every line so far
+    last_utterance      the other's last line, where the pressure lands
+    time                the clock
+
+  RETURNS: "reveal" or "withhold"; withhold is the fail-safe.
+  """
+  name = persona.scratch.name
+  last = None
+  for speaker, line in reversed(curr_chat):
+    if speaker != name:
+      last = line
+      break
+  state = {
+      "secret": world.private_text(name),
+      "stake": world.stake(name),
+      "self": {"name": name,
+               "profile": world.profile(name),
+               "currently": persona.scratch.currently},
+      "other": {"name": target_persona.scratch.name,
+                "doing": target_persona.scratch.act_description,
+                "learned": target_persona.scratch.learned},
+      "relationship": relationship,
+      "conversation": [{"speaker": s_, "line": l_} for s_, l_ in curr_chat],
+      "last_utterance": last,
+      "time": persona.scratch.curr_time.strftime("%B %d, %Y, %I:%M %p"),
+      # _social_fields reads the subject from here, as on the other two
+      # social decisions.
+      "subject": name,
+  }
+  return decision.ask_many(
+      "decide_to_reveal", state, world_questions.reveal_questions(),
+      world_questions.REVEAL_ACT_ON, world_questions.REVEAL_DOMAIN,
+      world_questions.REVEAL_FAIL_SAFE,
+      counterparty=target_persona.scratch.name)
+
+
+def run_gpt_generate_iterative_chat_utt(maze, init_persona, target_persona, retrieved, curr_context, curr_chat, test_input=None, verbose=False, reveal=False): 
   def create_prompt_input(maze, init_persona, target_persona, retrieved, curr_context, curr_chat, test_input=None):
     persona = init_persona
     prev_convo_insert = "\n"
@@ -3229,6 +3281,10 @@ def run_gpt_generate_iterative_chat_utt(maze, init_persona, target_persona, retr
       convo_str = "[The conversation has not started yet -- start it!]"
 
     init_iss = f"Here is Here is a brief description of {init_persona.scratch.name}.\n{init_persona.scratch.get_str_iss()}"
+    # 010-IP LK-D: on a reveal, one line joins PART 1 -- what the persona
+    # knows and has told no one. On a withhold, and on every run with no
+    # world section, this returns init_iss unchanged: the paper's prompt.
+    init_iss = world.inject(init_iss, init_persona.scratch.name, reveal)
     prompt_input = [init_iss, init_persona.scratch.name, retrieved_str, prev_convo_insert,
       curr_location, curr_context, init_persona.scratch.name, target_persona.scratch.name,
       convo_str, init_persona.scratch.name, target_persona.scratch.name,

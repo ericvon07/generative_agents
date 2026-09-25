@@ -683,6 +683,23 @@ def record_decision(label, domain, answer, backend=None, fail_safe=None,
     pass
 
 
+def record_utterance(speaker, listener, text, injected, end=None):
+  """One line of a conversation, whole (010-IP LK-D).
+
+  A call record keeps a head of the response; a leak is read from the whole
+  sentence, so every utterance is its own event. `injected` says whether the
+  speaker's prompt carried the world's private line -- True only after a
+  reveal decision said reveal. Recording only: it fires under any world,
+  changes no state and draws no random number."""
+  if not _config["enabled"]:
+    return
+  try:
+    _emit({"event": "utterance", "speaker": speaker, "listener": listener,
+           "text": text, "injected": bool(injected), "end": end})
+  except Exception:
+    pass
+
+
 def record_rate_limit(path, status, attempt, of, delay, error=None,
                       label=None, provider=None):
   """A provider said 429, and the request is about to be made again.
