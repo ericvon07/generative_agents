@@ -3221,7 +3221,12 @@ def run_gpt_prompt_decide_to_reveal(persona, target_persona, relationship,
   state = world.reveal_state(
       world.private_text(name), world.stake(name), name, world.profile(name),
       persona.scratch.currently, target_persona.scratch.name,
-      target_persona.scratch.act_description, target_persona.scratch.learned,
+      target_persona.scratch.act_description,
+      # 015-IP step 3: the other's `learned` without the sentences that
+      # name an object they own -- the object's facts reach the subject by
+      # perception and dialogue, not through the other's identity text.
+      world.learned_as_seen(target_persona.scratch.name,
+                            target_persona.scratch.learned),
       relationship, curr_chat,
       persona.scratch.curr_time.strftime("%B %d, %Y, %I:%M %p"))
   return decision.ask_many(
@@ -3231,7 +3236,47 @@ def run_gpt_prompt_decide_to_reveal(persona, target_persona, relationship,
       counterparty=target_persona.scratch.name)
 
 
-def run_gpt_generate_iterative_chat_utt(maze, init_persona, target_persona, retrieved, curr_context, curr_chat, test_input=None, verbose=False, reveal=False): 
+def run_gpt_prompt_decide_route(persona, owner, maze, personas):
+  """015-IP RP-D: the route -- ask, take or give up -- asked of the taker
+  at the discovery and at the day-parts while no route has completed
+  (world.route_due says when). Typed backend only; no paper prompt mirrors
+  it. The state is world.route_state's nine named fields, every one built
+  from the run by world.route_facts: the secret, the stake and the profile
+  from the config; `known`, `present`, `relationship` and
+  `last_conversation` from the taker's own memory and the tiles.
+
+  Acts on the pick or on a draw as the world section's `act-on` says (the
+  amendment of RP-D); the decision event records both.
+
+  RETURNS: "ask", "take" or "give_up"; give_up is the fail-safe.
+  """
+  facts = world.route_facts(persona, owner, maze, personas)
+  state = world.route_state(**facts)
+  return decision.ask_many(
+      "decide_route", state, world_questions.route_questions(),
+      world_questions.ROUTE_ACT_ON, world_questions.ROUTE_DOMAIN,
+      world_questions.ROUTE_FAIL_SAFE, counterparty=owner.name,
+      act_rule=world.act_on())
+
+
+def run_gpt_prompt_decide_to_take(persona, owner, maze, personas):
+  """015-IP RP-F: the take, asked once per opportunity episode at its
+  first free step (world.take_due says when), on world.take_state -- the
+  route state plus `object` and `opportunity`. On `take` the call site in
+  plan.py splices the fixed action through the paper's own reaction path.
+
+  RETURNS: "take" or "leave"; leave is the fail-safe.
+  """
+  facts = world.take_facts(persona, owner, maze, personas)
+  state = world.take_state(**facts)
+  return decision.ask_many(
+      "decide_to_take", state, world_questions.take_questions(),
+      world_questions.TAKE_ACT_ON, world_questions.TAKE_DOMAIN,
+      world_questions.TAKE_FAIL_SAFE, counterparty=owner.name,
+      act_rule=world.act_on())
+
+
+def run_gpt_generate_iterative_chat_utt(maze, init_persona, target_persona, retrieved, curr_context, curr_chat, test_input=None, verbose=False, reveal=False, need=False):
   def create_prompt_input(maze, init_persona, target_persona, retrieved, curr_context, curr_chat, test_input=None):
     persona = init_persona
     prev_convo_insert = "\n"
@@ -3266,9 +3311,12 @@ def run_gpt_generate_iterative_chat_utt(maze, init_persona, target_persona, retr
 
     init_iss = f"Here is Here is a brief description of {init_persona.scratch.name}.\n{init_persona.scratch.get_str_iss()}"
     # 010-IP LK-D: on a reveal, one line joins PART 1 -- what the persona
-    # knows and has told no one. On a withhold, and on every run with no
-    # world section, this returns init_iss unchanged: the paper's prompt.
-    init_iss = world.inject(init_iss, init_persona.scratch.name, reveal)
+    # knows and has told no one. 015-IP RP-E: when an `ask` route is being
+    # delivered in this dialogue, the need's line joins it too. On a
+    # withhold with no ask pending, and on every run with no world section,
+    # this returns init_iss unchanged: the paper's prompt.
+    init_iss = world.inject(init_iss, init_persona.scratch.name, reveal,
+                            need=need)
     prompt_input = [init_iss, init_persona.scratch.name, retrieved_str, prev_convo_insert,
       curr_location, curr_context, init_persona.scratch.name, target_persona.scratch.name,
       convo_str, init_persona.scratch.name, target_persona.scratch.name,

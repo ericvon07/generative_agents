@@ -1,0 +1,59 @@
+{
+  "node_1": {
+    "node_count": 1,
+    "type_count": 1,
+    "type": "thought",
+    "depth": 1,
+    "created": "2023-02-13 00:00:00",
+    "expiration": null,
+    "subject": "Sam Moore",
+    "predicate": "knows",
+    "object": "Arthur Burton",
+    "description": "Sam Moore has had his breakfast at The Rose and Crown Pub most mornings for years. He and Arthur Burton are on easy terms and talk about the town and Sam's navy days.",
+    "embedding_key": "Sam Moore has had his breakfast at The Rose and Crown Pub most mornings for years. He and Arthur Burton are on easy terms and talk about the town and Sam's navy days.",
+    "poignancy": 5,
+    "keywords": [
+      "Sam Moore",
+      "Arthur Burton"
+    ],
+    "filling": []
+  },
+  "node_2": {
+    "node_count": 2,
+    "type_count": 2,
+    "type": "thought",
+    "depth": 1,
+    "created": "2023-02-13 00:00:00",
+    "expiration": null,
+    "subject": "Sam Moore",
+    "predicate": "knows",
+    "object": "Tomas Kessler",
+    "description": "Tomas Kessler runs Harvey Oak Supply Store. Sam Moore knows him by sight and by name, and no more.",
+    "embedding_key": "Tomas Kessler runs Harvey Oak Supply Store. Sam Moore knows him by sight and by name, and no more.",
+    "poignancy": 5,
+    "keywords": [
+      "Sam Moore",
+      "Tomas Kessler"
+    ],
+    "filling": []
+  },
+  "node_3": {
+    "node_count": 3,
+    "type_count": 3,
+    "type": "thought",
+    "depth": 1,
+    "created": "2023-02-13 00:00:00",
+    "expiration": null,
+    "subject": "Sam Moore",
+    "predicate": "knows",
+    "object": "Daniel Okafor",
+    "description": "Daniel Okafor is a police officer who moved to the Ville a month ago.",
+    "embedding_key": "Daniel Okafor is a police officer who moved to the Ville a month ago.",
+    "poignancy": 5,
+    "keywords": [
+      "Sam Moore",
+      "Daniel Okafor"
+    ],
+    "filling": []
+  }
+}

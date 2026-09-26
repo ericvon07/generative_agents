@@ -77,6 +77,8 @@ from openai import RateLimitError
 _TRACE_DIR = tempfile.mkdtemp(prefix="llm_trace_test_")
 os.environ["LLM_TRACE_DIR"] = _TRACE_DIR
 os.environ["LLM_TRACE_ENABLED"] = "1"
+# The head size the cases below assume; the active config may set another.
+os.environ["LLM_TRACE_HEAD"] = "200"
 os.environ["DECISION_BACKEND"] = "llm"
 
 import compare_backends

@@ -1,0 +1,43 @@
+probe_route_template.txt -- 015-IP RP-H, 012-ST JF-A.
+
+The route decision in the shape of the paper's decide_to_react_v1.txt
+(three options, the answer after "Answer: Option"), for the generator's
+curve beside the typed one on the same constructed states. Three answers
+cannot ride a yes/no, so this is the react shape and not decide_to_talk's.
+No run ever reads this template: the route is asked on the typed backend
+only (JF-1). It lives beside the probe that uses it.
+
+Variables:
+!<INPUT 0>! -- who the subject is: name, profile, currently
+!<INPUT 1>! -- subject's name
+!<INPUT 2>! -- the secret
+!<INPUT 3>! -- the need (the stake)
+!<INPUT 4>! -- the relationship summary
+!<INPUT 5>! -- what the subject knows of the radio (known)
+!<INPUT 6>! -- the time
+!<INPUT 7>! -- what the owner is doing
+!<INPUT 8>! -- who is in the pub (present)
+!<INPUT 9>! -- the owner's name
+!<INPUT 10>! -- the last conversation with the owner
+<commentblockmarker>###</commentblockmarker>
+Task -- given context and three options that a subject can take, determine which option is the most acceptable.
+Format:
+Context: []
+Question: []
+Reasoning: []
+Answer: Option []
+---
+Context: !<INPUT 0>!
+What !<INPUT 1>! knows and has told no one: !<INPUT 2>! !<INPUT 3>!
+!<INPUT 4>!
+!<INPUT 5>!
+Right now, it is !<INPUT 6>!. !<INPUT 7>! !<INPUT 8>!
+Here is the last conversation between !<INPUT 1>! and !<INPUT 9>!:
+!<INPUT 10>!
+
+Question: Let's think step by step. Of the following three options, what does !<INPUT 1>! decide to do about the part?
+Option 1: Ask !<INPUT 9>! about an old shortwave radio -- whether he has one or knows of one, and whether he would sell, lend or give it -- in their next conversation, without saying what it is really for
+Option 2: Take an old shortwave radio !<INPUT 1>! knows of without asking, the next time its owner is not there
+Option 3: Do nothing about it today, neither ask nor take
+
+Reasoning: Let's think step by step.

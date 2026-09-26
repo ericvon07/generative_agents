@@ -19,6 +19,9 @@ Born 2026-09-25 for 010-IP step 3, with the four parts of the talk decision
 (the first residents). The reveal decision and its four companions arrive
 with step 5, and the whole file lands on main with step 7's pull request.
 
+The route and the take of W3 (015-IP RP-D, RP-F) were born at that plan's
+step 2, for the grids, at the end of this file; their call sites are step 3's.
+
 THE TALK DECISION IN FOUR PARTS (LK-L)
 
 The paper asks "Would A initiate a conversation with B?" as one question on
@@ -176,5 +179,118 @@ def reveal_questions():
   questions = {REVEAL_ACT_ON: jev.choice(REVEAL_CHOICE["instructions"],
                                          dict(REVEAL_CHOICE["criteria"]))}
   for key, text in REVEAL_COMPANIONS.items():
+    questions[key] = jev.noul(text)
+  return questions
+
+
+# --- the route and the take (015-IP RP-D, RP-F) -----------------------------
+#
+# The two decisions of W3, born at 015-IP step 2 so that the grids
+# (probe_route.py, probe_take.py) ask the questions the sim will ask, from
+# the same file; the sim's call sites (run_gpt_prompt.py, plan.py) arrive
+# with step 3. Each is a Choice the code acts on and companion Nouls in the
+# same request, recorded under `companions` and acted on by nothing -- each
+# companion worded to be answerable from the one field it names (the second
+# grid's lesson, 010-IP step 6).
+#
+# The route state (world.route_state) has nine named fields: secret, stake,
+# self {name, profile, currently}, other {name, doing, learned},
+# relationship, time, known, present, last_conversation. The take state
+# (world.take_state) adds object and opportunity.
+
+ROUTE_DOMAIN = ["ask", "take", "give_up"]
+ROUTE_FAIL_SAFE = "give_up"
+
+ROUTE_CHOICE = {
+    "instructions": (
+        "`self.name` keeps `secret` and needs what `stake` names. `known` "
+        "is what `self.name` knows of an old shortwave radio and of its "
+        "owner, `other.name`; `present` says who is in the pub right now; "
+        "`last_conversation` is the last exchange between `self.name` and "
+        "`other.name`; `relationship` says how they stand; `self.profile` "
+        "the kind of person `self.name` is. It is `time`. Which does "
+        "`self.name` decide to do about the part?"),
+    "criteria": {
+        "ask": ("`self.name` will ask `other.name` about an old shortwave "
+                "radio -- whether he has one or knows of one, and whether he "
+                "would sell, lend or give it -- in their next conversation, "
+                "without saying what it is really for."),
+        "take": ("`self.name` will take an old shortwave radio he knows of "
+                 "without asking, the next time its owner is not there."),
+        "give_up": ("`self.name` will do nothing about it today: neither "
+                    "ask nor take."),
+    },
+}
+
+ROUTE_COMPANIONS = {
+    "known_says_refused": (
+        "`known` says `other.name` refused to part with the radio."),
+    "present_says_officer": (
+        "`present` says a police officer is in the room."),
+    "would_rather_ask": (
+        "`self.name` would rather ask `other.name` for the radio than take "
+        "it, given `self.profile` and `relationship`."),
+    "stopped_wanting": (
+        "`self.name` has stopped wanting the part `stake` names."),
+}
+
+ROUTE_ACT_ON = "decide"
+
+
+def route_questions():
+  """The route Choice under ROUTE_ACT_ON and its four companions, as one
+  map for one jev.ask."""
+  questions = {ROUTE_ACT_ON: jev.choice(ROUTE_CHOICE["instructions"],
+                                        dict(ROUTE_CHOICE["criteria"]))}
+  for key, text in ROUTE_COMPANIONS.items():
+    questions[key] = jev.noul(text)
+  return questions
+
+
+TAKE_DOMAIN = ["take", "leave"]
+TAKE_FAIL_SAFE = "leave"
+
+TAKE_CHOICE = {
+    "instructions": (
+        "`self.name` is in The Rose and Crown Pub at `time`. `opportunity` "
+        "says `other.name` is out and when he is expected back; `object` "
+        "says where the radio is, its state and whose it is; `present` says "
+        "who else is in the room; `known` what `self.name` knows of the "
+        "radio and what `other.name` has said of it; `last_conversation` "
+        "the last exchange between them; `stake` what `self.name` needs "
+        "from it and `secret` why; `relationship` how `self.name` stands "
+        "with `other.name`; `self.profile` the kind of person `self.name` "
+        "is. Does `self.name` take the radio now?"),
+    "criteria": {
+        "take": ("`self.name` goes behind the counter and takes the radio "
+                 "now, without asking, while `other.name` is out."),
+        "leave": "`self.name` leaves the radio where it is.",
+    },
+}
+
+TAKE_COMPANIONS = {
+    "object_not_in_use": (
+        "`object` says the radio is not in use and would not be missed "
+        "soon."),
+    "owner_not_back_soon": (
+        "`opportunity` says `other.name` is away and not expected back "
+        "soon."),
+    "known_says_refused": (
+        "`known` says `other.name` refused to part with the radio."),
+    "someone_watching": "`present` says someone is watching.",
+    "breaks_trust": (
+        "Taking the radio without asking would break the trust "
+        "`relationship` describes."),
+}
+
+TAKE_ACT_ON = "decide"
+
+
+def take_questions():
+  """The take Choice under TAKE_ACT_ON and its five companions, as one map
+  for one jev.ask."""
+  questions = {TAKE_ACT_ON: jev.choice(TAKE_CHOICE["instructions"],
+                                       dict(TAKE_CHOICE["criteria"]))}
+  for key, text in TAKE_COMPANIONS.items():
     questions[key] = jev.noul(text)
   return questions

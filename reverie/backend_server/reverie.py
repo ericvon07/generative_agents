@@ -40,6 +40,7 @@ from persona.prompt_template import decision
 from persona.prompt_template import domain_guard
 from persona.prompt_template import lenient_parser
 from persona.prompt_template import run_manifest
+from persona.prompt_template import world
 
 current_file = os.path.abspath(__file__)
 
@@ -121,8 +122,15 @@ class ReverieServer:
     
     # <step> denotes the number of steps that our game has taken. A step here
     # literally translates to the number of moves our personas made in terms
-    # of the number of tiles. 
+    # of the number of tiles.
     self.step = reverie_meta['step']
+
+    # 015-IP RP-C: the world's runtime state, read from the simulation
+    # folder (it came with the fork's copy) or started fresh, and the
+    # object states put back on the tiles before the first cycle. Nothing
+    # with no world section.
+    world.boot(sim_folder, self.step, self.sec_per_step)
+    world.write_back(self.maze, self.step)
 
     # SETTING UP PERSONAS IN REVERIE
     # <personas> is a dictionary that takes the persona's full name as its 
@@ -213,9 +221,12 @@ class ReverieServer:
       outfile.write(json.dumps(reverie_meta, indent=2))
 
     # Save the personas.
-    for persona_name, persona in self.personas.items(): 
+    for persona_name, persona in self.personas.items():
       save_folder = f"{sim_folder}/personas/{persona_name}/bootstrap_memory"
       persona.save(save_folder)
+
+    # 015-IP RP-C: the world's runtime state, beside reverie/meta.json.
+    world.save(sim_folder)
 
 
   def start_path_tester_server(self): 
@@ -368,11 +379,15 @@ class ReverieServer:
         if env_retrieved: 
           # This is where we go through <game_obj_cleanup> to clean up all 
           # object actions that were used in this cylce. 
-          for key, val in game_obj_cleanup.items(): 
-            # We turn all object actions to their blank form (with None). 
+          for key, val in game_obj_cleanup.items():
+            # We turn all object actions to their blank form (with None).
             self.maze.turn_event_from_tile_idle(key, val)
-          # Then we initialize game_obj_cleanup for this cycle. 
+          # Then we initialize game_obj_cleanup for this cycle.
           game_obj_cleanup = dict()
+          # 015-IP RP-C: the states the world holds go back on the tiles
+          # after the paper's cleanup, so a taken object reads as missing
+          # every cycle from the take on. Nothing with no world section.
+          world.write_back(self.maze, self.step)
 
           # We first move our personas in the backend environment to match 
           # the frontend environment. 
@@ -488,11 +503,13 @@ class ReverieServer:
     # The commit and the seed, so the log of a run says what the run was
     # without anyone having to open the trace.
     print (run_manifest.status())
+    # The world, its act-on rule and its objects, when there is one.
+    print (world.status())
 
     # <sim_folder> points to the current simulation folder.
     sim_folder = f"{fs_storage}/{self.sim_code}"
 
-    while True: 
+    while True:
       if not input_command:
         sim_command = input("Enter option: ")
       else:

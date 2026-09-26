@@ -1,0 +1,40 @@
+probe_take_template.txt -- 015-IP RP-H, 012-ST JF-A.
+
+The take decision in the shape of the paper's decide_to_talk_v2.txt, for
+the generator's curve beside the typed one on the same constructed states.
+No run ever reads this template: the take is asked on the typed backend
+only (JF-1). It lives beside the probe that uses it.
+
+Variables:
+!<INPUT 0>! -- who the subject is: name, profile, currently
+!<INPUT 1>! -- subject's name
+!<INPUT 2>! -- the secret
+!<INPUT 3>! -- the need (the stake)
+!<INPUT 4>! -- the relationship summary
+!<INPUT 5>! -- what the subject knows of the radio (known)
+!<INPUT 6>! -- the radio: where it is, its state, whose it is (object)
+!<INPUT 7>! -- the time
+!<INPUT 8>! -- the opportunity: the owner is out, when he is expected back
+!<INPUT 9>! -- who else is in the pub (present)
+!<INPUT 10>! -- the owner's name
+!<INPUT 11>! -- the last conversation with the owner
+<commentblockmarker>###</commentblockmarker>
+Task -- given context, determine whether the subject will take an object that is not his, now.
+Format:
+Context: []
+Question: []
+Reasoning: []
+Answer in "yes" or "no": []
+---
+Context: !<INPUT 0>!
+What !<INPUT 1>! knows and has told no one: !<INPUT 2>! !<INPUT 3>!
+!<INPUT 4>!
+!<INPUT 5>!
+!<INPUT 6>!
+Right now, it is !<INPUT 7>!. !<INPUT 1>! is in The Rose and Crown Pub. !<INPUT 8>! !<INPUT 9>!
+Here is the last conversation between !<INPUT 1>! and !<INPUT 10>!, this morning:
+!<INPUT 11>!
+
+Question: Does !<INPUT 1>! go behind the counter and take the radio now, without asking, while !<INPUT 10>! is out?
+
+Reasoning: Let's think step by step.
