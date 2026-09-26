@@ -16,6 +16,7 @@ from persona.prompt_template.run_gpt_prompt import *
 from persona.cognitive_modules.retrieve import *
 from persona.cognitive_modules.converse import *
 from persona.prompt_template import llm_trace
+from persona.prompt_template import world
 
 ##############################################################################
 # CHAPTER 2: Generate
@@ -906,7 +907,51 @@ def _chat_react(maze, persona, focused_event, reaction_mode, personas):
       act_obj_event, act_start_time)
 
 
-def _wait_react(persona, reaction_mode): 
+def _take_react(persona, obj_name, spec):
+  """015-IP RP-F: the scripted take, spliced into the schedule through the
+  same path a chat reaction takes (_create_react): a fixed description,
+  address and duration, the event triple the tile carries -- so the act
+  enters the taker's memory ungated by the paper's own perception, and the
+  witness's when he is in the arena -- and the object's event while it is
+  being taken. The one typed decision in the fork that writes an action."""
+  act = world.take_action(obj_name, spec)
+  _create_react(persona, act["description"], act["minutes"],
+                act["address"], tuple(act["event"]),
+                None, None, None, None,
+                act["pronunciatio"], act["obj_description"],
+                act["pronunciatio"], tuple(act["obj_event"]))
+
+
+def _world_react(persona, maze, personas):
+  """015-IP step 3: the world's own decisions for the persona who may take
+  an object (W3's Tomas) -- the discovery check, the route at the
+  discovery and the day-parts (RP-D), the take once per opportunity
+  episode (RP-F). With no world section, or for a persona who is nobody's
+  taker, nothing is asked and nothing is inserted: the fork is the paper's.
+  Runs after the paper's own reactions of the step, so a chat that just
+  started is not overwritten by a take; the take waits for the episode's
+  first free step."""
+  found = world.object_of_taker(persona.name)
+  if found is None:
+    return
+  obj_name, spec = found
+  owner = personas.get(spec.get("owner"))
+  if owner is None:
+    return
+  step = llm_trace.current_step()
+  world.note_discovery(persona, step)
+  at = world.route_due(persona, step)
+  if at:
+    answer = run_gpt_prompt_decide_route(persona, owner, maze, personas)
+    world.route_answered(persona, answer, step, at)
+  if world.take_due(persona, maze, personas, step):
+    answer = run_gpt_prompt_decide_to_take(persona, owner, maze, personas)
+    world.take_answered(persona, answer, step)
+    if answer == "take":
+      _take_react(persona, obj_name, spec)
+
+
+def _wait_react(persona, reaction_mode):
   p = persona
 
   inserted_act = f'waiting to start {p.scratch.act_description.split("(")[-1][:-1]}'
@@ -988,10 +1033,15 @@ def plan(persona, maze, personas, new_day, retrieved):
         _chat_react(maze, persona, focused_event, reaction_mode, personas)
       elif reaction_mode[:4] == "wait": 
         _wait_react(persona, reaction_mode)
-      # elif reaction_mode == "do other things": 
+      # elif reaction_mode == "do other things":
       #   _chat_react(persona, focused_event, reaction_mode, personas)
 
-  # Step 3: Chat-related state clean up. 
+  # 015-IP step 3: the world's decisions (the route, the take) for the
+  # persona who may take an object. Nothing with no world section.
+  if world.enabled():
+    _world_react(persona, maze, personas)
+
+  # Step 3: Chat-related state clean up.
   # If the persona is not chatting with anyone, we clean up any of the 
   # chat-related states here. 
   if persona.scratch.act_event[1] != "chat with":

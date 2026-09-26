@@ -347,8 +347,30 @@ def _resolve_noul(label, spec, domain, state, fail_safe, social=None):
 
 # --- several questions over one state, one of them acted on (010-IP LK-L) ----
 
+ACT_RULES = ("pick", "sample")
+
+
+def _draw(probabilities):
+  """One option drawn with the Choice's probabilities as weights, from the
+  run's seeded `random` (run_manifest seeds it per stage), so a day on
+  `sample` replays. Options are walked in name order so the same draw
+  lands on the same option whatever order the backend listed them in."""
+  import random
+  options = sorted((probabilities or {}).items())
+  total = sum(float(p) for _, p in options)
+  if not options or total <= 0:
+    return None
+  r = random.random() * total
+  acc = 0.0
+  for option, p in options:
+    acc += float(p)
+    if r < acc:
+      return option
+  return options[-1][0]
+
+
 def ask_many(label, state, questions, act_on, domain, fail_safe,
-             counterparty=None):
+             counterparty=None, act_rule="pick"):
   """Ask a map of questions over one state in ONE request, act on one.
 
   The derived track's entry point beside choose() (world_questions.py):
@@ -357,18 +379,28 @@ def ask_many(label, state, questions, act_on, domain, fail_safe,
   on the decision event under `companions`, raw, so a weight or a reading
   can change later without a rerun. Nothing reads the companions back.
 
+  <act_rule> (015-IP RP-D's amendment, the world section's `act-on`):
+  "pick" returns the Choice's answer; "sample" draws one option with the
+  Choice's probabilities as weights and returns the draw. The event records
+  `acted_on`, the `pick` either way and, under sample, the `drawn` option,
+  so a day can be read both ways. Under pick no random number is drawn.
+
   Typed backend only (012-ST JF-A): these questions mirror no paper prompt,
   so there is nothing for the paper's backend to resolve.
 
   RETURNS:
-    The answer under <act_on>, or <fail_safe> when the backend never
-    answered (recorded with gave_up: true and backend_error: true).
+    The answer under <act_on> (or the draw), or <fail_safe> when the
+    backend never answered (recorded with gave_up: true and
+    backend_error: true; nothing is drawn).
   """
   if _backend != "jev":
     raise RuntimeError("decision '%s' is a derived-track question and is "
                        "asked on the typed backend only" % label)
   if state is None:
     raise ValueError("decision '%s' reached ask_many without a state" % label)
+  if act_rule not in ACT_RULES:
+    raise ValueError("decision '%s': act_rule must be one of %s, not %r"
+                     % (label, "/".join(ACT_RULES), act_rule))
   social = _social_fields(counterparty, state)
   try:
     answers = jev.ask(state, questions, label=label)
@@ -379,6 +411,12 @@ def ask_many(label, state, questions, act_on, domain, fail_safe,
     return _failsafe(label, domain, fail_safe, social)
 
   answer, probabilities, confidence = jev.read_choice(answers[act_on])
+  pick = answer
+  drawn = None
+  if act_rule == "sample":
+    drawn = _draw(probabilities)
+    if drawn is not None:
+      answer = drawn
   companions = {}
   for key, question in questions.items():
     if key == act_on:
@@ -394,7 +432,11 @@ def ask_many(label, state, questions, act_on, domain, fail_safe,
   extra = {"confidence": confidence,
            "probabilities": _top(probabilities),
            "question_type": "choice",
-           "companions": companions}
+           "companions": companions,
+           "acted_on": act_rule,
+           "pick": pick}
+  if drawn is not None:
+    extra["drawn"] = drawn
   extra.update(social or {})
   llm_trace.record_decision(label, domain, answer, backend=_backend,
                             fail_safe=fail_safe, gave_up=False, extra=extra)

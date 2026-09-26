@@ -105,7 +105,7 @@ def agent_chat_v1(maze, init_persona, target_persona):
                       summarized_ideas[1])
 
 
-def generate_one_utterance(maze, init_persona, target_persona, retrieved, curr_chat, reveal=False): 
+def generate_one_utterance(maze, init_persona, target_persona, retrieved, curr_chat, reveal=False, need=False):
   # Chat version optimized for speed via batch generation
   curr_context = (f"{init_persona.scratch.name} " + 
               f"was {init_persona.scratch.act_description} " + 
@@ -117,7 +117,7 @@ def generate_one_utterance(maze, init_persona, target_persona, retrieved, curr_c
               f"{target_persona.scratch.name}.")
 
   print ("July 23 5")
-  x = run_gpt_generate_iterative_chat_utt(maze, init_persona, target_persona, retrieved, curr_context, curr_chat, reveal=reveal)[0]
+  x = run_gpt_generate_iterative_chat_utt(maze, init_persona, target_persona, retrieved, curr_context, curr_chat, reveal=reveal, need=need)[0]
 
   print ("July 23 6")
 
@@ -134,6 +134,21 @@ def _reveal(speaker, listener, relationship, curr_chat):
   answer = run_gpt_prompt_decide_to_reveal(speaker, listener, relationship,
                                            curr_chat)
   return answer == "reveal"
+
+
+def _need(speaker, listener):
+  """015-IP RP-E: whether this line carries the need -- the speaker's
+  `ask` route is pending and the listener is the object's owner. With no
+  world section, or no object, never. The first line that carries it
+  completes the route (ask delivered); the intention stays until the
+  dialogue ends so that every round of it carries the line."""
+  if not world.enabled():
+    return False
+  due = world.need_due(speaker.scratch.name, listener.scratch.name)
+  if due:
+    world.ask_delivered(speaker.scratch.name, listener.scratch.name,
+                        llm_trace.current_step())
+  return due
 
 
 def agent_chat_v2(maze, init_persona, target_persona): 
@@ -157,8 +172,9 @@ def agent_chat_v2(maze, init_persona, target_persona):
                       f"{target_persona.scratch.name} is {target_persona.scratch.act_description}"]
     retrieved = new_retrieve(init_persona, focal_points, 15)
     reveal = _reveal(init_persona, target_persona, relationship, curr_chat)
-    utt, end = generate_one_utterance(maze, init_persona, target_persona, retrieved, curr_chat, reveal=reveal)
-    llm_trace.record_utterance(init_persona.scratch.name, target_persona.scratch.name, utt, reveal, end)
+    need = _need(init_persona, target_persona)
+    utt, end = generate_one_utterance(maze, init_persona, target_persona, retrieved, curr_chat, reveal=reveal, need=need)
+    llm_trace.record_utterance(init_persona.scratch.name, target_persona.scratch.name, utt, reveal, end, need=need)
 
     curr_chat += [[init_persona.scratch.name, utt]]
     if end:
@@ -181,12 +197,18 @@ def agent_chat_v2(maze, init_persona, target_persona):
                       f"{init_persona.scratch.name} is {init_persona.scratch.act_description}"]
     retrieved = new_retrieve(target_persona, focal_points, 15)
     reveal = _reveal(target_persona, init_persona, relationship, curr_chat)
-    utt, end = generate_one_utterance(maze, target_persona, init_persona, retrieved, curr_chat, reveal=reveal)
-    llm_trace.record_utterance(target_persona.scratch.name, init_persona.scratch.name, utt, reveal, end)
+    need = _need(target_persona, init_persona)
+    utt, end = generate_one_utterance(maze, target_persona, init_persona, retrieved, curr_chat, reveal=reveal, need=need)
+    llm_trace.record_utterance(target_persona.scratch.name, init_persona.scratch.name, utt, reveal, end, need=need)
 
     curr_chat += [[target_persona.scratch.name, utt]]
     if end:
       break
+
+  # 015-IP RP-E: an `ask` intention delivered in this dialogue is spent.
+  if world.enabled():
+    world.conversation_ended(init_persona.scratch.name,
+                             target_persona.scratch.name)
 
   print ("July 23 PU")
   for row in curr_chat: 

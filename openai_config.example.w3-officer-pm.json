@@ -86,6 +86,20 @@
       "Tomas Kessler": "extraversion: low (`quiet`: quiet, not withdrawn; speaks when spoken to); agreeableness: middling to high (`loyal`: trust grows with kindness and, once given, holds); conscientiousness: high (`orderly`: tidy, keeps lists); neuroticism: middling (no signed adjective; worries about being found out); openness: middling (practical, curious about how things work).",
       "Sam Moore": "extraversion: high (`humorous`, loves to share stories: talks first, to anyone); agreeableness: high (`wise`: gives advice, holds no grudges); conscientiousness: middling to high (`resourceful`, a navy career: does what needs doing); neuroticism: low (settled); openness: middling to high (an avid reader, curious about other people's stories).",
       "Daniel Okafor": "extraversion: middling to high (`easygoing`: joins whoever is talking, seldom starts); agreeableness: high (listens, does not press); conscientiousness: high (a duty he keeps without being told twice); neuroticism: low (`easygoing`: calm); openness: high (`curious`: interested in everyone's story)."
-    }
+    },
+    "objects": {
+      "shortwave radio": {
+        "address": "the Ville:The Rose and Crown Pub:pub:shortwave radio",
+        "owner": "Arthur Burton",
+        "taker": "Tomas Kessler",
+        "description": "an old shortwave radio on the back wall behind the counter of The Rose and Crown Pub, at the end of the bar beside the refrigerator, reached through the gap at the end of the counter, switched off and not in use",
+        "take": {
+          "description": "taking the old shortwave radio from behind the counter",
+          "minutes": 10
+        }
+      }
+    },
+    "act-on": "pick",
+    "discovery": "perception"
   }
 }

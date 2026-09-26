@@ -683,19 +683,40 @@ def record_decision(label, domain, answer, backend=None, fail_safe=None,
     pass
 
 
-def record_utterance(speaker, listener, text, injected, end=None):
+def record_utterance(speaker, listener, text, secret, end=None, need=False):
   """One line of a conversation, whole (010-IP LK-D).
 
   A call record keeps a head of the response; a leak is read from the whole
-  sentence, so every utterance is its own event. `injected` says whether the
-  speaker's prompt carried the world's private line -- True only after a
-  reveal decision said reveal. Recording only: it fires under any world,
-  changes no state and draws no random number."""
+  sentence, so every utterance is its own event. Two flags say which private
+  text entered the speaker's prompt (015-IP RP-E): `secret` -- the world's
+  private line, True only after a reveal decision said reveal -- and `need`
+  -- the stake's line, True on every round of the dialogue an `ask` route
+  is delivered in. `injected` is kept equal to `secret`, so the W2 readers
+  keep reading. Recording only: it fires under any world, changes no state
+  and draws no random number."""
   if not _config["enabled"]:
     return
   try:
     _emit({"event": "utterance", "speaker": speaker, "listener": listener,
-           "text": text, "injected": bool(injected), "end": end})
+           "text": text, "need": bool(need), "secret": bool(secret),
+           "injected": bool(secret), "end": end})
+  except Exception:
+    pass
+
+
+def record_world(**fields):
+  """One thing the world module did or saw (015-IP step 3): `kind` is
+  `discovery` (the object entered the taker's spatial memory), `route`
+  (the route was asked, with `at` and `answer`), `opportunity` (an
+  episode opens or closes), `take` (the take was decided, with the step
+  the object goes missing), `ask_delivered` (the need entered a dialogue).
+  Recording only, like an utterance."""
+  if not _config["enabled"]:
+    return
+  try:
+    record = {"event": "world"}
+    record.update(fields)
+    _emit(record)
   except Exception:
     pass
 
