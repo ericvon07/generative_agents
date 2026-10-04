@@ -23,7 +23,8 @@ there (base_the_ville_n9). The modes are VP-D's:
 The answers go to ../../logs/interviews/<target>-<mode>.json. The generator is
 the config's, so the run's config must be the one in openai_config.json when
 this is run; the trace records the calls under sim
-"<target>-interview-<mode>".
+"interview-<target>-<mode>" -- named so that it never starts with a run's
+"<prefix>-s-", which the registrar reads as a stage of that run.
 
 Each answer carries `label`, `labelled_by` and `support`, all null here. They
 are filled at 016-IP step 4 by VP-E's rule (read_valentine.py's docstring
@@ -140,7 +141,7 @@ def main(argv=None):
   args = ap.parse_args(argv)
 
   from persona.prompt_template import llm_trace
-  llm_trace.set_simulation("%s-interview-%s" % (args.target, args.mode))
+  llm_trace.set_simulation("interview-%s-%s" % (args.target, args.mode))
   from persona.persona import Persona
 
   stage = checkpoint_of(args.target)
