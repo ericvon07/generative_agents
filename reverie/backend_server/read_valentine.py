@@ -85,6 +85,8 @@ THE READINGS, in order:
      and the day plan before and after the midnight, whether the new-day path
      ran (a call of plan.revise_identity at the midnight step) and whether any
      prompt of that step fell to its fail-safe; the lines naming either fact.
+     The gate stops only on VP-I's amended list (gate_stops); any other
+     fail-safe at that step, such as the wake-up hour, is printed as counted.
   5. (d) the decision layer: decisions, fail-safes (gave_up), out-of-domain
      answers and calls per decision, the location family, the social pair and
      the scores on separate lines (SR-1); the conversations held and with
@@ -456,11 +458,31 @@ def midnight(prefix, stages, rows, names):
                   "revise_identity_called": revised,
                   "failsafes": failsafes, "errored_calls": errored,
                   "names": names_it}
-  gate = all(v["revise_identity_called"] and v["changed"] and v["plan"]
-             and not v["failsafes"] and not v["errored_calls"]
-             for v in read.values())
+  for v in read.values():
+    v["stops"] = gate_stops(v)
+  gate = not any(v["stops"] for v in read.values())
   return {"stage": folder, "before": before[0][3] if before else None,
           "gate": gate, "personas": read}
+
+
+def gate_stops(v):
+  """VP-I as amended on 2026-10-03: the gate stops only on what the story stands
+  on -- the identity revision did not run or errored, `currently` was not
+  revised, there is no day plan, or the hourly schedule fell to its fail-safe.
+  Any other fail-safe or errored call at the midnight step (the wake-up hour's
+  5-token budget, an event triple) is counted, not a stop."""
+  why = []
+  if not v["revise_identity_called"]:
+    why.append("no revise_identity call at step %d" % MIDNIGHT)
+  if any(l.endswith("revise_identity") for l in v["errored_calls"]):
+    why.append("revise_identity errored")
+  if not v["changed"]:
+    why.append("currently unchanged")
+  if not v["plan"]:
+    why.append("no day plan")
+  if any(l.endswith("generate_hourly_schedule") for l in v["failsafes"]):
+    why.append("hourly schedule fell to its fail-safe")
+  return why
 
 
 # --- the decision layer and operations --------------------------------------
@@ -724,17 +746,11 @@ def read(prefix, start, show_lines, stamp):
     print("   GATE: %s" % ("PASSED" if mid["gate"] else "FAILED"))
     for n in names:
       v = mid["personas"][n]
-      flags = []
-      if not v["revise_identity_called"]:
-        flags.append("no revise_identity call at step %d" % MIDNIGHT)
-      if not v["changed"]:
-        flags.append("currently unchanged")
-      if not v["plan"]:
-        flags.append("no day plan")
+      flags = ["STOPS: %s" % s for s in v["stops"]]
       if v["failsafes"]:
-        flags.append("fail-safe: %s" % ", ".join(v["failsafes"]))
+        flags.append("counted fail-safe: %s" % ", ".join(v["failsafes"]))
       if v["errored_calls"]:
-        flags.append("errored: %s" % ", ".join(v["errored_calls"]))
+        flags.append("counted errored: %s" % ", ".join(v["errored_calls"]))
       named = ["%s in %s" % (k, "/".join(w)) for k, w in v["names"].items() if w]
       print("   %-19s %s%s" % (n, "; ".join(flags) or "ok",
                                ("  NAMES " + ", ".join(named)) if named else ""))
