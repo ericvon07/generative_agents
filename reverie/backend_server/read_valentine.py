@@ -16,8 +16,16 @@ thing that decides whether a memory carries a fact. Case-insensitive, read on a
 node's description, subject, predicate and object together:
 
   the party       `valentine`, or `party` together with `hobbs` or `isabella`
-  the candidacy   `mayor`, `election` or `candida`
+  the candidacy   `mayor`, `election` or `candida`, together with `sam` (a
+                  whole word) or `moore` -- in the text, or as the node's
+                  subject, or as the utterance's speaker
   a person        the person's full name, or their first name as a whole word
+
+  Amended 2026-10-03, before any run that counts, when D13 put the paper's
+  seed memories into the village: Carmen Ortiz's row seeds "You are somewhat
+  curious about who will run for the local mayor election", which the first
+  candidacy pattern matched although it says nothing of Sam. A node carries
+  the candidacy only if it ties the office to him.
 
 THE LABEL RULE (VP-E) -- applied by Claude at step 4, or overridden by the
 author; this reader only reads the labels (`label`: "yes" | "no" |
@@ -88,8 +96,11 @@ THE READINGS, in order:
      conversation stored up to three times (TODOS); the paper's measures are
      per persona and do not inherit it.
 
---start names the checkpoint whose `relations` interview is the start
-density (the base, the same state for every arm). --json writes every figure
+The start density is read on the run's first checkpoint (its stage 0, step 200,
+00:33 of 13 February, every persona asleep, no conversation possible), where
+D13 has loaded the paper's seed memories; each arm loads its own, so each has
+its own start. --start names a checkpoint printed beside it for reference
+(default base_the_ville_n9: the release's base, no seed memory at all). --json writes every figure
 to a file for the snapshot. --stamp writes each answer's `support` into the
 interview files (the only field this reader writes, and only there).
 """
@@ -121,7 +132,8 @@ END = 17280
 PATTERNS = {
     "party": lambda t: bool(re.search(r"valentine", t)) or (
         bool(re.search(r"party", t)) and bool(re.search(r"hobbs|isabella", t))),
-    "candidacy": lambda t: bool(re.search(r"mayor|election|candida", t)),
+    "candidacy": lambda t: bool(re.search(r"mayor|election|candida", t)) and (
+        bool(re.search(r"\bsam\b|moore", t))),
 }
 ORIGINATOR = {"party": ISABELLA, "candidacy": SAM}
 
@@ -397,7 +409,8 @@ def heard_by_utterance(rows, about):
   match = matcher(about)
   first = {}
   for r in rows:
-    if r.get("event") == "utterance" and match((r.get("text") or "").lower()):
+    said = ("%s %s" % (r.get("speaker") or "", r.get("text") or "")).lower()
+    if r.get("event") == "utterance" and match(said):
       who = r.get("listener")
       if who and who not in first:
         first[who] = {"step": r.get("step"), "sim_time": r.get("sim_time"),
@@ -533,7 +546,17 @@ def operations(files, rows):
       a = datetime.datetime.strptime(min(ts), "%Y-%m-%dT%H:%M:%S.%f")
       b = datetime.datetime.strptime(max(ts), "%Y-%m-%dT%H:%M:%S.%f")
       wall += (b - a).total_seconds()
+  seed = [r for r in rows if r.get("phase") == "seed"]
+  seed_ts = sorted(r["ts"] for r in seed if r.get("ts"))
+  seed_load = {
+      "calls": sum(1 for r in seed if r.get("event") == "call"),
+      "decisions": sum(1 for r in seed if r.get("event") == "decision"),
+      "minutes": ((datetime.datetime.strptime(seed_ts[-1], "%Y-%m-%dT%H:%M:%S.%f")
+                   - datetime.datetime.strptime(seed_ts[0], "%Y-%m-%dT%H:%M:%S.%f"))
+                  .total_seconds() / 60.0) if seed_ts else 0.0,
+      "record": next((r for r in rows if r.get("event") == "seed_history"), None)}
   return {"wall_clock_h": wall / 3600.0, "calls": dict(by_path),
+          "seed_load": seed_load,
           "generator_calls": len(gen), "providers": dict(providers),
           "rate_limit_waits": len(waits),
           "rate_limit_wait_s": sum(r.get("delay_s") or 0 for r in waits),
@@ -585,7 +608,9 @@ def read(prefix, start, show_lines, stamp):
         "gpt-3.5-turbo, one run]")
   facts, fpath = load_interview(prefix, "facts")
   rel_end, rpath = load_interview(prefix, "relations")
-  rel_start, spath = load_interview(start, "relations") if start else (None, None)
+  first = stages[0][3]
+  rel_first, fpath1 = load_interview(first, "relations")
+  rel_base, bpath = load_interview(start, "relations") if start else (None, None)
   measures = {}
   if facts is None:
     print("   the facts interview is not on disk (%s)" % fpath)
@@ -606,7 +631,8 @@ def read(prefix, start, show_lines, stamp):
           "by the author, %d fail-safe"
           % (fc["answers"], fc["unlabelled"], fc["unsettled"], fc["by_author"],
              fc["fail_safe"]))
-  for tag, iv, path in (("start", rel_start, spath), ("end", rel_end, rpath)):
+  for tag, iv, path in (("base", rel_base, bpath), ("start", rel_first, fpath1),
+                        ("end", rel_end, rpath)):
     if iv is None:
       print("   density at the %s: the relations interview is not on disk (%s)"
             % (tag, path))
@@ -766,6 +792,14 @@ def read(prefix, start, show_lines, stamp):
   print("   rate-limit waits %d, %.0f s waited; cost: router $%.4f, typed "
         "backend $%.4f" % (ops["rate_limit_waits"], ops["rate_limit_wait_s"],
                            ops["router_cost_usd"], ops["jev_cost_usd"]))
+  sl = ops["seed_load"]
+  if sl["record"]:
+    print("   seed memories (D13): %d phrases loaded in %.1f min, %d calls and "
+          "%d decisions, all counted above" % (sl["record"].get("phrases"),
+                                               sl["minutes"], sl["calls"],
+                                               sl["decisions"]))
+  else:
+    print("   seed memories (D13): none loaded in this run")
   for p in ops["pins"]:
     print("   pin from %s: %s  config %s" % (p["from_stage"], p["order"],
                                             p["config_sha1"]))

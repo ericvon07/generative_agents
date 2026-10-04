@@ -75,5 +75,7 @@
     "run": {
         "seed": 20260922
     },
-    "_decision-backend-note": "016-IP VP-B: both arms run this one file; the arm is chosen at launch by the DECISION_BACKEND environment variable (llm for vp9-llm, jev for vp9-jev)."
+    "_decision-backend-note": "016-IP VP-B: both arms run this one file; the arm is chosen at launch by the DECISION_BACKEND environment variable (llm for vp9-llm, jev for vp9-jev).",
+    "seed-history": "the_ville/agent_history_init_n25.csv",
+    "_seed-history-note": "016-IP D13: the paper's seed memories (Park et al. 2023 \u00a73.1), loaded by the runner in a run's first stage when its origin is at step 0; rows of agents not in the simulation skipped. Each arm loads its own, so the importance of each seed memory is that arm's decision (the author, 2026-10-03)."
 }

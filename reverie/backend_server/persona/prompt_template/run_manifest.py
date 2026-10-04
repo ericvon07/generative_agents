@@ -285,6 +285,10 @@ def apply(fork_sim_code=None, sim_code=None, steps=None):
       # fingerprint cannot see; the effective value is recorded so two runs
       # whose JSON prompts differ never share an identity.
       "json_no_fence": _no_fence(cfg),
+      # D13 (016-IP): the history file whose phrases the runner loads as the
+      # paper's seed memories in a run's first stage, or null. Every run
+      # before 2026-10-03 started without them.
+      "seed_history": cfg.get("seed-history") or None,
       "config_sha1": _config_fingerprint(cfg),
       "python": platform.python_version(),
       "platform": "%s %s" % (platform.system().lower(), platform.machine()),
