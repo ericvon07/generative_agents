@@ -7,6 +7,8 @@ import sys
 import time
 import shutil
 import reverie
+import json
+import seed_history
 import argparse
 import webbrowser
 import subprocess
@@ -211,6 +213,12 @@ if __name__ == '__main__':
     max_stalls = int(os.environ.get("AUTO_EXEC_MAX_STALLS", 2))
     stalls = 0
 
+    try:
+        with open("../../openai_config.json") as f:
+            seed_file = seed_history.configured(json.load(f))
+    except Exception:
+        seed_file = None
+
     print("(Auto-Exec): STARTING THE EXPERIMENT", flush=True)
     print(f"(Auto-Exec): Origin: {origin}", flush=True)
     print(f"(Auto-Exec): Target: {target}", flush=True)
@@ -218,6 +226,10 @@ if __name__ == '__main__':
     print(f"(Auto-Exec): Checkpoint Freq: {checkpoint_freq}", flush=True)
     print(f"(Auto-Exec): Origin is at step {current_step}; running to "
           f"{tot_steps} ({tot_steps - current_step} steps)", flush=True)
+    if seed_file:
+        print(f"(Auto-Exec): Seed memories (D13): {seed_file}"
+              + ("" if current_step == 0 else
+                 " -- NOT loaded: the origin is past step 0"), flush=True)
 
     # --steps is an absolute end step, not a count. Forking a checkpoint that
     # is already past it used to skip the loop and exit 0 in 7 ms, which reads
@@ -238,6 +250,12 @@ if __name__ == '__main__':
             print(f"(Auto-Exec): STAGE {idx}", flush=True)
             print(f"(Auto-Exec): Running experiment '{exp_name}' from step '{current_step}' to '{curr_checkpoint}'", flush=True)
             rs = reverie.ReverieServer(origin, target)
+            # D13 (016-IP): the paper's seed memories, loaded once, in the
+            # first stage of a run that starts at step 0, before the first
+            # step -- the command the paper's server takes by hand, which
+            # this runner never typed. Absent from the config, nothing runs.
+            if idx == 0 and current_step == 0 and seed_file:
+                seed_history.load(rs, seed_file)
             th, pid = None, None 
             # Headless chrome doesn't need a thread since it create a dedicated thread by itself
             if ui:

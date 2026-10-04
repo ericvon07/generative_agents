@@ -721,6 +721,22 @@ def record_world(**fields):
     pass
 
 
+def record_seed_history(**fields):
+  """D13 (016-IP): the paper's seed memories were loaded at the start of the
+  run -- `file`, `phrases`, `per_agent`, `skipped_agents` (rows of agents not
+  in the simulation) and `clock_lent_to` (personas whose unset clock was lent
+  the server's for the load). The calls the load made are in the trace
+  before this record, under phase "seed". Recording only."""
+  if not _config["enabled"]:
+    return
+  try:
+    record = {"event": "seed_history"}
+    record.update(fields)
+    _emit(record)
+  except Exception:
+    pass
+
+
 def record_rate_limit(path, status, attempt, of, delay, error=None,
                       label=None, provider=None):
   """A provider said 429, and the request is about to be made again.
