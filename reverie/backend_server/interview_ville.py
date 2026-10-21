@@ -1,7 +1,7 @@
 """
 File: interview_ville.py
-Description: the paper's end-of-run interview in the paper's Ville, W1 (016-IP
-             step 1, VP-D and VP-E). Reads one checkpoint, asks every persona
+Description: the paper's end-of-run interview in the paper's Ville, W1.
+             Reads one checkpoint, asks every persona
              in it the paper's questions on the paper's own analysis path
              (retrieve, summarize, next line; see ask), and saves each answer
              with the memories it was built from. It writes nothing into the
@@ -9,12 +9,12 @@ Description: the paper's end-of-run interview in the paper's Ville, W1 (016-IP
              are in the output, and the script refuses to save when they
              differ.
 
-    ../../../.venv/bin/python interview_ville.py <target> --mode facts|relations
-                                                 [--persona NAME ...]
+    python interview_ville.py <target> --mode facts|relations
+                              [--persona NAME ...]
 
 <target> is a run prefix (its last stage folder under
 environment/frontend_server/storage is the checkpoint) or the name of a folder
-there (base_the_ville_n9). The modes are VP-D's:
+there (base_the_ville_n9). The modes:
 
   facts      the paper's two questions of §7.1, verbatim, to every persona;
   relations  "Do you know of <name>?" for every other persona in the
@@ -24,11 +24,11 @@ The answers go to ../../logs/interviews/<target>-<mode>.json. The generator is
 the config's, so the run's config must be the one in openai_config.json when
 this is run; the trace records the calls under sim
 "interview-<target>-<mode>" -- named so that it never starts with a run's
-"<prefix>-s-", which the registrar reads as a stage of that run.
+"<prefix>-s-", which the readers would take for a stage of that run.
 
 Each answer carries `label`, `labelled_by` and `support`, all null here. They
-are filled at 016-IP step 4 by VP-E's rule (read_valentine.py's docstring
-holds the rule and its patterns, committed before the runs) or by the author.
+are filled afterwards by the label rule (read_valentine.py's docstring
+holds the rule and its patterns, committed before the runs) or by hand.
 
 Two things the checkpoint can be that the paper's path does not expect, and
 what is done about each -- both recorded on the answer, never silent:

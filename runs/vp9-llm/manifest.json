@@ -1,0 +1,1962 @@
+{
+  "name": "vp9-llm",
+  "registered": "2026-10-04",
+  "status": "citable",
+  "condition": {
+    "decision_backend": "llm",
+    "jev_model": null,
+    "noul_threshold": 0.5,
+    "on_error": "failsafe",
+    "provider_pin": {
+      "order": [
+        "friendli"
+      ],
+      "allow_fallbacks": false
+    },
+    "provider_fallbacks": [
+      "novita",
+      "parasail",
+      "crusoe"
+    ],
+    "lenient_parser": "on",
+    "json_no_fence": true,
+    "seed_history": "the_ville/agent_history_init_n25.csv",
+    "seed_history_loaded": 95
+  },
+  "code": {
+    "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+    "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+    "branch": "v14-the-valentine-party-twice",
+    "dirty": false,
+    "shas": [
+      "6f442bd0e7a9c214b9009c7f87e63decb5e88a91"
+    ],
+    "trees": [
+      "8e2074c4a10d30329900be7d1cfaa3da7032ba9e"
+    ],
+    "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155",
+    "public_shas": [
+      "41973e332a03ecb0eede0b02e15bf687515b7155"
+    ]
+  },
+  "world": "W1",
+  "seed": 20260922,
+  "config_sha1": "5f7da622f046",
+  "model": {
+    "name": "google/gemma-4-31b-it",
+    "base_url": "https://openrouter.ai/api/v1",
+    "provider_pin": {
+      "order": [
+        "friendli"
+      ],
+      "allow_fallbacks": false
+    },
+    "provider_fallbacks": [
+      "novita",
+      "parasail",
+      "crusoe"
+    ],
+    "embeddings": "nomic-embed-text",
+    "embeddings_base_url": "http://localhost:11434/v1"
+  },
+  "domain_guard": true,
+  "origin": "base_the_ville_n9",
+  "steps": {
+    "from": 0,
+    "to": 17280
+  },
+  "sim_time": {
+    "from": "2023-02-13 00:00:00",
+    "to": "2023-02-15 00:00:00"
+  },
+  "argv": "automatic_execution.py --origin base_the_ville_n9 --target vp9-llm --steps 17280 --ui False --port 8000",
+  "host": "MacBook-Air-de-Eric.local",
+  "platform": "darwin arm64",
+  "python": "3.9.25",
+  "stages": [
+    {
+      "sim": "vp9-llm-s-0-0-200",
+      "index": 0,
+      "from": 0,
+      "to": 200,
+      "stage_seed": 427851586,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-0-0-200_2026-10-03_22-32-01.jsonl.gz",
+      "sha1": "0454e749ae68535eadfe82e13653ff99c350b4ce",
+      "records": 1513,
+      "calls": 767,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 597
+      },
+      "started": "2026-10-03T22:32:01.842",
+      "finished": "2026-10-03T22:36:48.997",
+      "sim_time": {
+        "from": "2023-02-13 00:00:00",
+        "to": "2023-02-13 00:00:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-9-1799-1999",
+      "index": 9,
+      "from": 1799,
+      "to": 1999,
+      "stage_seed": 1666093190,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-9-1799-1999_2026-10-03_22-42-38.jsonl.gz",
+      "sha1": "4c3ac75e08dec3c2c01c4ba01d0808e047a2de03",
+      "records": 339,
+      "calls": 153,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 124
+      },
+      "started": "2026-10-03T22:42:38.688",
+      "finished": "2026-10-03T22:43:56.457",
+      "sim_time": {
+        "from": "2023-02-13 05:00:00",
+        "to": "2023-02-13 05:32:20"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-10-1999-2199",
+      "index": 10,
+      "from": 1999,
+      "to": 2199,
+      "stage_seed": 119849161,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-10-1999-2199_2026-10-03_22-44-24.jsonl.gz",
+      "sha1": "1dd4e3cf5cab54eb68919a339c9d32442be94bae",
+      "records": 330,
+      "calls": 147,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 123
+      },
+      "started": "2026-10-03T22:44:24.716",
+      "finished": "2026-10-03T22:45:43.751",
+      "sim_time": {
+        "from": "2023-02-13 05:40:00",
+        "to": "2023-02-13 06:05:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-11-2199-2399",
+      "index": 11,
+      "from": 2199,
+      "to": 2399,
+      "stage_seed": 793177111,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-11-2199-2399_2026-10-03_22-46-03.jsonl.gz",
+      "sha1": "827e5cdc1c9a293ab7c38e7be42c984b63be1a53",
+      "records": 468,
+      "calls": 229,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 157
+      },
+      "started": "2026-10-03T22:46:03.999",
+      "finished": "2026-10-03T22:47:47.683",
+      "sim_time": {
+        "from": "2023-02-13 06:08:00",
+        "to": "2023-02-13 06:31:00"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-12-2399-2599",
+      "index": 12,
+      "from": 2399,
+      "to": 2599,
+      "stage_seed": 1879896537,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-12-2399-2599_2026-10-03_22-48-10.jsonl.gz",
+      "sha1": "f9cc66cd5ea662bb44ac0799f13436908d6b0a37",
+      "records": 805,
+      "calls": 361,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 297
+      },
+      "started": "2026-10-03T22:48:10.263",
+      "finished": "2026-10-03T22:51:25.994",
+      "sim_time": {
+        "from": "2023-02-13 06:40:00",
+        "to": "2023-02-13 07:12:50"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-13-2599-2799",
+      "index": 13,
+      "from": 2599,
+      "to": 2799,
+      "stage_seed": 1953100784,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-13-2599-2799_2026-10-03_22-51-46.jsonl.gz",
+      "sha1": "7abea5cac701f277f848fa531067dc204fb49e02",
+      "records": 1205,
+      "calls": 554,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 420
+      },
+      "started": "2026-10-03T22:51:46.015",
+      "finished": "2026-10-03T22:55:13.899",
+      "sim_time": {
+        "from": "2023-02-13 07:15:00",
+        "to": "2023-02-13 07:46:30"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-14-2799-2999",
+      "index": 14,
+      "from": 2799,
+      "to": 2999,
+      "stage_seed": 367643652,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-14-2799-2999_2026-10-03_22-55-33.jsonl.gz",
+      "sha1": "c76628cbdbbf5005d5dc596e0729ab148d4bea61",
+      "records": 1085,
+      "calls": 483,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 398
+      },
+      "started": "2026-10-03T22:55:33.408",
+      "finished": "2026-10-03T22:59:21.355",
+      "sim_time": {
+        "from": "2023-02-13 07:47:00",
+        "to": "2023-02-13 08:19:20"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-15-2999-3199",
+      "index": 15,
+      "from": 2999,
+      "to": 3199,
+      "stage_seed": 2000828203,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-15-2999-3199_2026-10-03_22-59-39.jsonl.gz",
+      "sha1": "faee5422419831fb038f0df0504bb56c82b6c7ca",
+      "records": 910,
+      "calls": 418,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 321
+      },
+      "started": "2026-10-03T22:59:39.260",
+      "finished": "2026-10-03T23:03:28.070",
+      "sim_time": {
+        "from": "2023-02-13 08:20:00",
+        "to": "2023-02-13 08:50:50"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-16-3199-3399",
+      "index": 16,
+      "from": 3199,
+      "to": 3399,
+      "stage_seed": 700091058,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-16-3199-3399_2026-10-03_23-03-51.jsonl.gz",
+      "sha1": "46a9acb6ce237c497d2b31c193e24c1146f4265d",
+      "records": 1267,
+      "calls": 577,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 455
+      },
+      "started": "2026-10-03T23:03:51.009",
+      "finished": "2026-10-03T23:08:41.344",
+      "sim_time": {
+        "from": "2023-02-13 08:54:00",
+        "to": "2023-02-13 09:26:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-17-3399-3599",
+      "index": 17,
+      "from": 3399,
+      "to": 3599,
+      "stage_seed": 781987517,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-17-3399-3599_2026-10-03_23-09-02.jsonl.gz",
+      "sha1": "a614b95e37e19ed46d5b3d6686013cb39d36f2a8",
+      "records": 1177,
+      "calls": 501,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 409
+      },
+      "started": "2026-10-03T23:09:02.939",
+      "finished": "2026-10-03T23:15:48.101",
+      "sim_time": {
+        "from": "2023-02-13 09:27:30",
+        "to": "2023-02-13 09:59:20"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-18-3599-3799",
+      "index": 18,
+      "from": 3599,
+      "to": 3799,
+      "stage_seed": 2022639506,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-18-3599-3799_2026-10-03_23-16-31.jsonl.gz",
+      "sha1": "e3cca56906ea2c0a4379752f2a0a567569156648",
+      "records": 2565,
+      "calls": 1145,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 865
+      },
+      "started": "2026-10-03T23:16:31.688",
+      "finished": "2026-10-03T23:29:28.900",
+      "sim_time": {
+        "from": "2023-02-13 10:00:00",
+        "to": "2023-02-13 10:32:00"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-19-3799-3999",
+      "index": 19,
+      "from": 3799,
+      "to": 3999,
+      "stage_seed": 1908077093,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-19-3799-3999_2026-10-03_23-29-56.jsonl.gz",
+      "sha1": "a592cf9c598f12eec9ce97a278cfe962eb286ed7",
+      "records": 2952,
+      "calls": 1184,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 1005
+      },
+      "started": "2026-10-03T23:29:56.907",
+      "finished": "2026-10-03T23:40:04.772",
+      "sim_time": {
+        "from": "2023-02-13 10:35:00",
+        "to": "2023-02-13 11:06:20"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-20-3999-4199",
+      "index": 20,
+      "from": 3999,
+      "to": 4199,
+      "stage_seed": 2066179427,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-20-3999-4199_2026-10-03_23-40-34.jsonl.gz",
+      "sha1": "6bf45240d73a1a7299224d4e9761e86230acfaaa",
+      "records": 1577,
+      "calls": 643,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 542
+      },
+      "started": "2026-10-03T23:40:34.117",
+      "finished": "2026-10-03T23:46:01.099",
+      "sim_time": {
+        "from": "2023-02-13 11:06:40",
+        "to": "2023-02-13 11:39:50"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-21-4199-4399",
+      "index": 21,
+      "from": 4199,
+      "to": 4399,
+      "stage_seed": 245962929,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-21-4199-4399_2026-10-03_23-46-27.jsonl.gz",
+      "sha1": "48c50a2044cb2028284acdf555ab7fb15485b8f7",
+      "records": 2182,
+      "calls": 902,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 747
+      },
+      "started": "2026-10-03T23:46:27.652",
+      "finished": "2026-10-03T23:55:31.985",
+      "sim_time": {
+        "from": "2023-02-13 11:41:00",
+        "to": "2023-02-13 12:12:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-22-4399-4599",
+      "index": 22,
+      "from": 4399,
+      "to": 4599,
+      "stage_seed": 1373832575,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-22-4399-4599_2026-10-03_23-56-11.jsonl.gz",
+      "sha1": "1e5132a98a18ed4beb7cab3884b92fb7d7f03c4b",
+      "records": 2417,
+      "calls": 1055,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 799
+      },
+      "started": "2026-10-03T23:56:11.008",
+      "finished": "2026-10-04T00:07:59.239",
+      "sim_time": {
+        "from": "2023-02-13 12:15:00",
+        "to": "2023-02-13 12:44:50"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-23-4599-4799",
+      "index": 23,
+      "from": 4599,
+      "to": 4799,
+      "stage_seed": 1434847062,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-23-4599-4799_2026-10-04_00-08-42.jsonl.gz",
+      "sha1": "92d394806b4c6e6268eab3034aa7cf7984626de8",
+      "records": 2480,
+      "calls": 1111,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 830
+      },
+      "started": "2026-10-04T00:08:42.941",
+      "finished": "2026-10-04T00:22:44.839",
+      "sim_time": {
+        "from": "2023-02-13 12:48:50",
+        "to": "2023-02-13 13:17:30"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-24-4799-4999",
+      "index": 24,
+      "from": 4799,
+      "to": 4999,
+      "stage_seed": 872822946,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-24-4799-4999_2026-10-04_00-23-16.jsonl.gz",
+      "sha1": "b10d89036001121cfb4fb76de135178745ad4d6d",
+      "records": 1515,
+      "calls": 658,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 529
+      },
+      "started": "2026-10-04T00:23:16.950",
+      "finished": "2026-10-04T00:29:23.538",
+      "sim_time": {
+        "from": "2023-02-13 13:20:00",
+        "to": "2023-02-13 13:53:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-25-4999-5199",
+      "index": 25,
+      "from": 4999,
+      "to": 5199,
+      "stage_seed": 1454228365,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-25-4999-5199_2026-10-04_00-29-48.jsonl.gz",
+      "sha1": "43edba8f90af64560edd14c46d4a785fa35b3040",
+      "records": 2883,
+      "calls": 1252,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 976
+      },
+      "started": "2026-10-04T00:29:48.625",
+      "finished": "2026-10-04T00:39:44.708",
+      "sim_time": {
+        "from": "2023-02-13 13:53:20",
+        "to": "2023-02-13 14:26:20"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-26-5199-5399",
+      "index": 26,
+      "from": 5199,
+      "to": 5399,
+      "stage_seed": 139820564,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-26-5199-5399_2026-10-04_00-40-04.jsonl.gz",
+      "sha1": "0607c90a52401b68bdb717915033337060967871",
+      "records": 1807,
+      "calls": 743,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 618
+      },
+      "started": "2026-10-04T00:40:04.181",
+      "finished": "2026-10-04T00:45:16.331",
+      "sim_time": {
+        "from": "2023-02-13 14:26:40",
+        "to": "2023-02-13 14:58:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-27-5399-5599",
+      "index": 27,
+      "from": 5399,
+      "to": 5599,
+      "stage_seed": 259250715,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-27-5399-5599_2026-10-04_00-45-37.jsonl.gz",
+      "sha1": "af51348ca223e280c24107e1e012163a16557f1b",
+      "records": 1822,
+      "calls": 777,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 635
+      },
+      "started": "2026-10-04T00:45:37.656",
+      "finished": "2026-10-04T00:51:13.206",
+      "sim_time": {
+        "from": "2023-02-13 15:00:00",
+        "to": "2023-02-13 15:33:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-28-5599-5799",
+      "index": 28,
+      "from": 5599,
+      "to": 5799,
+      "stage_seed": 1499525940,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-28-5599-5799_2026-10-04_00-51-34.jsonl.gz",
+      "sha1": "f443592a2e9895976488841af2c7779cfa7f010f",
+      "records": 1523,
+      "calls": 677,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 533
+      },
+      "started": "2026-10-04T00:51:34.864",
+      "finished": "2026-10-04T00:57:22.007",
+      "sim_time": {
+        "from": "2023-02-13 15:34:00",
+        "to": "2023-02-13 16:05:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-29-5799-5999",
+      "index": 29,
+      "from": 5799,
+      "to": 5999,
+      "stage_seed": 1347749507,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-29-5799-5999_2026-10-04_00-57-45.jsonl.gz",
+      "sha1": "a84fc893398219717fc7c5923a04067f520facd3",
+      "records": 1230,
+      "calls": 544,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 422
+      },
+      "started": "2026-10-04T00:57:45.187",
+      "finished": "2026-10-04T01:01:53.276",
+      "sim_time": {
+        "from": "2023-02-13 16:07:00",
+        "to": "2023-02-13 16:38:30"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-30-5999-6199",
+      "index": 30,
+      "from": 5999,
+      "to": 6199,
+      "stage_seed": 965842957,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-30-5999-6199_2026-10-04_01-02-15.jsonl.gz",
+      "sha1": "407e734355a87dfbc521d8cba2e78cb8b445ea91",
+      "records": 1845,
+      "calls": 788,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 658
+      },
+      "started": "2026-10-04T01:02:15.861",
+      "finished": "2026-10-04T01:08:23.063",
+      "sim_time": {
+        "from": "2023-02-13 16:40:20",
+        "to": "2023-02-13 17:13:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-31-6199-6399",
+      "index": 31,
+      "from": 6199,
+      "to": 6399,
+      "stage_seed": 301184211,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-31-6199-6399_2026-10-04_01-08-45.jsonl.gz",
+      "sha1": "09b0a3df54c5200630e4e50d793c308a84fcf67e",
+      "records": 1250,
+      "calls": 593,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 426
+      },
+      "started": "2026-10-04T01:08:45.477",
+      "finished": "2026-10-04T01:13:45.582",
+      "sim_time": {
+        "from": "2023-02-13 17:13:50",
+        "to": "2023-02-13 17:46:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-32-6399-6599",
+      "index": 32,
+      "from": 6399,
+      "to": 6599,
+      "stage_seed": 1320790301,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-32-6399-6599_2026-10-04_01-14-08.jsonl.gz",
+      "sha1": "5a978f7c245ed3cc76129e927d0a598a2146b4fe",
+      "records": 1291,
+      "calls": 565,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 459
+      },
+      "started": "2026-10-04T01:14:08.621",
+      "finished": "2026-10-04T01:18:51.638",
+      "sim_time": {
+        "from": "2023-02-13 17:48:00",
+        "to": "2023-02-13 18:19:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-33-6599-6799",
+      "index": 33,
+      "from": 6599,
+      "to": 6799,
+      "stage_seed": 1255975732,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-33-6599-6799_2026-10-04_01-19-12.jsonl.gz",
+      "sha1": "9d3b4260fece73e5b2577465927518107447fe50",
+      "records": 847,
+      "calls": 368,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 308
+      },
+      "started": "2026-10-04T01:19:12.555",
+      "finished": "2026-10-04T01:22:22.745",
+      "sim_time": {
+        "from": "2023-02-13 18:20:00",
+        "to": "2023-02-13 18:51:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-34-6799-6999",
+      "index": 34,
+      "from": 6799,
+      "to": 6999,
+      "stage_seed": 727487680,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-34-6799-6999_2026-10-04_01-22-47.jsonl.gz",
+      "sha1": "196b23c6153c5e563ede479660a11cadd0934041",
+      "records": 939,
+      "calls": 414,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 345
+      },
+      "started": "2026-10-04T01:22:47.970",
+      "finished": "2026-10-04T01:26:21.398",
+      "sim_time": {
+        "from": "2023-02-13 18:54:00",
+        "to": "2023-02-13 19:26:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-35-6999-7199",
+      "index": 35,
+      "from": 6999,
+      "to": 7199,
+      "stage_seed": 1240952815,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-35-6999-7199_2026-10-04_01-26-42.jsonl.gz",
+      "sha1": "312b59b8019b525d2c39d73d376f4718c253554b",
+      "records": 1162,
+      "calls": 528,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 419
+      },
+      "started": "2026-10-04T01:26:42.213",
+      "finished": "2026-10-04T01:31:17.742",
+      "sim_time": {
+        "from": "2023-02-13 19:26:40",
+        "to": "2023-02-13 19:59:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-36-7199-7399",
+      "index": 36,
+      "from": 7199,
+      "to": 7399,
+      "stage_seed": 386912886,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-36-7199-7399_2026-10-04_01-31-40.jsonl.gz",
+      "sha1": "93f297f2b2728c5c8e3103efe41107f448635513",
+      "records": 982,
+      "calls": 438,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 358
+      },
+      "started": "2026-10-04T01:31:40.994",
+      "finished": "2026-10-04T01:35:27.729",
+      "sim_time": {
+        "from": "2023-02-13 20:00:00",
+        "to": "2023-02-13 20:32:30"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-37-7399-7599",
+      "index": 37,
+      "from": 7399,
+      "to": 7599,
+      "stage_seed": 271152761,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-37-7399-7599_2026-10-04_01-35-51.jsonl.gz",
+      "sha1": "2366db9bd9ffc486102c1252ed1270ae328e17ef",
+      "records": 942,
+      "calls": 409,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 351
+      },
+      "started": "2026-10-04T01:35:51.593",
+      "finished": "2026-10-04T01:39:25.678",
+      "sim_time": {
+        "from": "2023-02-13 20:34:00",
+        "to": "2023-02-13 21:06:20"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-38-7599-7799",
+      "index": 38,
+      "from": 7599,
+      "to": 7799,
+      "stage_seed": 1178230614,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-38-7599-7799_2026-10-04_01-39-49.jsonl.gz",
+      "sha1": "312522620470fce125913e7001bbaf6455603cf4",
+      "records": 803,
+      "calls": 367,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 292
+      },
+      "started": "2026-10-04T01:39:49.862",
+      "finished": "2026-10-04T01:43:43.247",
+      "sim_time": {
+        "from": "2023-02-13 21:09:00",
+        "to": "2023-02-13 21:36:50"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-39-7799-7999",
+      "index": 39,
+      "from": 7799,
+      "to": 7999,
+      "stage_seed": 1326426849,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-39-7799-7999_2026-10-04_01-44-09.jsonl.gz",
+      "sha1": "2066bbd56a5b9c473354803c2843c2e3a48bb76f",
+      "records": 598,
+      "calls": 268,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 222
+      },
+      "started": "2026-10-04T01:44:09.280",
+      "finished": "2026-10-04T01:46:54.746",
+      "sim_time": {
+        "from": "2023-02-13 21:42:00",
+        "to": "2023-02-13 22:11:20"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-40-7999-8199",
+      "index": 40,
+      "from": 7999,
+      "to": 8199,
+      "stage_seed": 52440631,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-40-7999-8199_2026-10-04_01-47-20.jsonl.gz",
+      "sha1": "6359336d0a417e6dab9171ee9a15982a8158c4da",
+      "records": 486,
+      "calls": 219,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 180
+      },
+      "started": "2026-10-04T01:47:20.642",
+      "finished": "2026-10-04T01:49:27.658",
+      "sim_time": {
+        "from": "2023-02-13 22:15:00",
+        "to": "2023-02-13 22:46:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-41-8199-8399",
+      "index": 41,
+      "from": 8199,
+      "to": 8399,
+      "stage_seed": 1299640829,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-41-8199-8399_2026-10-04_01-49-53.jsonl.gz",
+      "sha1": "f8daf0b705a6ea735632e5e975141fc6790fa60f",
+      "records": 424,
+      "calls": 184,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 157
+      },
+      "started": "2026-10-04T01:49:53.216",
+      "finished": "2026-10-04T01:51:41.950",
+      "sim_time": {
+        "from": "2023-02-13 22:50:00",
+        "to": "2023-02-13 23:17:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-42-8399-8599",
+      "index": 42,
+      "from": 8399,
+      "to": 8599,
+      "stage_seed": 305982515,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-42-8399-8599_2026-10-04_01-52-05.jsonl.gz",
+      "sha1": "6a144d90ebe3f5c690a0c0ef9a9e1ee8ba644143",
+      "records": 380,
+      "calls": 165,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 142
+      },
+      "started": "2026-10-04T01:52:05.039",
+      "finished": "2026-10-04T01:54:03.183",
+      "sim_time": {
+        "from": "2023-02-13 23:20:00",
+        "to": "2023-02-13 23:50:30"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-43-8599-8799",
+      "index": 43,
+      "from": 8599,
+      "to": 8799,
+      "stage_seed": 374992410,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-43-8599-8799_2026-10-04_01-54-29.jsonl.gz",
+      "sha1": "9c0bd75a75d9574f573c8cc02e9571b604e50b83",
+      "records": 628,
+      "calls": 327,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 297
+      },
+      "started": "2026-10-04T01:54:29.813",
+      "finished": "2026-10-04T01:58:55.141",
+      "sim_time": {
+        "from": "2023-02-13 23:55:00",
+        "to": "2023-02-14 00:03:00"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-44-8799-8999",
+      "index": 44,
+      "from": 8799,
+      "to": 8999,
+      "stage_seed": 2010763758,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-44-8799-8999_2026-10-04_01-59-40.jsonl.gz",
+      "sha1": "bf101872638020d0bff8858818b571a2eed81f10",
+      "records": 22,
+      "calls": 9,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 9
+      },
+      "started": "2026-10-04T01:59:40.621",
+      "finished": "2026-10-04T01:59:44.251",
+      "sim_time": {
+        "from": "2023-02-14 00:34:00",
+        "to": "2023-02-14 00:34:00"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-52-10399-10599",
+      "index": 52,
+      "from": 10399,
+      "to": 10599,
+      "stage_seed": 98911275,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-52-10399-10599_2026-10-04_02-05-51.jsonl.gz",
+      "sha1": "b7e700ca02d06d9632883b135a3fbff20b2f68d5",
+      "records": 108,
+      "calls": 46,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 41
+      },
+      "started": "2026-10-04T02:05:51.489",
+      "finished": "2026-10-04T02:06:29.107",
+      "sim_time": {
+        "from": "2023-02-14 05:01:00",
+        "to": "2023-02-14 05:21:40"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-53-10599-10799",
+      "index": 53,
+      "from": 10599,
+      "to": 10799,
+      "stage_seed": 686633034,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-53-10599-10799_2026-10-04_02-07-01.jsonl.gz",
+      "sha1": "c7948d1a38989ed6f8c17f85681b902098613b82",
+      "records": 165,
+      "calls": 69,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 63
+      },
+      "started": "2026-10-04T02:07:01.628",
+      "finished": "2026-10-04T02:07:51.067",
+      "sim_time": {
+        "from": "2023-02-14 05:34:00",
+        "to": "2023-02-14 05:59:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-54-10799-10999",
+      "index": 54,
+      "from": 10799,
+      "to": 10999,
+      "stage_seed": 1911960478,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-54-10799-10999_2026-10-04_02-08-14.jsonl.gz",
+      "sha1": "e765dcb4bb3143b8ec0e98be8ea6b878d9c3f647",
+      "records": 475,
+      "calls": 201,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 178
+      },
+      "started": "2026-10-04T02:08:14.788",
+      "finished": "2026-10-04T02:10:07.708",
+      "sim_time": {
+        "from": "2023-02-14 06:00:00",
+        "to": "2023-02-14 06:26:50"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-55-10999-11199",
+      "index": 55,
+      "from": 10999,
+      "to": 11199,
+      "stage_seed": 1376585556,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-55-10999-11199_2026-10-04_02-10-40.jsonl.gz",
+      "sha1": "a32b2981f5c13c9750a5896190251cd753542f05",
+      "records": 511,
+      "calls": 216,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 195
+      },
+      "started": "2026-10-04T02:10:40.445",
+      "finished": "2026-10-04T02:13:06.300",
+      "sim_time": {
+        "from": "2023-02-14 06:40:00",
+        "to": "2023-02-14 07:06:20"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-56-11199-11399",
+      "index": 56,
+      "from": 11199,
+      "to": 11399,
+      "stage_seed": 945387218,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-56-11199-11399_2026-10-04_02-13-31.jsonl.gz",
+      "sha1": "95175ae750074dc8c9cf116a7545284f61803fdd",
+      "records": 997,
+      "calls": 449,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 361
+      },
+      "started": "2026-10-04T02:13:31.292",
+      "finished": "2026-10-04T02:18:54.949",
+      "sim_time": {
+        "from": "2023-02-14 07:08:00",
+        "to": "2023-02-14 07:39:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-57-11399-11599",
+      "index": 57,
+      "from": 11399,
+      "to": 11599,
+      "stage_seed": 1337260899,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-57-11399-11599_2026-10-04_02-19-17.jsonl.gz",
+      "sha1": "1ca272b277f65b4a7708a595ef5bb86c9eed1f34",
+      "records": 846,
+      "calls": 359,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 324
+      },
+      "started": "2026-10-04T02:19:17.818",
+      "finished": "2026-10-04T02:23:21.371",
+      "sim_time": {
+        "from": "2023-02-14 07:40:00",
+        "to": "2023-02-14 08:12:50"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-58-11599-11799",
+      "index": 58,
+      "from": 11599,
+      "to": 11799,
+      "stage_seed": 408585138,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-58-11599-11799_2026-10-04_02-23-46.jsonl.gz",
+      "sha1": "ac80ce03e960618e28ba48d9fe77d2e913d0f5d5",
+      "records": 638,
+      "calls": 280,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 236
+      },
+      "started": "2026-10-04T02:23:46.503",
+      "finished": "2026-10-04T02:26:20.150",
+      "sim_time": {
+        "from": "2023-02-14 08:14:00",
+        "to": "2023-02-14 08:45:20"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-59-11799-11999",
+      "index": 59,
+      "from": 11799,
+      "to": 11999,
+      "stage_seed": 1638162363,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-59-11799-11999_2026-10-04_02-26-45.jsonl.gz",
+      "sha1": "67c22791400c9656df9a001627fd6d35a77c31e2",
+      "records": 1199,
+      "calls": 544,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 432
+      },
+      "started": "2026-10-04T02:26:45.347",
+      "finished": "2026-10-04T02:32:23.562",
+      "sim_time": {
+        "from": "2023-02-14 08:46:40",
+        "to": "2023-02-14 09:19:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-60-11999-12199",
+      "index": 60,
+      "from": 11999,
+      "to": 12199,
+      "stage_seed": 1312052556,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-60-11999-12199_2026-10-04_02-32-50.jsonl.gz",
+      "sha1": "82f512ea31d868feb1469e1439c85ebdbed86458",
+      "records": 922,
+      "calls": 445,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 313
+      },
+      "started": "2026-10-04T02:32:50.729",
+      "finished": "2026-10-04T02:37:46.291",
+      "sim_time": {
+        "from": "2023-02-14 09:24:20",
+        "to": "2023-02-14 09:53:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-61-12199-12399",
+      "index": 61,
+      "from": 12199,
+      "to": 12399,
+      "stage_seed": 1086931388,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-61-12199-12399_2026-10-04_02-38-08.jsonl.gz",
+      "sha1": "29bbc3c8282a2af6d87f6188c2d72ac635b05497",
+      "records": 1342,
+      "calls": 610,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 454
+      },
+      "started": "2026-10-04T02:38:08.960",
+      "finished": "2026-10-04T02:44:01.363",
+      "sim_time": {
+        "from": "2023-02-14 09:53:20",
+        "to": "2023-02-14 10:25:50"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-62-12399-12599",
+      "index": 62,
+      "from": 12399,
+      "to": 12599,
+      "stage_seed": 1467513158,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-62-12399-12599_2026-10-04_02-44-25.jsonl.gz",
+      "sha1": "806e90aeba32ea545af05c1f7652028c8b92e9c7",
+      "records": 1137,
+      "calls": 464,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 392
+      },
+      "started": "2026-10-04T02:44:25.289",
+      "finished": "2026-10-04T02:48:51.926",
+      "sim_time": {
+        "from": "2023-02-14 10:26:40",
+        "to": "2023-02-14 10:59:40"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-63-12599-12799",
+      "index": 63,
+      "from": 12599,
+      "to": 12799,
+      "stage_seed": 2054163751,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-63-12599-12799_2026-10-04_02-49-15.jsonl.gz",
+      "sha1": "13ef6e742ed3e5b59a1fa6ecb9bbaeda17092b60",
+      "records": 1392,
+      "calls": 565,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 481
+      },
+      "started": "2026-10-04T02:49:15.008",
+      "finished": "2026-10-04T02:54:32.914",
+      "sim_time": {
+        "from": "2023-02-14 11:00:00",
+        "to": "2023-02-14 11:33:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-64-12799-12999",
+      "index": 64,
+      "from": 12799,
+      "to": 12999,
+      "stage_seed": 594218739,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-64-12799-12999_2026-10-04_02-54-56.jsonl.gz",
+      "sha1": "975d39981ca69016535572b75050471cc0cf0681",
+      "records": 2085,
+      "calls": 906,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 694
+      },
+      "started": "2026-10-04T02:54:56.250",
+      "finished": "2026-10-04T03:03:28.282",
+      "sim_time": {
+        "from": "2023-02-14 11:33:20",
+        "to": "2023-02-14 12:06:30"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-65-12999-13199",
+      "index": 65,
+      "from": 12999,
+      "to": 13199,
+      "stage_seed": 9452089,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-65-12999-13199_2026-10-04_03-03-52.jsonl.gz",
+      "sha1": "5086fc3c2bf277f1ec86e5f974d664793c1afa35",
+      "records": 2174,
+      "calls": 915,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 738
+      },
+      "started": "2026-10-04T03:03:52.642",
+      "finished": "2026-10-04T03:12:57.735",
+      "sim_time": {
+        "from": "2023-02-14 12:06:40",
+        "to": "2023-02-14 12:37:30"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-66-13199-13399",
+      "index": 66,
+      "from": 13199,
+      "to": 13399,
+      "stage_seed": 1791249343,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-66-13199-13399_2026-10-04_03-13-22.jsonl.gz",
+      "sha1": "473f04543d1142481d52bb756034e612b673df66",
+      "records": 1583,
+      "calls": 639,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 540
+      },
+      "started": "2026-10-04T03:13:22.699",
+      "finished": "2026-10-04T03:19:31.755",
+      "sim_time": {
+        "from": "2023-02-14 12:40:00",
+        "to": "2023-02-14 13:11:40"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-67-13399-13599",
+      "index": 67,
+      "from": 13399,
+      "to": 13599,
+      "stage_seed": 489276942,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-67-13399-13599_2026-10-04_03-19-57.jsonl.gz",
+      "sha1": "a81118694d3afb0913b02b2b3e77b46fde92aaa8",
+      "records": 1019,
+      "calls": 439,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 352
+      },
+      "started": "2026-10-04T03:19:57.616",
+      "finished": "2026-10-04T03:24:03.956",
+      "sim_time": {
+        "from": "2023-02-14 13:13:20",
+        "to": "2023-02-14 13:46:30"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-68-13599-13799",
+      "index": 68,
+      "from": 13599,
+      "to": 13799,
+      "stage_seed": 1254604511,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-68-13599-13799_2026-10-04_03-24-29.jsonl.gz",
+      "sha1": "fe78ee04ef4ffde5dca52328fe95a12644447474",
+      "records": 1216,
+      "calls": 584,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 409
+      },
+      "started": "2026-10-04T03:24:29.727",
+      "finished": "2026-10-04T03:30:06.406",
+      "sim_time": {
+        "from": "2023-02-14 13:47:00",
+        "to": "2023-02-14 14:19:50"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-69-13799-13999",
+      "index": 69,
+      "from": 13799,
+      "to": 13999,
+      "stage_seed": 859398870,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-69-13799-13999_2026-10-04_03-30-30.jsonl.gz",
+      "sha1": "75b6d587a4446a23372679b8a2b0422a072892fe",
+      "records": 1179,
+      "calls": 506,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 410
+      },
+      "started": "2026-10-04T03:30:30.304",
+      "finished": "2026-10-04T03:35:22.583",
+      "sim_time": {
+        "from": "2023-02-14 14:20:00",
+        "to": "2023-02-14 14:53:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-70-13999-14199",
+      "index": 70,
+      "from": 13999,
+      "to": 14199,
+      "stage_seed": 1923431387,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-70-13999-14199_2026-10-04_03-35-46.jsonl.gz",
+      "sha1": "0c0d960a801bd5fc862dd598f82adfcbed4bf2bd",
+      "records": 1377,
+      "calls": 608,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 483
+      },
+      "started": "2026-10-04T03:35:46.309",
+      "finished": "2026-10-04T03:41:35.763",
+      "sim_time": {
+        "from": "2023-02-14 14:53:20",
+        "to": "2023-02-14 15:26:30"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-71-14199-14399",
+      "index": 71,
+      "from": 14199,
+      "to": 14399,
+      "stage_seed": 1974701905,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-71-14199-14399_2026-10-04_03-42-07.jsonl.gz",
+      "sha1": "1a16376a9f3974524982a0baf95777f7acd28dc8",
+      "records": 434,
+      "calls": 186,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 159
+      },
+      "started": "2026-10-04T03:42:07.880",
+      "finished": "2026-10-04T03:43:59.326",
+      "sim_time": {
+        "from": "2023-02-14 15:33:00",
+        "to": "2023-02-14 15:57:30"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-72-14399-14599",
+      "index": 72,
+      "from": 14399,
+      "to": 14599,
+      "stage_seed": 1644345259,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-72-14399-14599_2026-10-04_03-44-25.jsonl.gz",
+      "sha1": "71ffbda41eb2a45f2b5b147ce4336b614c305822",
+      "records": 623,
+      "calls": 270,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 223
+      },
+      "started": "2026-10-04T03:44:25.886",
+      "finished": "2026-10-04T03:47:24.044",
+      "sim_time": {
+        "from": "2023-02-14 16:00:00",
+        "to": "2023-02-14 16:31:30"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-73-14599-14799",
+      "index": 73,
+      "from": 14599,
+      "to": 14799,
+      "stage_seed": 1326105546,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-73-14599-14799_2026-10-04_03-47-53.jsonl.gz",
+      "sha1": "d2ffb1a56a462764978f853d64db6e29d6023f7c",
+      "records": 566,
+      "calls": 247,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 207
+      },
+      "started": "2026-10-04T03:47:53.406",
+      "finished": "2026-10-04T03:50:18.639",
+      "sim_time": {
+        "from": "2023-02-14 16:35:00",
+        "to": "2023-02-14 17:06:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-74-14799-14999",
+      "index": 74,
+      "from": 14799,
+      "to": 14999,
+      "stage_seed": 370262046,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-74-14799-14999_2026-10-04_03-50-46.jsonl.gz",
+      "sha1": "02158406d9ca5522855d4ddcbb1250346c3a54ca",
+      "records": 1286,
+      "calls": 609,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 441
+      },
+      "started": "2026-10-04T03:50:46.670",
+      "finished": "2026-10-04T03:56:32.728",
+      "sim_time": {
+        "from": "2023-02-14 17:07:00",
+        "to": "2023-02-14 17:38:50"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-75-14999-15199",
+      "index": 75,
+      "from": 14999,
+      "to": 15199,
+      "stage_seed": 904590548,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-75-14999-15199_2026-10-04_03-56-59.jsonl.gz",
+      "sha1": "99025bfce163565880c6e8f6910aefea8695bb82",
+      "records": 1495,
+      "calls": 710,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 511
+      },
+      "started": "2026-10-04T03:56:59.833",
+      "finished": "2026-10-04T04:05:05.811",
+      "sim_time": {
+        "from": "2023-02-14 17:40:10",
+        "to": "2023-02-14 18:13:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-76-15199-15399",
+      "index": 76,
+      "from": 15199,
+      "to": 15399,
+      "stage_seed": 1606321490,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-76-15199-15399_2026-10-04_04-05-32.jsonl.gz",
+      "sha1": "aa76cf9319cfd9d5b9372387470686d79cdb25d6",
+      "records": 2001,
+      "calls": 834,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 686
+      },
+      "started": "2026-10-04T04:05:32.824",
+      "finished": "2026-10-04T04:14:28.638",
+      "sim_time": {
+        "from": "2023-02-14 18:13:20",
+        "to": "2023-02-14 18:46:30"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-77-15399-15599",
+      "index": 77,
+      "from": 15399,
+      "to": 15599,
+      "stage_seed": 676530403,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-77-15399-15599_2026-10-04_04-14-55.jsonl.gz",
+      "sha1": "25c142d6756384557545ec1d551f8f4d2a45ca24",
+      "records": 1359,
+      "calls": 548,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 472
+      },
+      "started": "2026-10-04T04:14:55.461",
+      "finished": "2026-10-04T04:20:43.575",
+      "sim_time": {
+        "from": "2023-02-14 18:46:40",
+        "to": "2023-02-14 19:14:40"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-78-15599-15799",
+      "index": 78,
+      "from": 15599,
+      "to": 15799,
+      "stage_seed": 2143121458,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-78-15599-15799_2026-10-04_04-21-15.jsonl.gz",
+      "sha1": "6e2a4ee1513a49e7c11e5122a961cd524f5fc0a9",
+      "records": 1820,
+      "calls": 814,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 619
+      },
+      "started": "2026-10-04T04:21:15.834",
+      "finished": "2026-10-04T04:30:00.838",
+      "sim_time": {
+        "from": "2023-02-14 19:22:20",
+        "to": "2023-02-14 19:53:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-79-15799-15999",
+      "index": 79,
+      "from": 15799,
+      "to": 15999,
+      "stage_seed": 105098299,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-79-15799-15999_2026-10-04_04-30-25.jsonl.gz",
+      "sha1": "6f087f7e80dca3df91814a26c32e6edfb3ad492e",
+      "records": 867,
+      "calls": 388,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 306
+      },
+      "started": "2026-10-04T04:30:25.353",
+      "finished": "2026-10-04T04:34:24.527",
+      "sim_time": {
+        "from": "2023-02-14 19:53:20",
+        "to": "2023-02-14 20:26:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-80-15999-16199",
+      "index": 80,
+      "from": 15999,
+      "to": 16199,
+      "stage_seed": 52836321,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-80-15999-16199_2026-10-04_04-34-52.jsonl.gz",
+      "sha1": "d9b17c83c167c0f9ceffde88a7396632b17b5b95",
+      "records": 1132,
+      "calls": 526,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 399
+      },
+      "started": "2026-10-04T04:34:52.293",
+      "finished": "2026-10-04T04:40:02.291",
+      "sim_time": {
+        "from": "2023-02-14 20:27:00",
+        "to": "2023-02-14 20:59:50"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-81-16199-16399",
+      "index": 81,
+      "from": 16199,
+      "to": 16399,
+      "stage_seed": 232465169,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-81-16199-16399_2026-10-04_04-40-27.jsonl.gz",
+      "sha1": "4ba166acbf76d885621d729463e943f9398898c1",
+      "records": 869,
+      "calls": 361,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 311
+      },
+      "started": "2026-10-04T04:40:27.325",
+      "finished": "2026-10-04T04:44:30.014",
+      "sim_time": {
+        "from": "2023-02-14 21:00:00",
+        "to": "2023-02-14 21:33:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-82-16399-16599",
+      "index": 82,
+      "from": 16399,
+      "to": 16599,
+      "stage_seed": 443161579,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-82-16399-16599_2026-10-04_04-44-55.jsonl.gz",
+      "sha1": "82d39b02f9c93457b54bec2901ed8bbae5cd4a8f",
+      "records": 914,
+      "calls": 380,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 329
+      },
+      "started": "2026-10-04T04:44:55.207",
+      "finished": "2026-10-04T04:49:12.839",
+      "sim_time": {
+        "from": "2023-02-14 21:33:20",
+        "to": "2023-02-14 22:05:20"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-83-16599-16799",
+      "index": 83,
+      "from": 16599,
+      "to": 16799,
+      "stage_seed": 929197962,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-83-16599-16799_2026-10-04_04-49-41.jsonl.gz",
+      "sha1": "cfeb2e23d584f102f50337e47e209732a922a2c2",
+      "records": 585,
+      "calls": 252,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 222
+      },
+      "started": "2026-10-04T04:49:41.230",
+      "finished": "2026-10-04T04:52:57.157",
+      "sim_time": {
+        "from": "2023-02-14 22:07:30",
+        "to": "2023-02-14 22:39:40"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-84-16799-16999",
+      "index": 84,
+      "from": 16799,
+      "to": 16999,
+      "stage_seed": 1853451358,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-84-16799-16999_2026-10-04_04-53-22.jsonl.gz",
+      "sha1": "1a7c699850fecc9702f1e82368a39941247d68ce",
+      "records": 957,
+      "calls": 409,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 357
+      },
+      "started": "2026-10-04T04:53:22.610",
+      "finished": "2026-10-04T04:57:35.749",
+      "sim_time": {
+        "from": "2023-02-14 22:40:00",
+        "to": "2023-02-14 23:13:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-85-16999-17199",
+      "index": 85,
+      "from": 16999,
+      "to": 17199,
+      "stage_seed": 1300387988,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-85-16999-17199_2026-10-04_04-58-01.jsonl.gz",
+      "sha1": "81cad54da9192f22cdb881d4a591237ecbab8459",
+      "records": 871,
+      "calls": 389,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 319
+      },
+      "started": "2026-10-04T04:58:01.151",
+      "finished": "2026-10-04T05:02:32.191",
+      "sim_time": {
+        "from": "2023-02-14 23:13:20",
+        "to": "2023-02-14 23:46:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-llm-s-86-17199-17280",
+      "index": 86,
+      "from": 17199,
+      "to": 17280,
+      "stage_seed": 1188285120,
+      "decision_backend": "llm",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-llm-s-86-17199-17280_2026-10-04_05-03-00.jsonl.gz",
+      "sha1": "0cb73cebd211177e9966be86b854dfc8cbb9453d",
+      "records": 668,
+      "calls": 346,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 310
+      },
+      "started": "2026-10-04T05:03:00.406",
+      "finished": "2026-10-04T05:07:43.658",
+      "sim_time": {
+        "from": "2023-02-14 23:47:00",
+        "to": "2023-02-15 00:00:00"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    }
+  ],
+  "started": "2026-10-03T22:32:01.842",
+  "finished": "2026-10-04T05:07:43.658",
+  "execution_time": "6:35:56.161426",
+  "outcome": "finished",
+  "backend_errors": 0,
+  "backend_errors_fatal": 0,
+  "providers": {
+    "Friendli": 29392
+  },
+  "log": "logs/vp9-llm_2026-10-03_22-31-59.txt",
+  "storage": "environment/frontend_server/storage/vp9-llm-s-<i>-<from>-<to>",
+  "notes": "The paper's prompts deciding (DECISION_BACKEND=llm, the generator answering the paper's decision prompts) in the Valentine's Day story on the village of nine, from base_the_ville_n9 over the paper's two game days (steps 0-17280), seed 20260922, one config shared with vp9-jev (5f7da622f046), pinned to Friendli with novita, parasail and crusoe declared as fallbacks; D1, D4, D6, D8-D13, D13 loading the paper's seed memories in stage 0 (95 phrases, each importance scored by the generator). Run beside vp9-jev and read side by side, never paired. 43 answers of action_game_object fell outside the offered set and were accepted by the paper's validator. A first launch at 21:43 on 2026-10-03 was stopped before any reading and set aside, unregistered."
+}
