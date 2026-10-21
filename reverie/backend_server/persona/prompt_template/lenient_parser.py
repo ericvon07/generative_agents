@@ -1,6 +1,6 @@
 """
 File: lenient_parser.py
-Description: Deviation D6 (009-IP) -- the paper's parsers stop throwing away
+Description: Deviation D6 -- the paper's parsers stop throwing away
              an answer that is unambiguously the one the prompt asked for.
 
 Three of the paper's validators refuse a correct answer over its wrapping:
@@ -20,7 +20,7 @@ Three of the paper's validators refuse a correct answer over its wrapping:
      only the closing one -- so "{Hobbs Cafe" is refused (OD-1) and
      "{common room}" reaches the maze wearing a brace and kills the run (GT-3).
 
-The rule every function here keeps (LP-A of 009-IP): the tolerance is
+The rule every function here keeps: the tolerance is
 SYNTACTIC and BLIND TO CONTENT. No function is ever handed the option set, the
 persona, or the prompt's inputs -- a validator that checked membership would be
 the typed backend wearing a regex. What is unambiguous is accepted; what would
@@ -136,7 +136,7 @@ def location_clean_up(response):
   answer, the cut is the end of the first line instead. Then every brace and
   the surrounding whitespace come off, so "{Hobbs Cafe", "Hobbs Cafe}" and
   "{Hobbs Cafe}" all read "Hobbs Cafe" -- and the maze is never handed the
-  opening brace the template put in the model's mouth (GT-3, LP-E)."""
+  opening brace the template put in the model's mouth (GT-3)."""
   text = str(response)
   if "}" in text:
     text = text.split("}")[0]
@@ -147,7 +147,7 @@ def location_clean_up(response):
 
 def location_validate(response):
   """Non-empty and no comma, as the paper asks; the closing brace is no longer
-  demanded. A comma names more than one option and stays rejected (LP-A)."""
+  demanded. A comma names more than one option and stays rejected."""
   if response is None:
     return False
   text = str(response)

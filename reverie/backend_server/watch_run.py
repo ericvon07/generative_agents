@@ -57,10 +57,10 @@ WHAT IT FLAGS, AND WHICH FIX EACH ONE GUARDS
                      fences and pronunciatio fell back 8 times in 8.
   cost               the run's spend against the config's upper bound.
 
-WHAT IT COUNTS, FOR 009-IP
+WHAT IT COUNTS, FOR THE LENIENT PARSER
 
 Every `reject` is tallied by label and reason. That tally is the question
-[009-IP] asks -- whether the paper's validators throw away answers a
+the lenient parser asks -- whether the paper's validators throw away answers a
 forgiving reader would keep -- put to a generator nobody has asked it of.
 OD-1 measured 241 of 241 rejections already holding a valid choice on the
 location trio, on the old model. `--digest` prints the same tally as the run
@@ -174,7 +174,7 @@ def examine(row, tally):
 
 
 class Tally(object):
-  """What the run is doing, for the digest and for 009-IP's question."""
+  """What the run is doing, for the digest and for the lenient parser's question."""
 
   def __init__(self):
     self.decisions = Counter()
@@ -228,7 +228,7 @@ class Tally(object):
                      % (label, n, fs, 100.0 * fs / n))
     if self.rejects:
       lines.append("")
-      lines.append("Rejections -- the question 009-IP asks, of a generator "
+      lines.append("Rejections -- the question the lenient parser asks, of a generator "
                    "nobody has asked it of:")
       lines.append("")
       lines.append("| prompt | rejections | reasons |")

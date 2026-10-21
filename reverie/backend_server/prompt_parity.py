@@ -1,7 +1,7 @@
 """
 File: prompt_parity.py
 Description: the identity check of a change that must not move the paper's
-             fork (010-IP LK-H, S4.1; 008-IP SV-B; GT-4). Reads two traces
+             fork (GT-4). Reads two traces
              and never touches a simulation.
 
     ../../../.venv/bin/python prompt_parity.py <trace-A.jsonl> <trace-B.jsonl>

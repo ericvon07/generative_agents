@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 File: probe_budget.py
-Description: 011-IP's budget probe (TS-E) -- how much room the paper's two
+Description: the budget probe -- how much room the paper's two
              social prompts need before their answer is on the page.
 
 WHY THIS EXISTS
@@ -10,7 +10,7 @@ WHY THIS EXISTS
 then an answer, and both are sent with `max_tokens: 20`. Twenty tokens does
 not reach the end of a sentence of reasoning, so the answer never arrives,
 the validator rejects all five attempts and the call site's own fail-safe
-enters the world -- "yes" for talk, Option 3 for react. TS-E says the new
+enters the world -- "yes" for talk, Option 3 for react. The new
 budget is CHOSEN FROM A MEASUREMENT and written into deviation D9 with the
 number behind it. This file is that measurement.
 
@@ -85,7 +85,7 @@ SOCIAL_LABELS = ("decide_to_talk", "decide_to_react")
 # and the out file, and all three are written under this one lock.
 _SHARED = threading.Lock()
 
-# The percentile TS-E names, and the margin it asks for on top of it.
+# The percentile the budget is read at, and the margin on top of it.
 PERCENTILE = 95
 
 # How many ACCEPTED answers an arm needs before this probe will name a budget
@@ -194,7 +194,7 @@ def request(prompt, budget, system, model=None, pin=True):
 
   <model> and <pin> exist for one question and are otherwise left alone: the
   config's model is the one the windows will run, and its provider pin is a
-  run's pin (MB-A). A different model cannot be served by a pin naming one
+  run's pin. A different model cannot be served by a pin naming one
   provider that does not host it, so an arm that names a model drops the pin
   and every row says which model answered and whether it was pinned.
   """
@@ -319,7 +319,7 @@ def _one(case, arm, system, prompt, budget, stamp, dry_run, model=None,
          pin=True):
   """One row: the request, and the two readings of what came back."""
   label = case["label"]
-  row = {"probe": "011-IP-budget", "at": stamp, "arm": arm,
+  row = {"probe": "budget", "at": stamp, "arm": arm,
          "budget": budget, "case": case["case"],
          "source": case["source"], "label": label,
          "run": case["run"], "step": case["step"],
@@ -461,7 +461,7 @@ def percentile(values, which):
 def report(paths, margin=0.30):
   rows = _rows_of(paths)
   live = [r for r in rows if not r.get("error") and not r.get("dry_run")]
-  print("# 011-IP step 6 -- the budget of the two social prompts")
+  print("# The budget of the two social prompts")
   print()
   print("%d rows read, %d of them answered." % (len(rows), len(live)))
   # The arms are whatever is in the file, "paper" first and its model arms

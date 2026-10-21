@@ -24,7 +24,7 @@ with open(config_path, "r") as f:
     openai_config = json.load(f) 
 
 # The routed remote model's key lives in an environment variable named by the
-# config, never in the config (RB-A of 006-IP). Read the .env before anything
+# config, never in the config. Read the .env before anything
 # asks for a key; an already-set variable is left alone.
 env_file.load()
 
@@ -33,13 +33,13 @@ class BackendTransportError(Exception):
   """The backend did not answer: a 402, a 429, a timeout, a refused
   connection. Deliberately NOT the same thing as a model answering badly.
 
-  Before 006-IP, GPT_request answered a transport failure with the string
+  Before the router (2026-09-23), GPT_request answered a transport failure with the string
   "TOKEN LIMIT EXCEEDED" and ChatGPT_request with "ChatGPT ERROR", and handed
   it to the caller's validator. The validators for the closed-set decisions
   accept any non-empty string, so on the sector and arena prompts that string
   was a well-formed answer: a dead backend read as a live simulation making
   bad choices. This exception is what makes the two distinguishable, and the
-  retry loops re-raise it rather than spend an attempt on it (RB-C).
+  retry loops re-raise it rather than spend an attempt on it.
   """
 
   @property
@@ -175,7 +175,7 @@ def _traced_pin():
   """The pin as the trace records it, or nothing at all.
 
   A pin is what the request ASKED for; the provider on the response is what
-  answered. Both go on the call so a reader can see them disagree (RB-E).
+  answered. Both go on the call so a reader can see them disagree.
   When there is no pin the key is absent rather than null, so a trace from a
   local run looks exactly as it did before this plan.
   """
@@ -204,7 +204,7 @@ def setup_client(type: str, config: dict):
   elif type == "openai":
     # base_url is optional: None -> api.openai.com. Set it to point at any
     # OpenAI-compatible server (Ollama: http://localhost:11434/v1, vLLM, ...).
-    # "timeout" is set for the generator only (011-IP, the night of the
+    # "timeout" is set for the generator only (the night of the
     # windows): the SDK's default is 600 s, and a request the router left
     # hanging held a run for five minutes before it came back empty.
     kwargs = {"timeout": config["timeout"]} if config.get("timeout") else {}
@@ -272,7 +272,7 @@ completion_system_prompt = openai_config.get("completion-system-prompt", DEFAULT
 def _charge(response, costs=None):
   """Book one response against the run's budget.
 
-  RB-B: when the backend reports what the call actually cost -- OpenRouter
+  When the backend reports what the call actually cost -- OpenRouter
   puts it in usage.cost, at the provider that actually served it, after
   whatever discount applied -- that number is the ledger's, and the price
   table is not consulted. "model-costs" stays for a backend that reports
@@ -300,11 +300,11 @@ def _charge(response, costs=None):
 
 
 # --- the ride-out -----------------------------------------------------------
-# SV-A of 008-IP. RB-C says a transport failure raises rather than become a
+# The ride-out. A transport failure raises rather than become a
 # fail-safe, and rtrA-llm showed what that costs when the failure is transient:
 # two 429s from DeepInfra, 24 seconds apart, ended two stages of a 32-minute
 # run, and only the automatic runner's own restart carried the window to its
-# end. RB-C's reopening clause named the successor, and this is it -- a bounded
+# end. The rule's reopening clause named the successor, and this is it -- a bounded
 # wait, every wait in the trace, and the SAME exception at the end of it.
 #
 # Deliberately not the paper's retry loop. That loop retries the PARSING of an
@@ -359,7 +359,7 @@ def _is_rate_limit(e):
 class EmptyResponse(Exception):
   """The router answered 200 with no choices and no usage.
 
-  Seen twice in the first hour of 011-IP's typed window, each after exactly
+  Seen twice in the first hour of a typed window on 2026-09-24, each after exactly
   ~300 s: the router's own cut of a request the provider left hanging. Nothing
   came back that anyone could read, so it is ridden out like a 429 -- the
   paper's code used to reach the cost ledger with it and die there.
@@ -368,7 +368,7 @@ class EmptyResponse(Exception):
 
 # The statuses no amount of waiting fixes: a malformed request, a key, a
 # balance, a permission. Everything else a provider can say is ridden out --
-# the night of 011-IP's windows Crusoe answered 429, 502, 412 ("no available
+# on the night of 2026-09-24 Crusoe answered 429, 502, 412 ("no available
 # servers") and 404 ("model not found", two hours into a window that had
 # been served by it all along) in turn, and each one ended a window the
 # first time it was met. A model name that is wrong from the start is
@@ -431,7 +431,7 @@ def _send(path, attempt, create):
   Returns whatever <create> returns. Raises whatever it raised, unchanged,
   once the ride-out's budget is spent -- so the caller's BackendTransportError
   and the reject that reads "transport:RateLimitError" are exactly the ones
-  006-IP wrote, and no fail-safe reaches the world on any path (RB-C, S1.3).
+  the router's change wrote, and no fail-safe reaches the world on any path.
 
   The backoff is deterministic: no jitter, because the run seeds `random` for
   reproducibility and a wait is not allowed to draw from that stream.
@@ -465,7 +465,7 @@ def _send(path, attempt, create):
         # A status no wait fixes. For THIS provider: a key, a balance or a
         # permission is per provider when a fallback list exists, and the
         # next link may well accept the same request. On the last link it
-        # is what it always was: the run stops and says so (RB-C). Only an
+        # is what it always was: the run stops and says so. Only an
         # HTTP status moves a request; an exception with no status is the
         # client's or ours, and asking another provider would hide it.
         if more_links and _status_of(e) is not None:
@@ -556,7 +556,7 @@ def ChatGPT_request(prompt):
                           latency=attempt.latency, error=e)
     print(f"Error: {e}")
     # Was: return "ChatGPT ERROR". A string is an answer, and the closed-set
-    # validators accept any non-empty one (RB-C).
+    # validators accept any non-empty one.
     raise BackendTransportError(
         "%s: %s" % (type(e).__name__, e)) from e
   llm_trace.record_call("ChatGPT_request", openai_config["model"], prompt,
@@ -566,11 +566,11 @@ def ChatGPT_request(prompt):
   return completion.choices[0].message.content
 
 
-# Deviation D11 (011-IP, GT-8). gemma-4-31b-it wraps its JSON in a markdown
+# Deviation D11 (GT-8). gemma-4-31b-it wraps its JSON in a markdown
 # fence, and the parser below cuts at the last "}" but never at the first "{",
-# so a correct answer is thrown away -- 213 of 213 responses on the 011-IP
-# shakedown, 0 of 76 once this sentence was added. The parser's own repair
-# belongs to 009-IP; this asks the model instead.
+# so a correct answer is thrown away -- 213 of 213 responses on the
+# shakedown of 2026-09-24, 0 of 76 once this sentence was added. The parser's own repair
+# belongs to the lenient parser (D6); this asks the model instead.
 #
 # Off by default, so the paper's prompt is byte-identical without it. When on,
 # it is on for EVERY prompt on this path, in both arms -- the generator's own
@@ -620,7 +620,7 @@ def ChatGPT_safe_generate_response(prompt,
     try: 
       curr_gpt_response = ChatGPT_request(prompt).strip()
       if lenient_parser.enabled():
-        # D6, tolerance 2 (009-IP, GT-8): the object starts at the first
+        # D6, tolerance 2 (GT-8): the object starts at the first
         # "{" as well as ending at the last "}", so a fenced answer parses.
         curr_gpt_response = lenient_parser.json_cut(curr_gpt_response)
       else:
@@ -644,7 +644,7 @@ def ChatGPT_safe_generate_response(prompt,
 
     except BackendTransportError as e:
       # Not an attempt: nothing was answered, so there is nothing to retry
-      # against and nothing the next two attempts would learn (RB-C).
+      # against and nothing the next two attempts would learn.
       llm_trace.record_reject(e.reason, curr_gpt_response, label=label)
       raise
     except: 
@@ -745,7 +745,7 @@ def GPT_request(prompt, gpt_parameter):
     print(f"Error: {e}")
     # Was: return "TOKEN LIMIT EXCEEDED" -- a string the retry loop spent an
     # attempt on and the validator, in five of the paper's closed-set
-    # prompts, accepted (RB-C).
+    # prompts, accepted.
     raise BackendTransportError(
         "%s: %s" % (type(e).__name__, e)) from e
   llm_trace.record_call("GPT_request", openai_config["model"], prompt,
@@ -783,13 +783,13 @@ def generate_prompt(curr_input, prompt_lib_file):
   return prompt.strip()
 
 
-# --- the composed state (011-IP, TS-A) --------------------------------------
+# --- the composed state --------------------------------------
 # A typed question hands the backend a `state`. Until now that state was the
 # dictionary the call site read out of prompt_input, and the audit of
 # 2026-09-23 found that five of the eight typed questions carry keys their
 # instruction never names -- facts the paper states in a sentence of its own
 # and the dictionary hands over as a bare key. This is the other mechanism
-# 011-IP weighs against descriptive criteria: give the backend the paper's own
+# weighed against descriptive criteria: give the backend the paper's own
 # sentences, rendered from the same prompt_input the prompt is built from.
 #
 # Two things are deliberately dropped:

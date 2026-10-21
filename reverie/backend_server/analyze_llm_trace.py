@@ -459,7 +459,7 @@ def report_by_step(records):
 
 
 # --- the social decisions ---------------------------------------------------
-# Everything here reads fields the trace has carried since 008-IP SV-B --
+# Everything here reads fields the trace has carried since the episode was added --
 # `subject`, `other` and `episode` on a social decision -- and which no reader
 # knew about. Read by hand until now, which is how the n9win readings of
 # 2026-09-23 were made.

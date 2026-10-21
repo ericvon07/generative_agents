@@ -58,7 +58,7 @@ _DEFAULTS = {
     # `for attempt in range(1, max-retries + 1)`. Six of them means one
     # request and five waits, which with the backoff below is 2+4+8+16+32 =
     # just over a minute of patience. That is deliberately the same coat the
-    # model path got from SV-A of 008-IP, because the two face the same
+    # model path got from the ride-out, because the two face the same
     # weather: n7win lost sixteen decisions to the paper's fail-safes on
     # 2026-09-23 while this path had three attempts and waits of 1 and 2 --
     # three seconds of patience against a service that was unstable for

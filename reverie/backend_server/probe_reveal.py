@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
 File: probe_reveal.py
-Description: 010-IP step 6 -- the dose grid of the reveal decision, read
-             before any morning is simulated (LK-M, 012-ST JF-D).
+Description: the dose grid of the reveal decision, read before any
+             morning is simulated.
 
 THIS IS THE FIRST TYPED QUESTION ASKED ON THE DERIVED TRACK. Nothing before
 it asked the typed backend a question that mirrors no paper prompt.
 
 THE GRID. Constructed states in the register the fork produces, each the
-eight-field state of LK-C, built by world.reveal_state -- the same function
+eight-field reveal state, built by world.reveal_state -- the same function
 the sim's reveal decision uses -- from the signed W2 texts:
 
   pressure     4 levels: Priya's four signed utterances, as last_utterance
@@ -36,7 +36,7 @@ EACH STATE IS ASKED TWICE:
              'Answer in "yes" or "no":'. Parse failures are counted apart.
 
 The pairing of the two on one state is legitimate here and nowhere else:
-the states are built, not visited (law 3, JF-A).
+the states are built, not visited (law 3).
 
 USAGE, from reverie/backend_server:
 
@@ -66,7 +66,7 @@ OUT = os.path.join(HERE, "..", "..", "logs", "probe",
                    "probe-reveal-2026-09-25-v3.jsonl")
 GENERATOR = "google/gemma-4-31b-it"
 
-# --- the signed texts (docs/worlds/w2-the-leak-pilot.md §9; 010-IP Rule 0) ---
+# --- the signed texts (docs/worlds/w2-the-leak-pilot.md §9) ---
 
 TOMAS = "Tomas Kessler"
 PRIYA = "Priya Raman"

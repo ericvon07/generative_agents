@@ -1,7 +1,7 @@
 """
 File: seed_history.py
 Description: D13 -- the paper's seed memories, loaded at the start of a run
-             (016-IP; Park et al. 2023 §3.1: "Each semicolon-delimited phrase
+             (Park et al. 2023 §3.1: "Each semicolon-delimited phrase
              is entered into the agent's initial memory as memories at the
              start of the simulation").
 

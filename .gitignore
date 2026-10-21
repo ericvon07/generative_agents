@@ -16,10 +16,10 @@ static_dirs/*
 !environment/frontend_server/storage/base_the_ville_n25/*
 !environment/frontend_server/storage/base_the_ville_n7/*
 !environment/frontend_server/storage/base_the_ville_n9/*
-# 010-IP step 7: the W2 sims, the only ones whose text is not the paper's.
+# The W2 sims, the only ones whose text is not the paper's.
 !environment/frontend_server/storage/base_the_ville_w2
 !environment/frontend_server/storage/base_the_ville_w2_text
-# 015-IP step 1: the W3 base and its three twins, built by build_w3.py from the signed texts.
+# The W3 base and its three twins, built by build_w3.py from the signed texts.
 !environment/frontend_server/storage/base_the_ville_w3
 !environment/frontend_server/storage/base_the_ville_w3_undercover
 !environment/frontend_server/storage/base_the_ville_w3_officer_pm

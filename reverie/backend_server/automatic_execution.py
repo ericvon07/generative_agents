@@ -250,7 +250,7 @@ if __name__ == '__main__':
             print(f"(Auto-Exec): STAGE {idx}", flush=True)
             print(f"(Auto-Exec): Running experiment '{exp_name}' from step '{current_step}' to '{curr_checkpoint}'", flush=True)
             rs = reverie.ReverieServer(origin, target)
-            # D13 (016-IP): the paper's seed memories, loaded once, in the
+            # D13: the paper's seed memories, loaded once, in the
             # first stage of a run that starts at step 0, before the first
             # step -- the command the paper's server takes by hand, which
             # this runner never typed. Absent from the config, nothing runs.

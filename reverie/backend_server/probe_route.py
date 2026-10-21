@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
 File: probe_route.py
-Description: 015-IP step 2 -- the route grid of W3, read before any cited
-             day is simulated (RP-H; in probe_reveal.py's image).
+Description: the route grid of W3, read before any cited
+             day is simulated (in probe_reveal.py's image).
 
 THE GRID. Constructed states in the register the fork produces, each the
-nine-field state of RP-D, built by world.route_state -- the function the
+nine-field route state, built by world.route_state -- the function the
 sim's route decision will use from step 3 -- from the signed W3 texts
 (docs/worlds/w3-the-radio-at-the-pub.md):
 
@@ -46,7 +46,7 @@ EACH STATE IS ASKED TWICE:
              'Answer: Option'. Parse failures are counted apart.
 
 The pairing of the two on one state is legitimate here and nowhere else:
-the states are built, not visited (law 3, JF-A).
+the states are built, not visited (law 3).
 
 USAGE, from reverie/backend_server:
 

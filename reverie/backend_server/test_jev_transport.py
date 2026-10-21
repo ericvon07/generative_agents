@@ -4,7 +4,7 @@
 five decisions to the paper's fail-safes between 14:11:59 and 14:16:48. The
 backend was answering `HTTP 529 {"error_type": "system_overloaded"}` — a
 provider having a bad five minutes, the same shape of failure as the `429`
-that SV-A of 008-IP taught the model path to ride out. One of the five was a
+that the ride-out taught the model path to wait out. One of the five was a
 `decide_to_talk`, and its fail-safe is `"yes"`: the run recorded a
 conversation that no model had agreed to. That is the pathology this whole
 lab exists to measure, happening inside the run that measures it.
@@ -143,7 +143,7 @@ class Transport(unittest.TestCase):
   # --- how long the backend is given ----------------------------------------
 
   def test_the_typed_path_waits_as_long_as_the_model_path(self):
-    """SV-A gave the model path five waits of 2, 4, 8, 16 and 32 seconds --
+    """The ride-out gave the model path five waits of 2, 4, 8, 16 and 32 seconds --
     just over a minute against a provider whose own message says "retry
     shortly". The typed path had three attempts and waits of 1 and 2: three
     seconds of patience, against a service that was unstable for

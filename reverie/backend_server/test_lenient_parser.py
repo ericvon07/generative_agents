@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 File: test_lenient_parser.py
-Description: 009-IP's tests -- the three tolerances of D6, the flag that
+Description: the tests of the three tolerances of D6, the flag that
              holds them, and the paper's path untouched when it is off.
 
 Asks no backend and opens no socket: the two request functions are replaced
@@ -10,11 +10,10 @@ tests, from reverie/backend_server:
 
     ../../../.venv/bin/python test_lenient_parser.py
 
-Scenarios of 009-IP §5 held here: S1.1 (a list is kept), S1.2 (a fenced
-object parses), S1.3 (a brace missing or doubled), S1.4 (a comma and a
-three-part triple stay rejected), S1.5 (no parser is handed an option set, a
-persona or a prompt's inputs), S2.1 (flag off, the paper's path runs) and
-S2.2 (the two flag states differ in config_sha1).
+What is held here: a list is kept, a fenced object parses, a brace missing or
+doubled is repaired, a comma and a three-part triple stay rejected, no parser is
+handed an option set, a persona or a prompt's inputs, with the flag off the
+paper's path runs, and the two flag states differ in config_sha1.
 """
 import inspect
 import json

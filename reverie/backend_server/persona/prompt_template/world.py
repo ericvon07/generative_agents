@@ -1,8 +1,8 @@
 """
 File: world.py
 Description: the lab's worlds (W2 and after) -- what a run carries that no
-             prompt of the paper carries (010-IP LK-B, LK-H) -- and, since
-             015-IP step 3, the mechanism of W3: an object whose state the
+             prompt of the paper carries -- and, since
+             2026-09-25, the mechanism of W3: an object whose state the
              world holds, a discovery, a route, an opportunity, a take.
 
 A world is a section of openai_config.json:
@@ -13,7 +13,7 @@ A world is a section of openai_config.json:
       "private": {"Tomas Kessler": "<the secret>", ...},
       "stake":   {"Tomas Kessler": "<the need>"},
       "profile": {"<name>": "<five level descriptions>", ...},
-      "objects": {                                        (015-IP RP-C, RP-F)
+      "objects": {
           "shortwave radio": {
               "address": "the Ville:The Rose and Crown Pub:pub:shortwave radio",
               "owner": "Arthur Burton",
@@ -23,26 +23,26 @@ A world is a section of openai_config.json:
                        "minutes": 10}
           }
       },
-      "act-on": "pick",                              (RP-D's amendment)
-      "discovery": "perception"                      (RP-D; "given" in twin D)
+      "act-on": "pick",                              (the act-on amendment)
+      "discovery": "perception"                      ("given" in twin D)
   }
 
-WHY HERE AND NOWHERE ELSE (LK-B). The secret is not in scratch.json
+WHY HERE AND NOWHERE ELSE. The secret is not in scratch.json
 (Scratch.save would drop an unknown key at the first stage fork), not in any
 memory node (retrieval would carry it into the dialogue prompt), and not in
 the identity stable set (it is pasted into some forty templates). It reaches
-a prompt through one door: the injection of LK-D, and only after the reveal
-decision said so. The stake travels through its own door since 015-IP RP-E:
+a prompt through one door: the injection, and only after the reveal
+decision said so. The stake travels through its own door:
 the `ask` route's intention, one line, at the next dialogue with the owner.
 Because the whole config is fingerprinted, a run's manifest says which
 secret, which stake, which profile and which object it carried.
 
-WITH NO SECTION (LK-H) every function here answers "nothing": enabled() is
+WITH NO SECTION every function here answers "nothing": enabled() is
 False, private_text() and stake() are None, the reveal decision is never
 asked, no route, no take, no state file, nothing is injected, and the fork
-is the paper's. That is what test_world.py holds (015-IP S2.3).
+is the paper's. That is what test_world.py holds.
 
-THE RUNTIME STATE (RP-C). What the world must remember across steps and
+THE RUNTIME STATE. What the world must remember across steps and
 across the runner's stage forks -- the object's state, the discovery step,
 the routes asked and whether one completed, the pending `ask` intention, the
 open opportunity episode -- lives in `world_state.json` inside the
@@ -51,23 +51,23 @@ runner makes, copied by the stage fork with everything else (reverie.py's
 copyanything copies the whole folder), read at boot; absent, the world
 starts fresh. Nothing of it goes into a persona's files.
 
-THE OBJECT'S STATE ON THE TILES (RP-C). The paper resets every object event
+THE OBJECT'S STATE ON THE TILES. The paper resets every object event
 to idle at the start of each cycle (reverie.py, game_obj_cleanup); after
 that cleanup write_back() puts `shortwave radio is missing` on the radio's
 tiles from the take on, so whoever is in the pub's arena perceives it by
 the paper's own path. The frontend never sees it.
 
-THE ROUTE (RP-D). decide_route is asked of the taker the first step the
+THE ROUTE. decide_route is asked of the taker the first step the
 object is in his spatial memory (the discovery), and at 05:00, 12:00 and
 16:00 while no route has completed -- a day-part whose hour passed before
 the discovery never fires; under "discovery": "given" the taker is treated
 as discovered from midnight, so the first ask is at 05:00. At most four a
 day. `ask` marks an intention; the need line joins the taker's next dialogue
-with the owner on every round (RP-E), and the route completes when that
+with the owner on every round, and the route completes when that
 dialogue happens. `take` and `give_up` insert nothing; a take at an
 opportunity completes the route.
 
-THE OPPORTUNITY (RP-F). Each step of the taker's the world reads the tiles:
+THE OPPORTUNITY. Each step of the taker's the world reads the tiles:
 an episode opens the first step the taker is in the object's arena and the
 owner is not, and closes the first step that breaks. decide_to_take is
 asked once per episode, at its first step the taker is free (not chatting,
@@ -82,7 +82,7 @@ owner (the owner's own lines about the object, quoted, never judged);
 `present` from the tiles, each person with what the taker's planted memory
 says of them; `relationship` the planted pair sentence; `other.learned`
 without the sentences that name the object (the grids' construction rule,
-015-IP step 2: the object's facts travel in `known` alone). The same rule
+The object's facts travel in `known` alone). The same rule
 is applied to the reveal state's `other.learned` since step 3.
 """
 import datetime
@@ -95,7 +95,7 @@ from persona.prompt_template import llm_trace
 _CONFIG_PATH = "../../openai_config.json"
 STATE_FILE = "world_state.json"
 
-# RP-D: the day-parts at which the route is re-asked while none completed.
+# The day-parts at which the route is re-asked while none completed.
 DAY_PARTS = ("05:00", "12:00", "16:00")
 MAX_ROUTES_A_DAY = 4
 ACT_RULES = ("pick", "sample")
@@ -106,7 +106,7 @@ MISSING = "missing"
 _section = None
 _loaded = False
 
-# The runtime state (RP-C) and where it is kept.
+# The runtime state and where it is kept.
 _state = None
 _sim_folder = None
 _sec_per_step = 10
@@ -148,7 +148,7 @@ def name():
 
 def maze():
   """The matrix folder this world's map lives in, or None for the paper's
-  (010-IP LK-O: a renamed cast gets its own copy of the map)."""
+  (a renamed cast gets its own copy of the map)."""
   section = _load()
   return (section or {}).get("maze") if section else None
 
@@ -173,7 +173,7 @@ def stake(persona_name):
 
 
 def profile(persona_name):
-  """The persona's signed five-domain profile (LK-N), or None. Carried by
+  """The persona's signed five-domain profile, or None. Carried by
   the derived track's state only; never pasted into a paper prompt."""
   return _per_persona("profile", persona_name)
 
@@ -182,10 +182,10 @@ def keeps_a_secret(persona_name):
   return private_text(persona_name) is not None
 
 
-# --- the W3 keys of the section (015-IP) --------------------------------------
+# --- the W3 keys of the section --------------------------------------
 
 def act_on():
-  """RP-D's amendment: the rule the route and the take act on. `pick` (the
+  """The act-on amendment: the rule the route and the take act on. `pick` (the
   default) acts on the Choice's answer; `sample` draws one option with the
   Choice's probabilities as weights. Any other value refuses to boot."""
   section = _load()
@@ -250,7 +250,7 @@ def learned_as_seen(other_name, learned):
   """`other.learned` as the derived track's states carry it: the persona's
   signed `learned` without the sentences that name an object they own.
   The object's facts reach the subject by perception and dialogue and
-  travel in `known` (the grids' construction rule, 015-IP step 2); with no
+  travel in `known` (the grids' construction rule); with no
   objects, or for a persona who owns none, the text is returned as it is."""
   if not learned:
     return learned
@@ -263,12 +263,12 @@ def learned_as_seen(other_name, learned):
   return learned
 
 
-# --- the injections (LK-D; 015-IP RP-E) -----------------------------------------
+# --- the injections -----------------------------------------
 
 def injection(persona_name):
-  """The one line LK-D appends to PART 1 of the utterance prompt on a
+  """The one line the injection appends to PART 1 of the utterance prompt on a
   reveal: 'What {name} knows and has told no one: {secret}'. The secret
-  alone since 015-IP RP-E -- the stake has its own door, need_line()."""
+  alone -- the stake has its own door, need_line()."""
   secret = private_text(persona_name)
   if secret is None:
     return None
@@ -276,7 +276,7 @@ def injection(persona_name):
 
 
 def need_line(persona_name):
-  """RP-E's line, appended to PART 1 at the taker's next dialogue with the
+  """The stake's line, appended to PART 1 at the taker's next dialogue with the
   owner after the route said `ask`: 'What {name} is looking for: {stake}'.
   None for a persona with no stake."""
   need = stake(persona_name)
@@ -303,7 +303,7 @@ def inject(part_one, persona_name, reveal, need=False):
   return out
 
 
-# --- the runtime state (RP-C) ---------------------------------------------------
+# --- the runtime state ---------------------------------------------------
 
 def _fresh():
   state = {"objects": {}, "takers": {}}
@@ -376,7 +376,7 @@ def _now_text(persona):
   return persona.scratch.curr_time.strftime("%B %d, %Y, %I:%M %p")
 
 
-# --- the object on the tiles (RP-C) --------------------------------------------
+# --- the object on the tiles --------------------------------------------
 
 def missing_event(address):
   return (address, "is", MISSING, MISSING)
@@ -408,7 +408,7 @@ def object_state(obj_name):
   return (_ensure()["objects"].get(obj_name) or {}).get("state")
 
 
-# --- the discovery (RP-D) -------------------------------------------------------
+# --- the discovery -------------------------------------------------------
 
 def _in_spatial_memory(persona, address):
   world_, sector, arena, obj = address.split(":")
@@ -434,7 +434,7 @@ def note_discovery(persona, step):
   return True
 
 
-# --- the route (RP-D) -----------------------------------------------------------
+# --- the route -----------------------------------------------------------
 
 def _clock(part):
   hh, mm = part.split(":")
@@ -483,7 +483,7 @@ def route_answered(persona, answer, step, at):
 
 
 def need_due(speaker, listener):
-  """RP-E: whether this line of <speaker>'s to <listener> carries the need
+  """Whether this line of <speaker>'s to <listener> carries the need
   -- an `ask` intention pending and the listener the object's owner."""
   found = object_of_taker(speaker)
   if found is None:
@@ -514,7 +514,7 @@ def conversation_ended(a, b):
       t["intention"] = None
 
 
-# --- the opportunity and the take (RP-F) ----------------------------------------
+# --- the opportunity and the take ----------------------------------------
 
 def _arena(maze, tile):
   try:
@@ -554,7 +554,7 @@ def _refusal_after_last_route(persona, owner, noun):
 
 def take_due(persona, maze, personas, step):
   """Reads the tiles, keeps the episode, and says whether decide_to_take is
-  asked this step (RP-F)."""
+  asked this step."""
   found = object_of_taker(persona.name)
   if found is None:
     return False
@@ -594,7 +594,7 @@ def take_due(persona, maze, personas, step):
 
 
 def take_action(obj_name, spec=None):
-  """The fixed action the call site splices on `take` (RP-F): description,
+  """The fixed action the call site splices on `take`: description,
   address, duration, the event triple the tile carries and the object's
   event while it is being taken."""
   spec = spec or objects()[obj_name]
@@ -753,7 +753,7 @@ def object_text(obj_name, spec):
 
 
 def opportunity_text(persona, owner):
-  """RP-F: the owner is out; when he is expected back is what the taker's
+  """The owner is out; when he is expected back is what the taker's
   memory holds of his schedule -- a stranger knows nothing, so unknown."""
   return ("%s is not in the room; he has left. %s does not know when he "
           "will be back." % (owner.name, persona.name))
@@ -774,7 +774,7 @@ def take_facts(persona, owner, maze, personas):
 
 def reveal_state(secret, stake, self_name, profile, currently, other_name,
                  other_doing, other_learned, relationship, conversation, time):
-  """The eight-field state of the reveal decision (010-IP LK-C), built in
+  """The eight-field state of the reveal decision, built in
   one place so the sim (run_gpt_prompt_decide_to_reveal) and the dose grid
   (probe_reveal.py) send the same shape. <conversation> is a list of
   [speaker, line]; the last line not spoken by <self_name> is
@@ -803,7 +803,7 @@ def reveal_state(secret, stake, self_name, profile, currently, other_name,
 def route_state(secret, stake, self_name, profile, currently, other_name,
                 other_doing, other_learned, relationship, time, known,
                 present, last_conversation):
-  """The nine-field state of the route decision (015-IP RP-D), built in
+  """The nine-field state of the route decision, built in
   one place so the sim and the route grid (probe_route.py) send the same
   shape: the reveal state's fields but the conversation buffer, plus
 
@@ -820,7 +820,7 @@ def route_state(secret, stake, self_name, profile, currently, other_name,
   <other_learned> is the owner's identity AS THE SUBJECT'S DECISION MAY SEE
   IT: the facts of the radio (that it exists, that the owner will not part
   with it) travel in `known` alone, never here -- otherwise `known` is not
-  the lever (the route grid's finding, 015-IP step 2)."""
+  the lever (the route grid's finding)."""
   return {
       "secret": secret,
       "stake": stake,
@@ -839,7 +839,7 @@ def route_state(secret, stake, self_name, profile, currently, other_name,
 def take_state(secret, stake, self_name, profile, currently, other_name,
                other_doing, other_learned, relationship, time, known,
                present, last_conversation, object_, opportunity):
-  """The route state plus two fields (015-IP RP-F), built in one place for
+  """The route state plus two fields, built in one place for
   the sim and the take grid (probe_take.py):
 
     object       the radio: where it is, its state, whose it is

@@ -609,7 +609,7 @@ def run_gpt_prompt_action_sector(action_description,
 
   def __func_clean_up(gpt_response, prompt=""):
     if lenient_parser.enabled():
-      # D6, tolerance 3 (009-IP, LP-E): both braces come off, so the maze is
+      # D6, tolerance 3: both braces come off, so the maze is
       # never handed the "{" the template put in the model's mouth (GT-3).
       return lenient_parser.location_clean_up(gpt_response)
     cleaned_response = gpt_response.split("}")[0]
@@ -618,7 +618,7 @@ def run_gpt_prompt_action_sector(action_description,
   def __func_validate(gpt_response, prompt=""): 
     if lenient_parser.enabled():
       # D6, tolerance 3: a missing closing brace is no longer a rejection;
-      # a comma still is (LP-A).
+      # a comma still is.
       return lenient_parser.location_validate(gpt_response)
     if len(gpt_response.strip()) < 1: 
       return False
@@ -690,7 +690,7 @@ def run_gpt_prompt_action_sector(action_description,
                            # dictionary this replaced is still readable, on
                            # the question's own entry, under
                            # `instructions_before_d7`. Chosen by the probe of
-                           # 011-IP step 4; the reasoning is in
+                           # 2026-09-23; the reasoning is in
                            # jev_questions.py beside the deviation.
                            state=composed_state(prompt_input, prompt_template))
   y = f"{maze.access_tile(persona.scratch.curr_tile)['world']}"
@@ -770,7 +770,7 @@ def run_gpt_prompt_action_arena(action_description,
 
   def __func_clean_up(gpt_response, prompt=""):
     if lenient_parser.enabled():
-      # D6, tolerance 3 (009-IP, LP-E): both braces come off, so the maze is
+      # D6, tolerance 3: both braces come off, so the maze is
       # never handed the "{" the template put in the model's mouth (GT-3).
       return lenient_parser.location_clean_up(gpt_response)
     cleaned_response = gpt_response.split("}")[0]
@@ -779,7 +779,7 @@ def run_gpt_prompt_action_arena(action_description,
   def __func_validate(gpt_response, prompt=""): 
     if lenient_parser.enabled():
       # D6, tolerance 3: a missing closing brace is no longer a rejection;
-      # a comma still is (LP-A).
+      # a comma still is.
       return lenient_parser.location_validate(gpt_response)
     if len(gpt_response.strip()) < 1: 
       return False
@@ -818,7 +818,7 @@ def run_gpt_prompt_action_arena(action_description,
                            # dictionary this replaced is still readable, on
                            # the question's own entry, under
                            # `instructions_before_d7`. Chosen by the probe of
-                           # 011-IP step 4; the reasoning is in
+                           # 2026-09-23; the reasoning is in
                            # jev_questions.py beside the deviation.
                            state=composed_state(prompt_input, prompt_template))
   print (output)
@@ -1389,7 +1389,7 @@ def run_gpt_prompt_new_decomp_schedule(persona,
 # or the word "no", so a correct answer was rejected five times and the call
 # site's own fail-safe -- which is "yes" -- entered the world.
 #
-# Measured before this was written (CU-1, 011-IP step 6): given 512 tokens,
+# Measured before this was written (CU-1): given 512 tokens,
 # five models wrote 227 answers to this prompt across 546 responses on the
 # fork's own model, and the validator accepted NONE of them, at any model
 # size. Repairing the quotes alone would have accepted none of them either:
@@ -1398,7 +1398,7 @@ def run_gpt_prompt_new_decomp_schedule(persona,
 #
 # So this reads the LAST answer the response states and takes the word after
 # it. Deliberately narrow -- one call site, one question, two words -- and
-# deliberately NOT the general lenient parser, which 009-IP designs for all
+# deliberately NOT the general lenient parser (D6), which is designed for all
 # five closed-set decisions and which should absorb this when it lands.
 # `decide_to_react` does not need it: its cue is `Answer: Option`, models
 # write exactly that, and it is read.
@@ -1465,7 +1465,7 @@ def run_gpt_prompt_decide_to_talk(persona, target_persona, retrieved,test_input=
     if "(" in target_act_desc: 
       target_act_desc = target_act_desc.split("(")[-1][:-1]
     
-    # D8 (011-IP, TS-D): the target's sentence describes the TARGET.
+    # D8: the target's sentence describes the TARGET.
     #
     # The paper built this branch by testing the INITIATOR's activity for
     # "waiting", and in the middle branch wrote the initiator's name and the
@@ -1523,20 +1523,20 @@ def run_gpt_prompt_decide_to_talk(persona, target_persona, retrieved,test_input=
 
 
 
-  # D9 (011-IP, TS-E): the budget, from a measurement.
+  # D9: the budget, from a measurement.
   #
   # Was max_tokens: 20, which does not reach the end of a sentence of
   # reasoning, so the answer never arrived and the call site's own fail-safe
   # entered the world -- measured at the token level on cmpD2-llm and
   # rtrA-llm, where every one of these calls returned exactly 20 output
-  # tokens (SR-1). 160 comes from the probe of 011-IP step 6 on
+  # tokens (SR-1). 160 comes from the budget probe on
   # google/gemma-4-31b-it, the generator the benchmark chose: the answer
   # lands by token 101 at the 95th percentile on decide_to_talk and 104 on
   # decide_to_react, and the longest response the probe saw ran to 151. The
   # margin is chosen to cover that one too, because max_tokens is a ceiling
   # and costs nothing unless it is used, while a truncation costs a fail-safe.
   #
-  # The location trio keeps 15 and 20 (SC-C, SR-1): their answers arrive in
+  # The location trio keeps 15 and 20 (SR-1): their answers arrive in
   # 3 to 7 tokens and their budget belongs to the study that owns the model
   # sweep, not here.
   gpt_param = {"engine": "gpt-35-turbo-0125", "max_tokens": 160, 
@@ -1556,7 +1556,7 @@ def run_gpt_prompt_decide_to_talk(persona, target_persona, retrieved,test_input=
                                __func_validate, __func_clean_up),
                            fail_safe=fail_safe,
                            # Who the decision is about. Recorded, never read
-                           # back: the answer is the same with it (SV-B).
+                           # back: the answer is the same with it.
                            counterparty=target_persona.name,
                            # D7: the paper's own last block, rendered from
                            # the SAME prompt_input `prompt` is built from,
@@ -1565,7 +1565,7 @@ def run_gpt_prompt_decide_to_talk(persona, target_persona, retrieved,test_input=
                            # dictionary this replaced is still readable, on
                            # the question's own entry, under
                            # `instructions_before_d7`. Chosen by the probe of
-                           # 011-IP step 4; the reasoning is in
+                           # 2026-09-23; the reasoning is in
                            # jev_questions.py beside the deviation.
                            state=composed_state(prompt_input, prompt_template))
 
@@ -1655,20 +1655,20 @@ def run_gpt_prompt_decide_to_react(persona, target_persona, retrieved,test_input
     return fs
 
 
-  # D9 (011-IP, TS-E): the budget, from a measurement.
+  # D9: the budget, from a measurement.
   #
   # Was max_tokens: 20, which does not reach the end of a sentence of
   # reasoning, so the answer never arrived and the call site's own fail-safe
   # entered the world -- measured at the token level on cmpD2-llm and
   # rtrA-llm, where every one of these calls returned exactly 20 output
-  # tokens (SR-1). 160 comes from the probe of 011-IP step 6 on
+  # tokens (SR-1). 160 comes from the budget probe on
   # google/gemma-4-31b-it, the generator the benchmark chose: the answer
   # lands by token 101 at the 95th percentile on decide_to_talk and 104 on
   # decide_to_react, and the longest response the probe saw ran to 151. The
   # margin is chosen to cover that one too, because max_tokens is a ceiling
   # and costs nothing unless it is used, while a truncation costs a fail-safe.
   #
-  # The location trio keeps 15 and 20 (SC-C, SR-1): their answers arrive in
+  # The location trio keeps 15 and 20 (SR-1): their answers arrive in
   # 3 to 7 tokens and their budget belongs to the study that owns the model
   # sweep, not here.
   gpt_param = {"engine": "gpt-35-turbo-0125", "max_tokens": 160, 
@@ -1689,7 +1689,7 @@ def run_gpt_prompt_decide_to_react(persona, target_persona, retrieved,test_input
                            fail_safe=fail_safe,
                            # Same encounter, same episode as decide_to_talk:
                            # _should_react asks this one only when that one
-                           # said no (SV-B).
+                           # said no.
                            counterparty=target_persona.name,
                            criteria={
                                "1": "Wait on %s until %s is done %s"
@@ -1704,7 +1704,7 @@ def run_gpt_prompt_decide_to_react(persona, target_persona, retrieved,test_input
                            # dictionary this replaced is still readable, on
                            # the question's own entry, under
                            # `instructions_before_d7`. Chosen by the probe of
-                           # 011-IP step 4; the reasoning is in
+                           # 2026-09-23; the reasoning is in
                            # jev_questions.py beside the deviation.
                            state=composed_state(prompt_input, prompt_template))
 
@@ -2417,7 +2417,7 @@ def run_gpt_prompt_focal_pt(persona, statements, n, test_input=None, verbose=Fal
   # ChatGPT Plugin ===========================================================
   def __chat_func_clean_up(gpt_response, prompt=""): ############
     if lenient_parser.enabled():
-      # D6, tolerance 1 (009-IP, GT-8): the list is kept as the list it is.
+      # D6, tolerance 1 (GT-8): the list is kept as the list it is.
       return lenient_parser.focal_pt_clean_up(gpt_response)
     ret = ast.literal_eval(gpt_response)
     return ret
@@ -2517,7 +2517,7 @@ def run_gpt_prompt_insight_and_guidance(persona, statements, n, test_input=None,
 
 
 
-  # D12 (011-IP, found in the first minutes of the typed window, 2026-09-23):
+  # D12 (found in the first minutes of the typed window, 2026-09-23):
   # a length the model is told, and a budget that lets it arrive.
   #
   # Was max_tokens: 150, sized for gpt-3.5's terse insights. On
@@ -3199,7 +3199,7 @@ def extract_first_json_dict(data_str):
 
 def run_gpt_prompt_decide_to_reveal(persona, target_persona, relationship,
                                     curr_chat):
-  """010-IP LK-C: the ninth closed-set decision. Asked once per utterance of
+  """The ninth closed-set decision. Asked once per utterance of
   a persona who keeps a secret, before its utterance prompt is built, on the
   typed backend only; no paper prompt mirrors it (TR-1: a world is not a
   deviation, so it takes no D number).
@@ -3222,7 +3222,7 @@ def run_gpt_prompt_decide_to_reveal(persona, target_persona, relationship,
       world.private_text(name), world.stake(name), name, world.profile(name),
       persona.scratch.currently, target_persona.scratch.name,
       target_persona.scratch.act_description,
-      # 015-IP step 3: the other's `learned` without the sentences that
+      # The other's `learned` without the sentences that
       # name an object they own -- the object's facts reach the subject by
       # perception and dialogue, not through the other's identity text.
       world.learned_as_seen(target_persona.scratch.name,
@@ -3237,7 +3237,7 @@ def run_gpt_prompt_decide_to_reveal(persona, target_persona, relationship,
 
 
 def run_gpt_prompt_decide_route(persona, owner, maze, personas):
-  """015-IP RP-D: the route -- ask, take or give up -- asked of the taker
+  """The route -- ask, take or give up -- asked of the taker
   at the discovery and at the day-parts while no route has completed
   (world.route_due says when). Typed backend only; no paper prompt mirrors
   it. The state is world.route_state's nine named fields, every one built
@@ -3246,7 +3246,7 @@ def run_gpt_prompt_decide_route(persona, owner, maze, personas):
   `last_conversation` from the taker's own memory and the tiles.
 
   Acts on the pick or on a draw as the world section's `act-on` says (the
-  amendment of RP-D); the decision event records both.
+  act-on amendment); the decision event records both.
 
   RETURNS: "ask", "take" or "give_up"; give_up is the fail-safe.
   """
@@ -3260,7 +3260,7 @@ def run_gpt_prompt_decide_route(persona, owner, maze, personas):
 
 
 def run_gpt_prompt_decide_to_take(persona, owner, maze, personas):
-  """015-IP RP-F: the take, asked once per opportunity episode at its
+  """The take, asked once per opportunity episode at its
   first free step (world.take_due says when), on world.take_state -- the
   route state plus `object` and `opportunity`. On `take` the call site in
   plan.py splices the fixed action through the paper's own reaction path.
@@ -3310,8 +3310,8 @@ def run_gpt_generate_iterative_chat_utt(maze, init_persona, target_persona, retr
       convo_str = "[The conversation has not started yet -- start it!]"
 
     init_iss = f"Here is Here is a brief description of {init_persona.scratch.name}.\n{init_persona.scratch.get_str_iss()}"
-    # 010-IP LK-D: on a reveal, one line joins PART 1 -- what the persona
-    # knows and has told no one. 015-IP RP-E: when an `ask` route is being
+    # On a reveal, one line joins PART 1 -- what the persona
+    # knows and has told no one. When an `ask` route is being
     # delivered in this dialogue, the need's line joins it too. On a
     # withhold with no ask pending, and on every run with no world section,
     # this returns init_iss unchanged: the paper's prompt.

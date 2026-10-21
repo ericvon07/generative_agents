@@ -126,7 +126,7 @@ def generate_one_utterance(maze, init_persona, target_persona, retrieved, curr_c
   return x["utterance"], x["end"]
 
 def _reveal(speaker, listener, relationship, curr_chat):
-  """010-IP LK-C: whether this line may carry the speaker's secret. Asked only
+  """Whether this line may carry the speaker's secret. Asked only
   of a persona who keeps one; with no world section nobody does, the
   decision is never asked, and the loop is the paper's."""
   if not world.keeps_a_secret(speaker.scratch.name):
@@ -137,7 +137,7 @@ def _reveal(speaker, listener, relationship, curr_chat):
 
 
 def _need(speaker, listener):
-  """015-IP RP-E: whether this line carries the need -- the speaker's
+  """Whether this line carries the need -- the speaker's
   `ask` route is pending and the listener is the object's owner. With no
   world section, or no object, never. The first line that carries it
   completes the route (ask delivered); the intention stays until the
@@ -205,7 +205,7 @@ def agent_chat_v2(maze, init_persona, target_persona):
     if end:
       break
 
-  # 015-IP RP-E: an `ask` intention delivered in this dialogue is spent.
+  # An `ask` intention delivered in this dialogue is spent.
   if world.enabled():
     world.conversation_ended(init_persona.scratch.name,
                              target_persona.scratch.name)

@@ -1,7 +1,7 @@
 """
 File: build_w3.py
 Description: builds the W3 map copy and the W3 simulations by subtraction from
-             base_the_ville_n25 (015-IP step 1, RP-A, RP-B; world file
+             base_the_ville_n25 (world file
              docs/worlds/w3-the-radio-at-the-pub.md, S1-S3 and S8).
 
     ../../../.venv/bin/python build_w3.py            # writes the map and the sims
@@ -10,7 +10,7 @@ Description: builds the W3 map copy and the W3 simulations by subtraction from
 What it writes:
 
   ../../environment/frontend_server/static_dirs/assets/the_ville_w3/matrix/
-      the paper's matrix folder (LK-O), with TWO houses renamed in the three
+      the paper's matrix folder, with TWO houses renamed in the three
       special-blocks CSVs -- Yuriko Yamamoto's house is Daniel Okafor's, and
       Tamara Taylor and Carmen Ortiz's house is Tomas Kessler's house, its
       rooms `Tomas Kessler's room` and `spare room` -- and ONE object added:
@@ -20,7 +20,7 @@ What it writes:
       Every other byte is the paper's (world file S1, S5).
 
   ../../environment/frontend_server/storage/
-      base_the_ville_w3                 w3-base and w3-discovery-given (RP-B:
+      base_the_ville_w3                 w3-base and w3-discovery-given (
                                         the twin D differs in the config only)
       base_the_ville_w3_undercover      twin A: the officer's trade node is not
                                         planted in the other three
@@ -43,7 +43,7 @@ Each persona starts with the planted memories of S3 -- one thought node per
 pair, the closeness rule of W2 S11 -- with the local embedding the run
 would compute (openai_config.json: embeddings). Nothing private is anywhere
 in a sim: the secret, the need and the tip live in the config's world
-section (LK-B) and reach a prompt only through the seam's door. `--check`
+section and reach a prompt only through the seam's door. `--check`
 also refuses a sim folder holding a canary word.
 
 The spawn tiles are the paper's for the four rooms (n25's environment/

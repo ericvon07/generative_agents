@@ -399,15 +399,15 @@ def response_facts(response):
     finish_reason  why generation stopped. "length" means the provider cut
                    the answer for the token budget -- the model was
                    answering and did not get to finish, which is not the
-                   same failure as answering something invalid (RB-D).
+                   same failure as answering something invalid.
     provider       which provider actually served the request. OpenRouter
                    returns it as a top-level field; it is ground truth about
                    which weights ran, and the pin sent with the request is
-                   only a request (RB-E).
+                   only a request.
     cost           what this call actually cost, at the provider that
                    actually served it, in USD. The router reports it; a
                    price table is a second copy of a number that moves
-                   without telling us (RB-B).
+                   without telling us.
 
   Every one is optional: Ollama reports none of them but finish_reason, and
   a backend that reports nothing reads None rather than zero -- which is the
@@ -521,13 +521,13 @@ def record_call(path, model, prompt, response=None, latency=None,
         "prompt_head": _head(prompt),
         "resp_head": _head(text),
         # Why generation stopped. "length" means the provider cut the answer
-        # for the token budget; a trace written before 006-IP has no such
+        # for the token budget; a trace written before the router has no such
         # key at all, which is not the same as having it read None, and the
         # readers keep the two apart.
         "finish_reason": facts["finish_reason"],
         # WHICH provider served this request -- what the response says, not
         # what the request asked for. The pin rides in <extra>, from the
-        # config; this is ground truth, and RB-E is the rule that the two
+        # config; this is ground truth, and the rule is that the two
         # must agree for the run to be one condition. None on any backend
         # that does not route (every local one).
         "provider": facts["provider"],
@@ -684,11 +684,11 @@ def record_decision(label, domain, answer, backend=None, fail_safe=None,
 
 
 def record_utterance(speaker, listener, text, secret, end=None, need=False):
-  """One line of a conversation, whole (010-IP LK-D).
+  """One line of a conversation, whole.
 
   A call record keeps a head of the response; a leak is read from the whole
   sentence, so every utterance is its own event. Two flags say which private
-  text entered the speaker's prompt (015-IP RP-E): `secret` -- the world's
+  text entered the speaker's prompt: `secret` -- the world's
   private line, True only after a reveal decision said reveal -- and `need`
   -- the stake's line, True on every round of the dialogue an `ask` route
   is delivered in. `injected` is kept equal to `secret`, so the W2 readers
@@ -705,7 +705,7 @@ def record_utterance(speaker, listener, text, secret, end=None, need=False):
 
 
 def record_world(**fields):
-  """One thing the world module did or saw (015-IP step 3): `kind` is
+  """One thing the world module did or saw: `kind` is
   `discovery` (the object entered the taker's spatial memory), `route`
   (the route was asked, with `at` and `answer`), `opportunity` (an
   episode opens or closes), `take` (the take was decided, with the step
@@ -722,7 +722,7 @@ def record_world(**fields):
 
 
 def record_seed_history(**fields):
-  """D13 (016-IP): the paper's seed memories were loaded at the start of the
+  """D13: the paper's seed memories were loaded at the start of the
   run -- `file`, `phrases`, `per_agent`, `skipped_agents` (rows of agents not
   in the simulation) and `clock_lent_to` (personas whose unset clock was lent
   the server's for the load). The calls the load made are in the trace
@@ -745,7 +745,7 @@ def record_rate_limit(path, status, attempt, of, delay, error=None,
   that anyone could read, no tokens were spent, and a reader counting
   requests -- which is how every wall-clock and cost figure in this lab is
   built -- must not count this one. What it is, is the minute the run lost,
-  and 008-IP asks for exactly that figure.
+  and the ride-out was built to report exactly that figure.
 
   The attempt that finally answers writes ONE call record with ok: true, and
   its latency_ms is that request's, not the wait's: a ride-out that folded
@@ -754,7 +754,8 @@ def record_rate_limit(path, status, attempt, of, delay, error=None,
   <attempt> is which wait this is and <of> the budget it is spent from, so
   the policy a run ran under is readable off any one of these records. When
   the budget runs out the call raises instead, and the reject beside it says
-  "transport:RateLimitError" -- RB-C is not weakened by this event, it is
+  "transport:RateLimitError" -- the rule that a transport failure raises is not
+  weakened by this event, it is
   given the bounded wait its reopening clause asked for.
   """
   if not _config["enabled"]:

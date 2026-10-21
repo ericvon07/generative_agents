@@ -21,7 +21,7 @@ class Maze:
     self.maze_name = maze_name
     # Reading in the meta information about the world. If you want tp see the
     # example variables, check out the maze_meta_info.json file. 
-    # 010-IP LK-O: the paper's folder, or the copy a world names.
+    # The paper's folder, or the copy a world names.
     env_matrix = matrix_folder()
     meta_info = json.load(open(f"{env_matrix}/maze_meta_info.json"))
     # <maze_width> and <maze_height> denote the number of tiles make up the 

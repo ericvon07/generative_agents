@@ -1,6 +1,6 @@
 """
 File: interview_w2.py
-Description: the end-of-run interview of the detective (010-IP step 8, world
+Description: the end-of-run interview of the detective (world
              file §9 "The interview, renamed"). Reads a run's last checkpoint,
              asks Priya Raman the two questions on the paper's own analysis
              path (retrieve, summarize, next line; see main), and saves the

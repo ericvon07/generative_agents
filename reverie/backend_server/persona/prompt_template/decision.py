@@ -40,7 +40,7 @@ checkpoint, read out of the same trace file.
 The two social decisions also carry WHO they were about and WHICH run of
 consecutive asks they belong to -- see "the episode" below. That is a trace
 change and nothing else: the answer, and therefore the simulation, is the same
-either way (SV-B of 008-IP).
+either way.
 
 Configuration, in openai_config.json:
 
@@ -61,7 +61,7 @@ Configuration, in openai_config.json:
                   network blip; "raise" stops the simulation.
 
   episode-gap    How many steps of silence end a run of asks about the same
-                 pair. 10 is the cut 007-ST read cmpD2-jev's 98 asks under
+                 pair. 10 is the cut cmpD2-jev's 98 asks were read under
                  when it found 35 episodes in them.
 
 Environment overrides: DECISION_BACKEND, DECISION_NOUL_THRESHOLD,
@@ -124,13 +124,13 @@ def check_ready():
   after twenty minutes of it if the chosen backend cannot work."""
   from persona.prompt_template import world
   if world.enabled() and _backend != "jev":
-    # 012-ST JF-A: the derived track is typed only. The reveal decision has
+    # The derived track is typed only. The reveal decision has
     # no paper prompt to fall back to, so a world on the paper's backend
     # would run a pilot whose central decision cannot be asked.
     raise RuntimeError(
         "the config has a \"world\" section (%s) but decision-backend is %r: "
-        "a world's decisions are asked on the typed backend only (012-ST "
-        "JF-A)" % (world.name(), _backend))
+        "a world's decisions are asked on the typed backend only"
+        % (world.name(), _backend))
   if _backend == "llm":
     return "decisions: llm (the paper's prompts)"
   if _backend == "jev":
@@ -162,10 +162,10 @@ def in_domain(answer, domain):
 
 
 # --- the episode ------------------------------------------------------------
-# SV-B of 008-IP. A social decision is asked again every step for as long as
+# A social decision is asked again every step for as long as
 # the two agents can see each other: in cmpD2-jev, Isabella asked about Klaus
 # 14 times between 11:26 and 11:36 while Klaus asked about Isabella 8 times in
-# the same cafe, and the trace called that 22 decisions. 007-ST recovered the
+# the same cafe, and the trace called that 22 decisions. A later reading recovered the
 # 35 co-presence episodes behind the 98 asks by joining each decision back to
 # its call event on a timestamp -- which succeeded on 76 of the 98 and left 22
 # with no counterparty at all. That join is what this replaces.
@@ -252,7 +252,7 @@ def choose(label, domain, resolve, fail_safe=None, state=None, criteria=None,
               their own names. Defaults to the domain, undescribed.
     counterparty: the OTHER agent, on a decision that is about one. Recorded
               in the trace beside the answer, with the co-presence episode
-              derived from it (SV-B). Nothing reads it back: the answer, and
+              derived from it. Nothing reads it back: the answer, and
               therefore the simulation, is the same with it and without it.
 
   RETURNS:
@@ -345,7 +345,7 @@ def _resolve_noul(label, spec, domain, state, fail_safe, social=None):
   return answer
 
 
-# --- several questions over one state, one of them acted on (010-IP LK-L) ----
+# --- several questions over one state, one of them acted on ----
 
 ACT_RULES = ("pick", "sample")
 
@@ -379,13 +379,13 @@ def ask_many(label, state, questions, act_on, domain, fail_safe,
   on the decision event under `companions`, raw, so a weight or a reading
   can change later without a rerun. Nothing reads the companions back.
 
-  <act_rule> (015-IP RP-D's amendment, the world section's `act-on`):
+  <act_rule> (the world section's `act-on`):
   "pick" returns the Choice's answer; "sample" draws one option with the
   Choice's probabilities as weights and returns the draw. The event records
   `acted_on`, the `pick` either way and, under sample, the `drawn` option,
   so a day can be read both ways. Under pick no random number is drawn.
 
-  Typed backend only (012-ST JF-A): these questions mirror no paper prompt,
+  Typed backend only: these questions mirror no paper prompt,
   so there is nothing for the paper's backend to resolve.
 
   RETURNS:

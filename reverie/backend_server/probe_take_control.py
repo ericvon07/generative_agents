@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 File: probe_take_control.py
-Description: 015-IP step 2's ablation, asked at the author's word on
+Description: the take grid's ablation, asked at the author's word on
              2026-09-25 -- is the take grid's low p(take) the character's
              or the model's?
 
