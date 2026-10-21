@@ -1,27 +1,27 @@
 #!/usr/bin/env python3
 """
 File: read_probe.py
-Description: 011-IP step 4's instrument -- what the probe's rows say, and
-             which form TS-A's criterion picks.
+Description: the forms probe's instrument -- what the probe's rows say,
+             and which form the criterion picks.
 
 `probe_questions.py` asks one state in every form that applies and writes one
 JSONL row per answer. This reads those rows. It decides nothing on its own:
-TS-A fixed the criterion BEFORE the data, and this applies it and shows its
+The criterion was fixed BEFORE the data, and this applies it and shows its
 working, including when the answer is "no form beat the dictionary" -- which
-is a result and not a failure, and which fires SC-D's reopening clause in
-007-ST.
+is a result and not a failure, and which fires the criterion's reopening
+clause.
 
-THE CRITERION, as TS-A wrote it:
+THE CRITERION, as it was written:
 
   a form is ADEQUATE if it puts the anchors on the right side;
   among adequate forms the one with the WIDER SPREAD across the probe run's
   real states wins;
   a tie within 0.05 of spread goes to the CHEAPER mechanism.
 
-Cheapness is an order this file hard-codes because TS-A named it: the
+Cheapness is an order this file hard-codes because the criterion named it: the
 dictionary costs nothing, descriptive criteria cost two sentences, the
 composed state replaces the payload. Spread is reported two ways -- the
-literal range TS-A's words ask for, and the 10th-to-90th percentile band,
+literal range the criterion's words ask for, and the 10th-to-90th percentile band,
 which one outlier cannot move. The criterion runs on the range by default;
 `--spread p10p90` runs it on the robust one, and the readout says which.
 
@@ -50,7 +50,7 @@ import json
 import argparse
 import collections
 
-# TS-A's own order, cheapest first. A tie goes left.
+# The criterion's own order, cheapest first. A tie goes left.
 FORM_COST = ("dictionary", "descriptive", "composed")
 TIE = 0.05
 
@@ -109,7 +109,7 @@ def _p(row):
   p_yes comes back None: the scalar there is the CONFIDENCE, the probability
   the backend put on whichever option it picked. The two are not the same
   quantity and this file never mixes them in one table; what they share is
-  the property TS-A's criterion actually tests, which is whether a form
+  the property the criterion actually tests, which is whether a form
   DISCRIMINATES. A form that answers every state at 1.000 confidence has no
   spread and is telling the reader nothing, exactly as a form that puts
   every p(yes) at 0.30 is.
@@ -139,7 +139,7 @@ def _choice_rows(rows, label=None):
 def report_anchors(rows):
   print("=" * 78)
   print("ANCHORS -- states whose right answer a reader does not doubt.")
-  print("A form that cannot separate them is not measuring anything (TS-A).")
+  print("A form that cannot separate them is not measuring anything.")
   print("")
   anchors = [r for r in _choice_rows(rows) if r.get("expect")]
   if not anchors:
@@ -168,7 +168,7 @@ def report_anchors(rows):
   table(["case (* = anchor)", "question", "want"] + list(forms), body,
         [24, 16, 12] + [12] * len(forms))
   print("")
-  print("  * the two anchors are the ones TS-A named; the rest are the four")
+  print("  * the two anchors are the ones the criterion named; the rest are the four")
   print("    other hand-written states. ADEQUACY below counts the anchors.")
   print("")
   adequate = {}
@@ -233,7 +233,7 @@ def report_spread(rows, adequate, spread_kind):
         print("       BUT it does not beat the dictionary (%.3f): D7 is still"
               % base)
         print("       entered, and the readout says the orphan keys were not")
-        print("       the cause -- 007-ST's SC-D reopening clause fires.")
+        print("       the cause -- the reopening clause fires.")
       chosen[label] = pick
     print("")
   return chosen
@@ -345,7 +345,7 @@ def report_four_way(rows):
            "comp/noul"], body, [24, 6, 11, 11, 10, 10])
     print("")
     print("  A Choice that rises where a reader would say yes is the half of")
-    print("  D5's evidence a window cannot give (TS-C).")
+    print("  D5's evidence a window cannot give.")
     print("")
     # SEPARATION: the distance between the anchor a reader calls yes and the
     # anchor a reader calls no, per type per state form. It is the number D5
@@ -404,7 +404,7 @@ def main(argv=None):
   parser.add_argument("--spread", choices=("range", "p10p90"),
                       default="range",
                       help="which spread the criterion runs on "
-                           "(default: range, which is TS-A's literal words)")
+                           "(default: range, the criterion's literal words)")
   args = parser.parse_args(argv)
 
   rows = load(args.rows)
@@ -429,7 +429,7 @@ def main(argv=None):
   for label in sorted(chosen):
     print("  %-18s %s" % (label, chosen[label]))
   print("")
-  print("This file applies TS-A's criterion; it does not decide D7. Step 4")
+  print("This file applies the criterion; it does not decide D7. Step 4")
   print("is a READING GATE: the author reads this beside n9win's readout")
   print("before step 5 moves anything onto the run path.")
   return 0

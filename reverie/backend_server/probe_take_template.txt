@@ -1,4 +1,4 @@
-probe_take_template.txt -- 015-IP RP-H, 012-ST JF-A.
+probe_take_template.txt
 
 The take decision in the shape of the paper's decide_to_talk_v2.txt, for
 the generator's curve beside the typed one on the same constructed states.

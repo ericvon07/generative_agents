@@ -1,6 +1,6 @@
 """
 File: test_world.py
-Description: 010-IP step 5 -- the world module, the reveal decision, the
+Description: the world module, the reveal decision, the
              injection and the utterance event.
 
 Asks no backend and opens no socket: the typed backend is replaced by a
@@ -10,38 +10,38 @@ from reverie/backend_server:
 
     ../../../.venv/bin/python test_world.py
 
-What it holds (010-IP S2.4):
-  - LK-H: with no world section nobody keeps a secret, the reveal decision
+What it holds:
+  - with no world section nobody keeps a secret, the reveal decision
     is never asked, and the utterance prompt is the paper's, byte for byte.
   - S2.1: with a world, a persona whose decision said withhold sends a
     prompt with no word of the secret or the stake.
   - S2.3: on reveal, exactly one line is added to PART 1, and the loop
     records the utterance with injected: true.
-  - LK-C / S3.1: the reveal decision asks one request with the Choice and
+  - the reveal decision asks one request with the Choice and
     the four companions, acts on the Choice, and writes the companions on
     the decision event; a backend error is the fail-safe withhold with
     gave_up: true.
-  - JF-A: a world on the paper's backend refuses to start.
-  - LK-O: the map folder is the paper's with no world section, the copy
+  - a world on the paper's backend refuses to start.
+  - the map folder is the paper's with no world section, the copy
     the section names with one, and a folder that does not exist is
     refused before a persona is loaded.
-  - 015-IP S1.2: the W3 map copy (the_ville_w3, build_w3.py) is the paper's
+  - the W3 map copy (the_ville_w3, build_w3.py) is the paper's
     folder with two houses renamed in the special-blocks CSVs and one
     object added -- the radio's row and its two tiles -- and nothing else.
-  - 015-IP S5.1: the route and take states (world.route_state,
+  - the route and take states (world.route_state,
     world.take_state) carry their named fields; the two grids
     (probe_route.py, probe_take.py) build 90 and 120 states, every one
     whole, no two alike; the questions are one Choice over the declared
     domain and its companions.
-  - 015-IP step 3 (S2.3 and the step's own list): with no world section
+  - with no world section
     no route, no take, no state file, and the utterance prompt the
     paper's even with a need pending; the need line and the secret line
-    are two doors (RP-E); the route is asked at the discovery and at the
+    are two doors; the route is asked at the discovery and at the
     day-parts while none completed, at most four, and at 05:00 under
-    discovery: given (RP-D); the take is asked once per opportunity
-    episode, only after a `take` route or a refusal (RP-F); a take makes
+    discovery: given; the take is asked once per opportunity
+    episode, only after a `take` route or a refusal; a take makes
     the object missing from the step the action ends, the write-back
-    survives the paper's cleanup and a stage fork (RP-C); the states are
+    survives the paper's cleanup and a stage fork; the states are
     built from the taker's own memory; act-on: sample draws with the
     probabilities and pick never draws; the utterance event carries need
     and secret; a world react on `take` splices the fixed action.
@@ -134,7 +134,7 @@ def _utterance_prompt(reveal, need=False):
   return seen["prompt"]
 
 
-# --- the W3 fakes (015-IP step 3) ---------------------------------------------
+# --- the W3 fakes ---------------------------------------------
 
 RADIO = "shortwave radio"
 RADIO_ADDRESS = "the Ville:The Rose and Crown Pub:pub:shortwave radio"
@@ -351,7 +351,7 @@ REVEAL_ANSWERS = {
 # --- the cases -----------------------------------------------------------------
 
 class NoWorld(unittest.TestCase):
-  """LK-H: with no section, the fork is the paper's."""
+  """With no section, the fork is the paper's."""
 
   def setUp(self):
     world.configure(None)
@@ -380,11 +380,11 @@ class NoWorld(unittest.TestCase):
     self.assertIn("llm", decision.check_ready())
 
   def test_the_map_is_the_papers(self):
-    """LK-O, LK-H: no section, the paper's matrix folder."""
+    """No section, the paper's matrix folder."""
     self.assertEqual(utils.env_matrix, utils.matrix_folder())
 
   def test_no_route_no_take_no_state_file_and_the_papers_prompt(self):
-    """015-IP S2.3: the world module does nothing with no section."""
+    """The world module does nothing with no section."""
     from persona.cognitive_modules import plan
     self.assertIsNone(world.object_of_taker("Tomas Kessler"))
     self.assertEqual({}, world.state())
@@ -419,7 +419,7 @@ class NoWorld(unittest.TestCase):
 
 
 class W3Map(unittest.TestCase):
-  """015-IP S1.2: the_ville_w3 against the paper's folder, file by file."""
+  """the_ville_w3 against the paper's folder, file by file."""
 
   RENAMES = [("Yuriko Yamamoto's house", "Daniel Okafor's house"),
              ("Tamara Taylor and Carmen Ortiz's house", "Tomas Kessler's house"),
@@ -479,7 +479,7 @@ class W3Map(unittest.TestCase):
 
 
 class W3States(unittest.TestCase):
-  """015-IP S5.1: the states of the route and the take, and the two grids."""
+  """The states of the route and the take, and the two grids."""
 
   ROUTE_FIELDS = ("secret", "stake", "self", "other", "relationship", "time",
                   "known", "present", "last_conversation")
@@ -542,8 +542,8 @@ class W3States(unittest.TestCase):
 
 
 class W3Mechanism(unittest.TestCase):
-  """015-IP step 3: the world module's mechanism -- RP-C, RP-D, RP-E, RP-F
-  and RP-D's amendment -- on fakes, asking no backend."""
+  """The world module's mechanism -- the take, the route, the stake's line,
+  the take state and the act-on amendment -- on fakes, asking no backend."""
 
   def setUp(self):
     world.configure(json.loads(json.dumps(W3)))
@@ -597,7 +597,7 @@ class W3Mechanism(unittest.TestCase):
     # a persona with no stake gets no need line, whatever is asked
     self.assertEqual(part, world.inject(part, "Daniel Okafor", False, True))
 
-  # --- the route (RP-D) ---
+  # --- the route ---
 
   def test_the_route_is_asked_at_the_discovery_and_the_day_parts(self):
     tomas, arthur, sam, personas = _cast()
@@ -677,7 +677,7 @@ class W3Mechanism(unittest.TestCase):
     self.assertTrue(world.note_discovery(tomas, 2640))
     self.assertEqual("discovery", world.route_due(tomas, 2640))
 
-  # --- the opportunity and the take (RP-F) ---
+  # --- the opportunity and the take ---
 
   def test_the_take_is_asked_once_per_episode_after_a_take_route(self):
     tomas, arthur, sam, personas = _cast()
@@ -742,7 +742,7 @@ class W3Mechanism(unittest.TestCase):
     self.assertFalse(world.take_due(tomas, maze, personas, 5820))
 
   def test_a_take_makes_the_radio_missing_and_survives_a_fork(self):
-    """RP-C, S1.3."""
+    """The take makes the radio missing, and it survives a fork."""
     tomas, arthur, sam, personas = _cast()
     maze = _W3Maze()
     tomas.sees_the_radio()
@@ -855,7 +855,7 @@ class W3Mechanism(unittest.TestCase):
                   world.present_text(tomas, maze, personas,
                                      W3["objects"][RADIO]))
 
-  # --- act-on: pick | sample (RP-D's amendment) ---
+  # --- act-on: pick | sample (the act-on amendment) ---
 
   def test_act_on_sample_draws_with_the_probabilities_and_pick_never_draws(self):
     import random
@@ -1001,7 +1001,7 @@ class WithWorld(unittest.TestCase):
     self.assertTrue(added[0].startswith(
         "What Tomas Kessler knows and has told no one: "))
     self.assertIn(SECRET, added[0])
-    # 015-IP RP-E: the secret alone; the stake has its own door
+    # The secret alone; the stake has its own door
     self.assertNotIn(STAKE, added[0])
     self.assertLess(after.index(added[0]), after.index("PART 2."))
     self.assertEqual(len(before.splitlines()) + 1, len(after.splitlines()))
@@ -1018,7 +1018,7 @@ class WithWorld(unittest.TestCase):
       converse.run_gpt_prompt_decide_to_reveal = real
 
   def test_the_reveal_decision_is_one_request_with_its_companions(self):
-    """LK-C, S3.1, S3.3."""
+    """One request with the Choice and its companions."""
     chat = [["Tomas Kessler", "Morning."],
             ["Priya Raman", "What are you building, Tomas?"]]
     with _TypedBackend(REVEAL_ANSWERS) as backend:
@@ -1072,7 +1072,7 @@ class WithWorld(unittest.TestCase):
     self.assertEqual("Priya Raman", event["listener"])
 
   def test_the_map_is_the_worlds_copy(self):
-    """LK-O: the section's maze selects the copy, and only the three
+    """The section's maze selects the copy, and only the three
     house strings differ from the paper's folder."""
     folder = utils.matrix_folder()
     self.assertEqual("%s/the_ville_w2/matrix" % utils.maze_assets_loc, folder)
@@ -1103,7 +1103,7 @@ class WithWorld(unittest.TestCase):
       utils.matrix_folder()
 
   def test_a_world_on_the_papers_backend_refuses_to_start(self):
-    """012-ST JF-A: the derived track is typed only."""
+    """The derived track is typed only."""
     with self.assertRaises(RuntimeError):
       decision.check_ready()
 

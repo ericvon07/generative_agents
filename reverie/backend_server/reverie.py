@@ -125,7 +125,7 @@ class ReverieServer:
     # of the number of tiles.
     self.step = reverie_meta['step']
 
-    # 015-IP RP-C: the world's runtime state, read from the simulation
+    # The world's runtime state, read from the simulation
     # folder (it came with the fork's copy) or started fresh, and the
     # object states put back on the tiles before the first cycle. Nothing
     # with no world section.
@@ -225,7 +225,7 @@ class ReverieServer:
       save_folder = f"{sim_folder}/personas/{persona_name}/bootstrap_memory"
       persona.save(save_folder)
 
-    # 015-IP RP-C: the world's runtime state, beside reverie/meta.json.
+    # The world's runtime state, beside reverie/meta.json.
     world.save(sim_folder)
 
 
@@ -384,7 +384,7 @@ class ReverieServer:
             self.maze.turn_event_from_tile_idle(key, val)
           # Then we initialize game_obj_cleanup for this cycle.
           game_obj_cleanup = dict()
-          # 015-IP RP-C: the states the world holds go back on the tiles
+          # The states the world holds go back on the tiles
           # after the paper's cleanup, so a taken object reads as missing
           # every cycle from the take on. Nothing with no world section.
           world.write_back(self.maze, self.step)

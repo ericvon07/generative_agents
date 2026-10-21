@@ -182,7 +182,7 @@ def _no_fence(cfg):
   return bool((cfg.get("json-no-fence") or {}).get("enabled", False))
 
 
-# The paper's Ville, as every run before 010-IP ran it. TR-1: a world is not
+# The paper's Ville, as every run before the first designed world ran it. TR-1: a world is not
 # a deviation, it is a different experiment, and a number written without
 # its world is a bug. So the field is never absent: a config with no "world"
 # section IS the paper's world, and says so.
@@ -254,7 +254,7 @@ def apply(fork_sim_code=None, sim_code=None, steps=None):
 
   _manifest = {
       "event": "manifest",
-      # 010-IP LK-G: which world this run is in. Read by the lab's registrar
+      # Which world this run is in. Read by the lab's registrar
       # and by compare_backends.py, which refuses a pair across two worlds.
       "world": world_of(cfg),
       "seed": _seed,
@@ -270,7 +270,7 @@ def apply(fork_sim_code=None, sim_code=None, steps=None):
           # The provider block sent with every request, when the run goes
           # through a router. It is half of the run's identity there: the
           # same model name at two providers is two sets of weights, two
-          # quantizations and two serving stacks (RB-E). Null on a run that
+          # quantizations and two serving stacks. Null on a run that
           # does not route.
           "provider_pin": cfg.get("model-provider"),
           # AP-3: the providers this run's own code may move a request to,
@@ -285,7 +285,7 @@ def apply(fork_sim_code=None, sim_code=None, steps=None):
       # fingerprint cannot see; the effective value is recorded so two runs
       # whose JSON prompts differ never share an identity.
       "json_no_fence": _no_fence(cfg),
-      # D13 (016-IP): the history file whose phrases the runner loads as the
+      # D13: the history file whose phrases the runner loads as the
       # paper's seed memories in a run's first stage, or null. Every run
       # before 2026-10-03 started without them.
       "seed_history": cfg.get("seed-history") or None,

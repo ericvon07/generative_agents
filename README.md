@@ -47,6 +47,9 @@ export DECISION_BACKEND=jev      # or llm
 17,280 steps, from `base_the_ville_n9`. Checkpoints are written to
 `environment/frontend_server/storage/`, and the trace of each stage to `logs/llm_trace/`.
 
+The two runs behind the results in the System One essay, with what is needed to recompute
+them, are in `runs/`: see [runs/README.md](runs/README.md).
+
 This fork was developed in a private repository and published here on 2026-10-20 with its full
 commit history. Commit hashes differ from that private copy.
 

@@ -1,4 +1,4 @@
-probe_reveal_template.txt -- 010-IP LK-M, JF-A.
+probe_reveal_template.txt
 
 The reveal decision in the shape of the paper's decide_to_talk_v2.txt, for
 the generator's curve beside the typed one on the same constructed states.

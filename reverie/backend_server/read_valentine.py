@@ -1,17 +1,17 @@
 """
 File: read_valentine.py
-Description: the readout of the Valentine's Day story in the paper's Ville
-             (016-IP step 1; VP-D, VP-E, VP-F, VP-I). Reads a run's traces,
-             its stage folders (memories, scratch, movement) and its labelled
-             interviews; never touches a simulation.
+Description: the readout of the Valentine's Day story in the paper's Ville.
+             Reads a run's traces, its stage folders (memories, scratch,
+             movement) and its labelled interviews; never touches a
+             simulation.
 
-    ../../../.venv/bin/python read_valentine.py <run-prefix> [<run-prefix> ...]
+    python read_valentine.py <run-prefix> [<run-prefix> ...]
         [--start base_the_ville_n9] [--json OUT] [--stamp] [--lines]
 
 Every run is read on its own and printed in its own block. Two runs are never
-paired (law 3): their numbers sit side by side, each with its own count.
+paired: their numbers sit side by side, each with its own count.
 
-THE MATCH PATTERNS (VP-F) -- committed before any run of 016-IP, and the only
+THE MATCH PATTERNS -- committed before any of the runs, and the only
 thing that decides whether a memory carries a fact. Case-insensitive, read on a
 node's description, subject, predicate and object together:
 
@@ -27,16 +27,16 @@ node's description, subject, predicate and object together:
   candidacy pattern matched although it says nothing of Sam. A node carries
   the candidacy only if it ties the office to him.
 
-THE LABEL RULE (VP-E) -- applied by Claude at step 4, or overridden by the
-author; this reader only reads the labels (`label`: "yes" | "no" |
+THE LABEL RULE -- applied to every answer, and by hand where the rule cannot
+settle one; this reader only reads the labels (`label`: "yes" | "no" |
 "unsettled", `labelled_by`: "rule" | "author") and never sets one:
 
   An answer is "yes" when it asserts the specific fact. For the party: a party
   on February 14th, or at Hobbs Cafe, or given by Isabella. For the candidacy:
   that Sam Moore is running for mayor. For a person: that the persona knows who
   that person is. Anything else is "no". An answer the rule cannot settle (a
-  hedge, a right fact attached to the wrong person) is "unsettled" and goes to
-  the author, quoted, by name; his label overrides.
+  hedge, a right fact attached to the wrong person) is "unsettled" and is
+  labelled by hand, quoted, by name; that label overrides.
 
 WHAT SUPPORTS A "YES" -- decided by the patterns above, never by hand:
 
@@ -50,9 +50,9 @@ WHAT SUPPORTS A "YES" -- decided by the patterns above, never by hand:
     identity one.
 
   A "yes" with neither is HALLUCINATED, and counted apart as the paper does.
-  An unsettled answer counts in no measure until the author labels it.
+  An unsettled answer counts in no measure until it is labelled by hand.
 
-THE DEFINITIONS (016-IP §3), with the clock at 10 s a step from 00:00 of
+THE DEFINITIONS, with the clock at 10 s a step from 00:00 of
 13 February 2023 (step 0):
 
   knows               "yes" and supported.
@@ -68,7 +68,7 @@ THE DEFINITIONS (016-IP §3), with the clock at 10 s a step from 00:00 of
 
 THE READINGS, in order:
 
-  1. VP-D's table: the party known (k of n), the candidacy known, density at
+  1. The paper's three measures: the party known (k of n), the candidacy known, density at
      the start and at the end with the hallucinated share, showed up of heard
      before the party and of those whose plan for the 14th named it; the
      originators' encounter rows printed beside the reach figures. The paper's
@@ -81,21 +81,21 @@ THE READINGS, in order:
      reached the persona, from the trace.
   3. (b) the encounter graph: steps each pair shared an arena (world, sector,
      arena of the two tiles), and who never shared one with each originator.
-  4. (c) the morning of the 14th, and VP-I's gate: per persona, `currently`
+  4. (c) the morning of the 14th, and the midnight's gate: per persona, `currently`
      and the day plan before and after the midnight, whether the new-day path
      ran (a call of plan.revise_identity at the midnight step) and whether any
      prompt of that step fell to its fail-safe; the lines naming either fact.
-     The gate stops only on VP-I's amended list (gate_stops); any other
+     The gate stops only on the list in gate_stops; any other
      fail-safe at that step, such as the wake-up hour, is printed as counted.
   5. (d) the decision layer: decisions, fail-safes (gave_up), out-of-domain
      answers and calls per decision, the location family, the social pair and
-     the scores on separate lines (SR-1); the conversations held and with
-     whom; decide_to_talk as asks and yeses, per ask and per episode (UN-1).
+     the scores on separate lines; the conversations held and with
+     whom; decide_to_talk as asks and yeses, per ask and per episode.
   6. (e) operations: wall clock, calls by path, rate-limit waits, cost, each
      provider's share of the generator's calls and every switch with its step.
      The one place a ratio between two runs may be read, as operational.
-  7. Secondary: party nodes per persona (GL-1's measure), inflated by the
-     conversation stored up to three times (TODOS); the paper's measures are
+  7. Secondary: party nodes per persona, inflated by the
+     conversation stored up to three times; the paper's measures are
      per persona and do not inherit it.
 
 The start density is read on the run's first checkpoint (its stage 0, step 200,
@@ -466,7 +466,7 @@ def midnight(prefix, stages, rows, names):
 
 
 def gate_stops(v):
-  """VP-I as amended on 2026-10-03: the gate stops only on what the story stands
+  """The midnight's gate as amended on 2026-10-03: the gate stops only on what the story stands
   on -- the identity revision did not run or errored, `currently` was not
   revised, there is no day plan, or the hourly schedule fell to its fail-safe.
   Any other fail-safe or errored call at the midnight step (the wake-up hour's
@@ -625,8 +625,8 @@ def read(prefix, start, show_lines, stamp):
   never = {f: [n for n in names if n != o and pair(shared, o, n) == 0]
            for f, o in ORIGINATOR.items()}
 
-  # 1. VP-D
-  print("\n1. THE PAPER'S THREE MEASURES (VP-D)   [paper: 25 agents, "
+  # 1. the paper's three measures
+  print("\n1. THE PAPER'S THREE MEASURES   [paper: 25 agents, "
         "gpt-3.5-turbo, one run]")
   facts, fpath = load_interview(prefix, "facts")
   rel_end, rpath = load_interview(prefix, "relations")
@@ -701,7 +701,7 @@ def read(prefix, start, show_lines, stamp):
   out["measures"] = measures
 
   # 2. (a) the diffusion path
-  print("\n2. THE DIFFUSION PATH (VP-F a): first node carrying the fact, and "
+  print("\n2. THE DIFFUSION PATH: first node carrying the fact, and "
         "the first utterance that brought it")
   out["diffusion"] = {}
   for about in ("party", "candidacy"):
@@ -722,7 +722,7 @@ def read(prefix, start, show_lines, stamp):
     print("      no node: %s" % (", ".join(missing) or "none"))
 
   # 3. (b) the encounter graph
-  print("\n3. THE ENCOUNTER GRAPH (VP-F b): steps each pair shared an arena, "
+  print("\n3. THE ENCOUNTER GRAPH: steps each pair shared an arena, "
         "over %d steps read" % steps_read)
   short = [n.split()[0][:7] for n in names]
   print("      %-19s %s" % ("", " ".join("%7s" % s for s in short)))
@@ -736,7 +736,7 @@ def read(prefix, start, show_lines, stamp):
   out["never_met"] = never
 
   # 4. (c) the morning of the 14th and the midnight's gate
-  print("\n4. THE MORNING OF THE 14TH (VP-F c) AND THE MIDNIGHT'S GATE (VP-I)")
+  print("\n4. THE MORNING OF THE 14TH AND THE MIDNIGHT'S GATE")
   out["midnight"] = mid
   if mid is None:
     print("   the run did not cross step %d" % MIDNIGHT)
@@ -761,7 +761,7 @@ def read(prefix, start, show_lines, stamp):
   # 5. (d) the decision layer
   decisions = [r for r in rows if r.get("event") == "decision"]
   calls = [r for r in rows if r.get("event") == "call"]
-  print("\n5. THE DECISION LAYER (VP-F d)")
+  print("\n5. THE DECISION LAYER")
   out["decisions"] = {}
   for fam, labels in (("location", LOCATION), ("social", SOCIAL),
                       ("scores", SCORES)):
@@ -797,7 +797,7 @@ def read(prefix, start, show_lines, stamp):
   # 6. (e) operations
   ops = operations(files, rows)
   out["operations"] = ops
-  print("\n6. OPERATIONS (VP-F e)")
+  print("\n6. OPERATIONS")
   print("   wall clock in stages %.1f h; calls %s" % (
       ops["wall_clock_h"], ", ".join("%s %d" % kv for kv in
                                      sorted(ops["calls"].items()))))
@@ -823,8 +823,8 @@ def read(prefix, start, show_lines, stamp):
     print("   provider switch at step %s: %s -> %s (%s)" % (
         s["step"], s["from"], s["to"], s["reason"]))
 
-  # 7. secondary: GL-1's node count
-  print("\n7. SECONDARY: party nodes per persona at step %d (GL-1's measure; "
+  # 7. secondary: the party node count
+  print("\n7. SECONDARY: party nodes per persona at step %d ("
         "one conversation can be stored up to three times)" % last_step)
   out["party_nodes"] = {n: (party_path.get(n) or {}).get("nodes", 0)
                         for n in names}

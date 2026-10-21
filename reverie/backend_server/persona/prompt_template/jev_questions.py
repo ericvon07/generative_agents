@@ -179,7 +179,7 @@ QUESTIONS = {
 }
 
 
-# --- the orphan keys, and the two mechanisms that close them (011-IP TS-A) ---
+# --- the orphan keys, and the two mechanisms that close them ---
 #
 # The audit of 2026-09-23: an ORPHAN KEY is a key in the `state` a call site
 # sends that the question's instruction never mentions. The model may look at
@@ -187,7 +187,7 @@ QUESTIONS = {
 # states in a sentence of its own -- nothing is missing from the payload, but
 # nothing tells the model what the fact is for.
 #
-# Two mechanisms are candidates, and the probe of 011-IP step 4 chooses per
+# Two mechanisms are candidates, and a probe chooses per
 # question:
 #
 #   descriptive criteria  the option descriptions name the orphan keys. The
@@ -199,7 +199,7 @@ QUESTIONS = {
 #                         rendered from the same prompt_input with the answer
 #                         cue stripped (gpt_structure.composed_state).
 #
-# ON THE RUN PATH SINCE D7 (011-IP step 5, 2026-09-23): the composed state is
+# ON THE RUN PATH SINCE D7 (2026-09-23): the composed state is
 # what the simulation sends for the four questions, put into QUESTIONS by the
 # landing loop at the end of this file, which keeps the instruction it
 # replaced under instructions_before_d7 for the probe. The descriptive form
@@ -308,7 +308,7 @@ def composed_instructions(label):
 
 # --- D7 LANDS: the four questions take the composed state -------------------
 #
-# 011-IP step 5, on the probe of step 4 (docs/research/, 2026-09-23). The probe
+# On the probe of 2026-09-23. The probe
 # asked 260 decide_to_talk, 22 decide_to_react, 182 action_sector and 182
 # action_arena REAL states in every form that applies, plus six hand-written
 # states with two anchors among them.
@@ -328,7 +328,7 @@ def composed_instructions(label):
 # and 0.470 / 0.600 for a Noul on the same two. D5 (the type) and D7 (the
 # state) are separate effects and they add.
 #
-# THE CRITERION WAS AMENDED, AFTER THE DATA, AND THIS SAYS SO. TS-A said "the
+# THE CRITERION WAS AMENDED, AFTER THE DATA, AND THIS SAYS SO. The criterion said "the
 # form with the wider SPREAD". On the location pair the two ways of measuring
 # spread disagreed: the literal range picked the dictionary, the p10-p90 band
 # picked the composed state. The range picked the dictionary because the
@@ -336,11 +336,11 @@ def composed_instructions(label):
 # 0.99 confidence, its body pinned at 1.000, its range bought by a few extreme
 # lows. Saturation is the failure the criterion existed to catch, so the
 # author amended "spread" to mean the p10-p90 band and the amendment is
-# recorded in the plan beside TS-A.
+# recorded beside the criterion.
 #
 # decide_to_react IS AN OVERRIDE, NOT A RESULT. Under the amended criterion it
 # tied -- 0.392 for the dictionary against 0.397 for the composed state, well
-# inside TS-A's own 0.05 tie -- and the tie-break sends a tie to the cheaper
+# inside the criterion's own 0.05 tie -- and the tie-break sends a tie to the cheaper
 # form, which is the dictionary. The author took the composed state there
 # anyway, for uniformity: a typed arm where three questions read prose and the
 # fourth reads a dictionary is a mixture, not a condition. That is a decision

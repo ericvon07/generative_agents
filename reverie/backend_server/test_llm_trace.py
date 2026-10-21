@@ -31,7 +31,7 @@ those rejects -- and only those -- keep the whole text.
 
 TransportFailure covers the third, and it is the one with teeth: a backend
 that did not answer must not look like a backend that answered badly. Before
-006-IP, GPT_request turned any exception into the string "TOKEN LIMIT
+the router (2026-09-23), GPT_request turned any exception into the string "TOKEN LIMIT
 EXCEEDED" and handed it to the validator -- and the validators for sector,
 arena and game object accept any non-empty string, so a dead backend read as
 a live simulation choosing badly. Two cases, deliberately side by side: the
@@ -46,8 +46,8 @@ field rather than an afternoon.
 
 RideOut covers the fifth, and it is the one that decides whether a routed run
 finishes. rtrA-llm took two upstream 429s from DeepInfra 24 seconds apart and
-each of them ended a stage, because RB-C makes a transport failure raise. SV-A
-of 008-IP gives RB-C the bounded wait its reopening clause asked for: a 429 is
+each of them ended a stage, because a transport failure raises. The ride-out
+gives that rule the bounded wait its reopening clause asked for: a 429 is
 ridden out, every wait is a record, and when the budget is spent the SAME
 exception still propagates. The two cases are deliberately side by side -- the
 limit that passes and the limit that does not.
@@ -56,7 +56,7 @@ TransportFailure, Truncation and RideOut share a stubbed client through
 Stubbed, which is deliberately not a TestCase: inheriting one re-runs its cases
 under the subclass's name, against the same trace file, and the counts double.
 Episodes covers the sixth: a social decision says who it was about and which
-run of consecutive asks it belongs to. 007-ST had to recover both by joining
+run of consecutive asks it belongs to. An earlier reading had to recover both by joining
 each decision back to its call event on a timestamp, which succeeded on 76 of
 cmpD2-jev's 98 asks and left 22 with no counterparty at all. Four cases: the
 counterparty is there, one encounter is one episode, a pair that meets again
@@ -530,7 +530,7 @@ class RideOut(RideOutSetup, unittest.TestCase):
     self.assertEqual([], self.records("reject"))
     self.assertFalse(self.records("outcome")[-1]["failsafe"])
 
-  # --- case 14 (S1.3): the budget runs out and RB-C is still RB-C -----------
+  # --- case 14: the budget runs out and a transport failure still raises ----
 
   def test_a_persistent_rate_limit_exhausts_the_ride_and_raises(self):
     gpt_structure.client = Stub(error=rate_limited())
@@ -551,7 +551,7 @@ class RideOut(RideOutSetup, unittest.TestCase):
     self.assertEqual(["transport:RateLimitError"],
                      [r["reason"] for r in rejects])
 
-    # The whole of RB-C in two assertions: the fail-safe never reached the
+    # The whole of the rule in two assertions: the fail-safe never reached the
     # world, and the loop never got to its last line.
     self.assertEqual([], self.records("outcome"))
 
@@ -582,7 +582,7 @@ class EmptyStub(Stub):
 
 
 class TheRouterSEmptyAnswer(RideOutSetup, unittest.TestCase):
-  """011-IP, the night of the windows: an empty body and a hung request are
+  """The night of 2026-09-24: an empty body and a hung request are
   ridden out like a 429, and never reach the cost ledger."""
 
   def test_an_empty_response_is_ridden_out(self):
@@ -883,7 +883,7 @@ class Episodes(OwnTrace, unittest.TestCase):
   What this replaces: in cmpD2-jev Isabella asked about Klaus 14 times between
   11:26 and 11:36 while Klaus asked about her 8 times in the same cafe, and
   the trace called that 22 decisions with no counterparty on any of them. The
-  denominator of every social rate in 007-ST had to be reconstructed by
+  denominator of every social rate in an earlier reading had to be reconstructed by
   joining on timestamps, and the join failed on 22 of 98.
 
   The backend here is "llm" (the suite sets DECISION_BACKEND before its
@@ -930,7 +930,7 @@ class Episodes(OwnTrace, unittest.TestCase):
     episodes = set(r["episode"] for r in self.decisions())
     self.assertEqual(1, len(episodes))
 
-    # And the other direction is its own ordered pair, as 007-ST counted it.
+    # And the other direction is its own ordered pair, as the earlier reading counted it.
     self.ask("Klaus Mueller", "Isabella Rodriguez", 4005)
     self.assertNotIn(self.decisions()[-1]["episode"], episodes)
 
@@ -941,7 +941,7 @@ class Episodes(OwnTrace, unittest.TestCase):
     first = self.decisions()[-1]["episode"]
 
     # Ten steps of silence is still the same encounter (the default gap); the
-    # eleventh is not. The cut is the one 007-ST read the 98 asks under.
+    # eleventh is not. The cut is the one the 98 asks were read under.
     self.ask("Isabella Rodriguez", "Klaus Mueller", 4010)
     self.assertEqual(first, self.decisions()[-1]["episode"])
 

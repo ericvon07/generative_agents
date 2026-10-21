@@ -1,6 +1,6 @@
 """
 File: replay_lenient_parser.py
-Description: The ceiling of 009-IP -- how many of a run's rejections the
+Description: The ceiling of the lenient parser -- how many of a run's rejections the
              lenient parser (D6) would have accepted, read off the trace
              before anything is paid for.
 
@@ -11,7 +11,7 @@ Usage (from reverie/backend_server, with the project venv):
 
 Each path is a trace file (.jsonl or .jsonl.gz), a directory of them, or a
 glob. Every `reject` record is re-validated under the three tolerances of
-LP-D and filed as ACCEPTED (D6 would have kept it), STILL REJECTED (with the
+D6 and filed as ACCEPTED (D6 would have kept it), STILL REJECTED (with the
 reason -- ambiguous, truncated, or a prompt D6 does not touch) or UNJUDGEABLE
 (the recorded head was cut before the answer could be read). Beside them,
 per prompt: how many `outcome` records it left and how many of them gave up
@@ -24,13 +24,13 @@ What the trace lets the replay see, per path:
 
   * focal_pt travels the JSON path, and a `validate_false` there records the
     PARSED "output" value -- the list itself, as Python prints it. The head is
-    4,000 characters on the 011-IP worktree, whole for every list seen so far;
+    4,000 characters on the worktree of 2026-09-24, whole for every list seen so far;
     a head ending in "..." is unjudgeable.
   * an `exception:JSONDecodeError` records the raw text cut at the last "}",
     because the assignment that would have replaced it raised. When the head
     is whole the replay can re-cut it at the first "{" and parse; when it is
-    cut, unjudgeable. (009-IP's Q under S3.1 expected null here; the code
-    keeps the cut text.)
+    cut, unjudgeable. (The design expected null here; the code keeps the cut
+    text.)
   * the location trio travels the completion path and records the raw text.
 
 Reads only; it never touches a simulation, and it is never told an option set.
@@ -45,7 +45,7 @@ import os
 import sys
 
 # The three tolerances are lenient_parser's own pure functions, never copies.
-# Step 1 of 009-IP read the ceiling with the module on disk and wired into no
+# The ceiling was read first with the module on disk and wired into no
 # call site (fork commit named in the plan), so the counterfactual preceded
 # the change in behaviour; step 3 re-read it through the wired code and the
 # two tables had to agree to the row.
@@ -100,7 +100,7 @@ def judge(record):
   if reason.startswith("transport"):
     return STILL, "transport failure, not a parse"
   if reason.startswith("truncated"):
-    return STILL, "truncated by the token budget (FB-E), not a parse"
+    return STILL, "truncated by the token budget, not a parse"
 
   if reason.startswith("exception:JSONDecodeError"):
     if head is None or head_is_cut(head):
@@ -128,14 +128,14 @@ def judge(record):
     if location_validate(head):
       return ACCEPTED, "one option name, brace missing or doubled"
     if "," in head:
-      return STILL, "ambiguous: a comma names more than one option (LP-A)"
+      return STILL, "ambiguous: a comma names more than one option"
     return STILL, "location, empty after the braces come off"
 
   if label in TRIPLES:
     text = str(head or "")
     parts = [p for p in text.split(")")[0].split(",")]
     if len(parts) >= 3:
-      return STILL, "ambiguous: three or more parts after the subject (LP-A)"
+      return STILL, "ambiguous: three or more parts after the subject"
     return STILL, "triple, not in D6"
 
   return STILL, "not a prompt D6 touches"

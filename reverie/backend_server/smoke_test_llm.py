@@ -13,11 +13,11 @@ and reports latency for each, so the same script doubles as a quick
 "is the model responsive enough" check when switching backends.
 
 Against a routed remote backend it reports four more things, and they are
-the reason 006-IP extended it: which provider actually answered, what the
+the reason the router's change extended it: which provider actually answered, what the
 call cost according to the router rather than according to a price table,
 why generation stopped, and what the account's own /key and /credits
 endpoints said immediately before and immediately after a paid call. That
-last pair is the only way to answer the question 006-IP could not answer in
+last pair is the only way to answer the question the router's change could not answer in
 advance -- the account's balance reads 0 and paid calls succeed anyway, and
 before a four-hour window is launched on that assumption it is worth
 spending a thousandth of a cent to watch a number move.

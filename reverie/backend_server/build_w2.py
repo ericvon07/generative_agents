@@ -1,7 +1,7 @@
 """
 File: build_w2.py
 Description: builds the W2 simulations by subtraction from base_the_ville_n25
-             (010-IP step 7, LK-E, LK-O, world file §9 and §11).
+             (world file §9 and §11).
 
     ../../../.venv/bin/python build_w2.py            # writes both sims
     ../../../.venv/bin/python build_w2.py --check    # rebuilds in memory, diffs
@@ -14,15 +14,15 @@ What it writes, under ../../environment/frontend_server/storage/:
                            field replaced by the signed text of the world
                            file's §9, and nothing private anywhere in it --
                            the secret and the stake live in the config's
-                           world section (LK-B).
-  base_the_ville_w2_text   the text condition's base (LK-F, w2j-text): the
+                           world section.
+  base_the_ville_w2_text   the text condition's base (w2j-text): the
                            same sim, with the secret and the stake appended
                            to Tomas's `currently` under clause a (none) --
                            the way the paper would carry a secret.
 
 Each persona keeps the paper's scratch settings (vision, retention,
 reflection thresholds...), the paper's spatial memory with the three house
-strings renamed to the map copy's (LK-O), and starts with ONE memory: the
+strings renamed to the map copy's, and starts with ONE memory: the
 relationship sentence the author signed (§11), planted as a thought, so
 that the paper's relationship summary (converse.generate_summarize_agent_
 relationship) starts from it and not from nothing. Its embedding is asked
@@ -51,7 +51,7 @@ TEXT = "base_the_ville_w2_text"
 # The cast (world file §9): the paper's resident -> the signed one.
 CAST = {"Carmen Ortiz": "Tomas Kessler", "Tamara Taylor": "Priya Raman"}
 
-# The three strings the map copy renames (LK-O), in spatial memory and in
+# The three strings the map copy renames, in spatial memory and in
 # living_area.
 RENAMES = [
     ("Tamara Taylor and Carmen Ortiz's house",
@@ -117,7 +117,7 @@ SIGNED = {
 
 # The secret and the stake (§9). In the gated sim they are NOT here: they
 # live in the config's world section and reach a prompt only through the
-# reveal decision (LK-B). In the text sim they sit inside `currently`, the
+# reveal decision. In the text sim they sit inside `currently`, the
 # way the paper would carry them, under clause a (none).
 SECRET = ("Tomas is secretly building a radio transmitter in the house "
           "garden, from parts he takes off the supply store product shelf "

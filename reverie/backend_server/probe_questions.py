@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
 File: probe_questions.py
-Description: 011-IP's probe (TS-B) -- what the typed backend answers when the
+Description: the forms probe -- what the typed backend answers when the
              SAME state is put to it in every form the plan weighs.
 
 The audit of 2026-09-23 found that five of the eight typed questions carry
-keys their instruction never names (jev_questions.ORPHAN_KEYS). 011-IP TS-A
+keys their instruction never names (jev_questions.ORPHAN_KEYS). The criterion
 weighs two mechanisms for closing that, and says the probe chooses per
 question. This file is the probe, and it is a FILE rather than a session
 because the six hand-written states that decided D5 in fork commit 2a4b0809
@@ -199,7 +199,7 @@ def base_criteria(label, prompt_input, domain):
 
 def forms_for(label):
   """Which forms apply to <label>. The location pair has no descriptive form:
-  twelve options do not get a description each (TS-A)."""
+  twelve options do not get a description each."""
   if jev_questions.descriptive_criteria(label, {"x": "y"}):
     return ("dictionary", "descriptive", "composed")
   return ("dictionary", "composed")
@@ -432,7 +432,7 @@ def probe(cases, out, dry_run=False, four_way=True):
     # reading in this probe that can falsify something: if a form collapses a
     # gap the dictionary opened, the asymmetry was never in the orphan keys.
     who = state_of(label, prompt_input)
-    base = {"probe": "011-IP", "at": stamp, "source": case.get("source", "hand"),
+    base = {"probe": "questions", "at": stamp, "source": case.get("source", "hand"),
             "case": case.get("case"), "anchor": bool(case.get("anchor")),
             "label": label, "expect": case.get("expect"),
             "subject": who.get("subject") or who.get("persona"),
@@ -441,7 +441,7 @@ def probe(cases, out, dry_run=False, four_way=True):
             "reconstruction": case.get("reconstruction")}
     asks = [(form, "choice") for form in forms_for(label)]
     if four_way and label == "decide_to_talk":
-      # The four-way ask (TS-C): the same state as a Noul and as a Choice, on
+      # The four-way ask: the same state as a Noul and as a Choice, on
       # the dictionary and on the composed state. The two Choice halves are
       # already in <asks>; these are the two Noul halves.
       asks += [("dictionary", "noul"), ("composed", "noul")]

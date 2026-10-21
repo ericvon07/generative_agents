@@ -1,11 +1,11 @@
 """
 File: world_questions.py
 Description: the derived track's questions -- the ones a W2 run asks that
-             mirror no paper prompt (010-IP LK-L, 012-ST JF-B).
+             mirror no paper prompt.
 
 Keyed by label like jev_questions.py, and consulted only when the config has
 a `world` section: with the section absent nothing here is ever built, and
-the fork is the paper's, byte for byte (010-IP LK-H).
+the fork is the paper's, byte for byte.
 
 The rules are TypeSafe's, read 2026-09-24 (docs.typesafe.ai, "state" and
 "how to build with System One"): the state is a NAMED OBJECT and every
@@ -15,19 +15,19 @@ evaluated in parallel and cannot see one another; weights, vetoes and
 thresholds live IN CODE, and the decision event records the raw answers
 beside the combined one, so a weight can change without a rerun.
 
-Born 2026-09-25 for 010-IP step 3, with the four parts of the talk decision
+Born 2026-09-25, with the four parts of the talk decision
 (the first residents). The reveal decision and its four companions arrive
 with step 5, and the whole file lands on main with step 7's pull request.
 
-The route and the take of W3 (015-IP RP-D, RP-F) were born at that plan's
+The route and the take of W3 were born at that plan's
 step 2, for the grids, at the end of this file; their call sites are step 3's.
 
-THE TALK DECISION IN FOUR PARTS (LK-L)
+THE TALK DECISION IN FOUR PARTS
 
 The paper asks "Would A initiate a conversation with B?" as one question on
 retrieved memories, the time, two activity sentences and the last chat. The
 decomposition asks four things a person would weigh, each a Noul (the
-probability that a statement holds), over the enriched state of LK-K:
+probability that a statement holds), over the enriched state:
 
   subject: {name, activity, progress, identity | profile, plan: {now, next}}
   other:   {name, activity, progress}
@@ -49,7 +49,7 @@ combine_talk() refuses to run.
 from persona.prompt_template import jev
 
 
-# The four parts, in the order LK-L lists them. The key is for code; the
+# The four parts, in their fixed order. The key is for code; the
 # text is the whole question, as the vendor says (ids are not sent).
 TALK_PARTS = {
     "other_interruptible": (
@@ -80,14 +80,14 @@ def talk_parts():
   return {key: jev.noul(text) for key, text in TALK_PARTS.items()}
 
 
-# Read at 010-IP step 3 against the author's 31 labels (the lab's snapshot
+# Read on 2026-09-25 against the author's 31 labels (the lab's snapshot
 # probe-fields-the-state-a-person-would-use-2026-09-25.md): the weighted sum
 # TIED the single question (leave-one-out MAE 0.69 against 0.70-0.71 on the
 # same states), three of the four parts carried no rank information about
 # the labels, and the least-squares weights were intercept +2.90,
 # other_interruptible +0.59, has_something_to_say -0.53, plan_leaves_room
 # -1.50, same_place_or_activity +1.79 with a cut of 2.90 for "probably yes"
-# -- a fit spent on noise. Under JF-F a tie goes to the simpler form, so the
+# -- a fit spent on noise. A tie goes to the simpler form, so the
 # decomposition is NOT adopted: these stay None, combine_talk() refuses, and
 # W2 runs the fidelity track's single question. The parts remain as
 # diagnostics a probe may ask; the one that tracked the labels was
@@ -113,24 +113,24 @@ def combine_talk(nouls, weights=None, cut=None):
   cut = cut if cut is not None else TALK_CUT
   if weights is None or cut is None:
     raise ValueError("world_questions.combine_talk: the weights and the cut "
-                     "are not fixed yet (010-IP step 3)")
+                     "are not fixed yet")
   value = float(weights.get("intercept", 0.0))
   for part in TALK_PARTS:
     value += float(weights[part]) * float(nouls[part])
   return value, ("yes" if value >= cut else "no")
 
 
-# --- the reveal decision (010-IP LK-C, 012-ST JF-C) --------------------------
+# --- the reveal decision ---------------------------------------
 #
 # The ninth closed-set decision. A Choice over reveal / withhold, so the code
 # acts on one answer and its confidence is recorded, and four companion Nouls
 # in the SAME request, speculative and free: code reads the Choice; the Nouls
 # are written on the decision event under `companions` and are acted on by
 # nothing in the pilot. Their job is to say what moved p(reveal) across the
-# dose grid (LK-M) -- if they explain none of it, they are the wrong
-# dimensions (LK-C's reopen clause).
+# dose grid -- if they explain none of it, they are the wrong
+# dimensions.
 #
-# The state is the named object of LK-C, eight fields:
+# The state is a named object of eight fields:
 #   secret, stake, self {name, profile, currently}, other {name, doing,
 #   learned}, relationship, conversation, last_utterance, time.
 
@@ -183,15 +183,15 @@ def reveal_questions():
   return questions
 
 
-# --- the route and the take (015-IP RP-D, RP-F) -----------------------------
+# --- the route and the take -----------------------------
 #
-# The two decisions of W3, born at 015-IP step 2 so that the grids
+# The two decisions of W3, born before the sim so that the grids
 # (probe_route.py, probe_take.py) ask the questions the sim will ask, from
 # the same file; the sim's call sites (run_gpt_prompt.py, plan.py) arrive
 # with step 3. Each is a Choice the code acts on and companion Nouls in the
 # same request, recorded under `companions` and acted on by nothing -- each
 # companion worded to be answerable from the one field it names (the second
-# grid's lesson, 010-IP step 6).
+# grid's lesson).
 #
 # The route state (world.route_state) has nine named fields: secret, stake,
 # self {name, profile, currently}, other {name, doing, learned},

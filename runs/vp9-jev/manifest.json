@@ -1,0 +1,1936 @@
+{
+  "name": "vp9-jev",
+  "registered": "2026-10-04",
+  "status": "citable",
+  "condition": {
+    "decision_backend": "jev",
+    "jev_model": "jev-latest",
+    "noul_threshold": 0.5,
+    "on_error": "failsafe",
+    "provider_pin": {
+      "order": [
+        "friendli"
+      ],
+      "allow_fallbacks": false
+    },
+    "provider_fallbacks": [
+      "novita",
+      "parasail",
+      "crusoe"
+    ],
+    "lenient_parser": "on",
+    "json_no_fence": true,
+    "seed_history": "the_ville/agent_history_init_n25.csv",
+    "seed_history_loaded": 95
+  },
+  "code": {
+    "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+    "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+    "branch": "HEAD",
+    "dirty": false,
+    "shas": [
+      "6f442bd0e7a9c214b9009c7f87e63decb5e88a91"
+    ],
+    "trees": [
+      "8e2074c4a10d30329900be7d1cfaa3da7032ba9e"
+    ],
+    "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155",
+    "public_shas": [
+      "41973e332a03ecb0eede0b02e15bf687515b7155"
+    ]
+  },
+  "world": "W1",
+  "seed": 20260922,
+  "config_sha1": "5f7da622f046",
+  "model": {
+    "name": "google/gemma-4-31b-it",
+    "base_url": "https://openrouter.ai/api/v1",
+    "provider_pin": {
+      "order": [
+        "friendli"
+      ],
+      "allow_fallbacks": false
+    },
+    "provider_fallbacks": [
+      "novita",
+      "parasail",
+      "crusoe"
+    ],
+    "embeddings": "nomic-embed-text",
+    "embeddings_base_url": "http://localhost:11434/v1"
+  },
+  "domain_guard": true,
+  "origin": "base_the_ville_n9",
+  "steps": {
+    "from": 0,
+    "to": 17280
+  },
+  "sim_time": {
+    "from": "2023-02-13 00:00:00",
+    "to": "2023-02-15 00:00:00"
+  },
+  "argv": "automatic_execution.py --origin base_the_ville_n9 --target vp9-jev --steps 17280 --ui False --port 8001",
+  "host": "MacBook-Air-de-Eric.local",
+  "platform": "darwin arm64",
+  "python": "3.9.25",
+  "stages": [
+    {
+      "sim": "vp9-jev-s-0-0-200",
+      "index": 0,
+      "from": 0,
+      "to": 200,
+      "stage_seed": 689691009,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-0-0-200_2026-10-03_22-32-31.jsonl.gz",
+      "sha1": "32bd0f8ef21f3cfc960414f30bb1901782825c0a",
+      "records": 1361,
+      "calls": 761,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 451
+      },
+      "started": "2026-10-03T22:32:31.726",
+      "finished": "2026-10-03T22:36:55.288",
+      "sim_time": {
+        "from": "2023-02-13 00:00:00",
+        "to": "2023-02-13 00:00:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-9-1799-1999",
+      "index": 9,
+      "from": 1799,
+      "to": 1999,
+      "stage_seed": 60231905,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-9-1799-1999_2026-10-03_22-42-51.jsonl.gz",
+      "sha1": "b0ef01c3c6d5acceb797a911bc952a44d09303e1",
+      "records": 263,
+      "calls": 144,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 62
+      },
+      "started": "2026-10-03T22:42:51.760",
+      "finished": "2026-10-03T22:43:58.746",
+      "sim_time": {
+        "from": "2023-02-13 05:00:00",
+        "to": "2023-02-13 05:32:20"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-10-1999-2199",
+      "index": 10,
+      "from": 1999,
+      "to": 2199,
+      "stage_seed": 1410526642,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-10-1999-2199_2026-10-03_22-44-24.jsonl.gz",
+      "sha1": "c66ec5fdea2325d4cf7ebdf82d6db584536cfeca",
+      "records": 304,
+      "calls": 166,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 69
+      },
+      "started": "2026-10-03T22:44:24.634",
+      "finished": "2026-10-03T22:45:38.393",
+      "sim_time": {
+        "from": "2023-02-13 05:40:00",
+        "to": "2023-02-13 06:05:50"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-11-2199-2399",
+      "index": 11,
+      "from": 2199,
+      "to": 2399,
+      "stage_seed": 2087764332,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-11-2199-2399_2026-10-03_22-46-01.jsonl.gz",
+      "sha1": "27bfc82a12a99b489be2579efdd47fe369ab5a0d",
+      "records": 352,
+      "calls": 195,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 75
+      },
+      "started": "2026-10-03T22:46:01.524",
+      "finished": "2026-10-03T22:47:22.365",
+      "sim_time": {
+        "from": "2023-02-13 06:10:00",
+        "to": "2023-02-13 06:35:30"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-12-2399-2599",
+      "index": 12,
+      "from": 2399,
+      "to": 2599,
+      "stage_seed": 591060130,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-12-2399-2599_2026-10-03_22-47-43.jsonl.gz",
+      "sha1": "108de5278c322b42e4bcb148f64773d00b2e2d7d",
+      "records": 623,
+      "calls": 340,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 143
+      },
+      "started": "2026-10-03T22:47:43.455",
+      "finished": "2026-10-03T22:49:57.321",
+      "sim_time": {
+        "from": "2023-02-13 06:40:00",
+        "to": "2023-02-13 07:12:50"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-13-2599-2799",
+      "index": 13,
+      "from": 2599,
+      "to": 2799,
+      "stage_seed": 660594315,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-13-2599-2799_2026-10-03_22-50-18.jsonl.gz",
+      "sha1": "8602073008a64389f6a11ec9640c45631c78cc86",
+      "records": 831,
+      "calls": 463,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 162
+      },
+      "started": "2026-10-03T22:50:18.348",
+      "finished": "2026-10-03T22:52:36.050",
+      "sim_time": {
+        "from": "2023-02-13 07:15:00",
+        "to": "2023-02-13 07:46:30"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-14-2799-2999",
+      "index": 14,
+      "from": 2799,
+      "to": 2999,
+      "stage_seed": 1189077375,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-14-2799-2999_2026-10-03_22-52-56.jsonl.gz",
+      "sha1": "43d14483ebd46d571b584f3f7207a6e3a969bc5b",
+      "records": 878,
+      "calls": 490,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 191
+      },
+      "started": "2026-10-03T22:52:56.197",
+      "finished": "2026-10-03T22:56:08.880",
+      "sim_time": {
+        "from": "2023-02-13 07:47:50",
+        "to": "2023-02-13 08:19:00"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-15-2999-3199",
+      "index": 15,
+      "from": 2999,
+      "to": 3199,
+      "stage_seed": 611588688,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-15-2999-3199_2026-10-03_22-56-27.jsonl.gz",
+      "sha1": "18caf3f409ae34f7d6fd2ea6d960dc895d8c9ba8",
+      "records": 770,
+      "calls": 441,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 163
+      },
+      "started": "2026-10-03T22:56:27.531",
+      "finished": "2026-10-03T22:59:28.372",
+      "sim_time": {
+        "from": "2023-02-13 08:20:00",
+        "to": "2023-02-13 08:51:40"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-16-3199-3399",
+      "index": 16,
+      "from": 3199,
+      "to": 3399,
+      "stage_seed": 2056038345,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-16-3199-3399_2026-10-03_22-59-52.jsonl.gz",
+      "sha1": "a15c9dbcf99e5d5d7bad9a14cecc409383f4e553",
+      "records": 673,
+      "calls": 367,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 153
+      },
+      "started": "2026-10-03T22:59:52.639",
+      "finished": "2026-10-03T23:02:30.615",
+      "sim_time": {
+        "from": "2023-02-13 08:55:00",
+        "to": "2023-02-13 09:26:30"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-17-3399-3599",
+      "index": 17,
+      "from": 3399,
+      "to": 3599,
+      "stage_seed": 2108294086,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-17-3399-3599_2026-10-03_23-02-48.jsonl.gz",
+      "sha1": "4a7014ecdac240366d0306030dac0dee0504223f",
+      "records": 574,
+      "calls": 318,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 124
+      },
+      "started": "2026-10-03T23:02:48.291",
+      "finished": "2026-10-03T23:05:13.994",
+      "sim_time": {
+        "from": "2023-02-13 09:26:40",
+        "to": "2023-02-13 09:59:50"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-18-3599-3799",
+      "index": 18,
+      "from": 3599,
+      "to": 3799,
+      "stage_seed": 733555433,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-18-3599-3799_2026-10-03_23-05-35.jsonl.gz",
+      "sha1": "92d33330f0e45a5b61cb3e037294b2de4e18e0fc",
+      "records": 1309,
+      "calls": 747,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 234
+      },
+      "started": "2026-10-03T23:05:35.376",
+      "finished": "2026-10-03T23:10:25.235",
+      "sim_time": {
+        "from": "2023-02-13 10:00:00",
+        "to": "2023-02-13 10:30:50"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-19-3799-3999",
+      "index": 19,
+      "from": 3799,
+      "to": 3999,
+      "stage_seed": 579657566,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-19-3799-3999_2026-10-03_23-11-01.jsonl.gz",
+      "sha1": "5cd5796a4687c8ad31c7883d7cebef8da69b9afc",
+      "records": 805,
+      "calls": 442,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 133
+      },
+      "started": "2026-10-03T23:11:01.289",
+      "finished": "2026-10-03T23:15:35.168",
+      "sim_time": {
+        "from": "2023-02-13 10:35:00",
+        "to": "2023-02-13 11:06:30"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-20-3999-4199",
+      "index": 20,
+      "from": 3999,
+      "to": 4199,
+      "stage_seed": 672221208,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-20-3999-4199_2026-10-03_23-16-22.jsonl.gz",
+      "sha1": "40255c659aca992e6fa6855e5704e2b92b5ca8bf",
+      "records": 906,
+      "calls": 501,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 153
+      },
+      "started": "2026-10-03T23:16:22.414",
+      "finished": "2026-10-03T23:23:37.357",
+      "sim_time": {
+        "from": "2023-02-13 11:06:40",
+        "to": "2023-02-13 11:37:40"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-21-4199-4399",
+      "index": 21,
+      "from": 4199,
+      "to": 4399,
+      "stage_seed": 1570715082,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-21-4199-4399_2026-10-03_23-24-11.jsonl.gz",
+      "sha1": "4c441e5b507af538a3d0ce0369c5ff118f3f536d",
+      "records": 1407,
+      "calls": 807,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 249
+      },
+      "started": "2026-10-03T23:24:11.617",
+      "finished": "2026-10-03T23:29:17.550",
+      "sim_time": {
+        "from": "2023-02-13 11:40:00",
+        "to": "2023-02-13 12:13:00"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-22-4399-4599",
+      "index": 22,
+      "from": 4399,
+      "to": 4599,
+      "stage_seed": 47523844,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-22-4399-4599_2026-10-03_23-29-39.jsonl.gz",
+      "sha1": "047634a5a354460c9f07c4f7fd6126a6f3b15c25",
+      "records": 2824,
+      "calls": 1601,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 387
+      },
+      "started": "2026-10-03T23:29:39.523",
+      "finished": "2026-10-03T23:38:12.156",
+      "sim_time": {
+        "from": "2023-02-13 12:13:20",
+        "to": "2023-02-13 12:46:30"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-23-4599-4799",
+      "index": 23,
+      "from": 4599,
+      "to": 4799,
+      "stage_seed": 112208429,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-23-4599-4799_2026-10-03_23-38-36.jsonl.gz",
+      "sha1": "70278eba415fac0dcff244ca8faae8713317eef7",
+      "records": 2538,
+      "calls": 1429,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 355
+      },
+      "started": "2026-10-03T23:38:36.338",
+      "finished": "2026-10-03T23:47:42.975",
+      "sim_time": {
+        "from": "2023-02-13 12:46:40",
+        "to": "2023-02-13 13:19:30"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-24-4799-4999",
+      "index": 24,
+      "from": 4799,
+      "to": 4999,
+      "stage_seed": 1731204569,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-24-4799-4999_2026-10-03_23-48-14.jsonl.gz",
+      "sha1": "b1c2e02d4fca09afc489a95a20a9d3e8551287c3",
+      "records": 1781,
+      "calls": 1006,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 255
+      },
+      "started": "2026-10-03T23:48:14.996",
+      "finished": "2026-10-03T23:54:37.891",
+      "sim_time": {
+        "from": "2023-02-13 13:20:20",
+        "to": "2023-02-13 13:52:50"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-25-4999-5199",
+      "index": 25,
+      "from": 4999,
+      "to": 5199,
+      "stage_seed": 94105334,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-25-4999-5199_2026-10-03_23-55-11.jsonl.gz",
+      "sha1": "06b49d78955fb3837caed2b1b8d3409d7012b41c",
+      "records": 1497,
+      "calls": 839,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 258
+      },
+      "started": "2026-10-03T23:55:11.165",
+      "finished": "2026-10-04T00:01:11.818",
+      "sim_time": {
+        "from": "2023-02-13 13:53:20",
+        "to": "2023-02-13 14:26:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-26-5199-5399",
+      "index": 26,
+      "from": 5199,
+      "to": 5399,
+      "stage_seed": 1533236079,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-26-5199-5399_2026-10-04_00-01-41.jsonl.gz",
+      "sha1": "e7a7ea9a2bb22d2327dc2c4713e2f6bc6d1533ab",
+      "records": 883,
+      "calls": 493,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 142
+      },
+      "started": "2026-10-04T00:01:41.111",
+      "finished": "2026-10-04T00:05:33.671",
+      "sim_time": {
+        "from": "2023-02-13 14:26:40",
+        "to": "2023-02-13 14:59:50"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-27-5399-5599",
+      "index": 27,
+      "from": 5399,
+      "to": 5599,
+      "stage_seed": 1548089184,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-27-5399-5599_2026-10-04_00-06-10.jsonl.gz",
+      "sha1": "554931650ffebac8b2ba2251c15b1a1b6e2f8da1",
+      "records": 1657,
+      "calls": 923,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 285
+      },
+      "started": "2026-10-04T00:06:10.997",
+      "finished": "2026-10-04T00:12:53.734",
+      "sim_time": {
+        "from": "2023-02-13 15:00:00",
+        "to": "2023-02-13 15:33:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-28-5599-5799",
+      "index": 28,
+      "from": 5599,
+      "to": 5799,
+      "stage_seed": 173465167,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-28-5599-5799_2026-10-04_00-13-47.jsonl.gz",
+      "sha1": "e7106b5a23fe194fb7384b842d2f42dbbc665dd1",
+      "records": 960,
+      "calls": 533,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 189
+      },
+      "started": "2026-10-04T00:13:47.824",
+      "finished": "2026-10-04T00:18:30.380",
+      "sim_time": {
+        "from": "2023-02-13 15:34:00",
+        "to": "2023-02-13 16:06:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-29-5799-5999",
+      "index": 29,
+      "from": 5799,
+      "to": 5999,
+      "stage_seed": 56830968,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-29-5799-5999_2026-10-04_00-19-16.jsonl.gz",
+      "sha1": "2bd2ed22e630a06ca19c5f7fe18680ea50264eb4",
+      "records": 745,
+      "calls": 408,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 146
+      },
+      "started": "2026-10-04T00:19:16.363",
+      "finished": "2026-10-04T00:22:44.795",
+      "sim_time": {
+        "from": "2023-02-13 16:07:00",
+        "to": "2023-02-13 16:39:30"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-30-5999-6199",
+      "index": 30,
+      "from": 5999,
+      "to": 6199,
+      "stage_seed": 1789375862,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-30-5999-6199_2026-10-04_00-23-32.jsonl.gz",
+      "sha1": "9cfb0b4ba255d64d906fb968ad1c6cc824e21787",
+      "records": 1308,
+      "calls": 733,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 255
+      },
+      "started": "2026-10-04T00:23:32.804",
+      "finished": "2026-10-04T00:28:21.108",
+      "sim_time": {
+        "from": "2023-02-13 16:40:30",
+        "to": "2023-02-13 17:12:40"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-31-6199-6399",
+      "index": 31,
+      "from": 6199,
+      "to": 6399,
+      "stage_seed": 1120246184,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-31-6199-6399_2026-10-04_00-28-46.jsonl.gz",
+      "sha1": "9d16f9afe2eaa4adbbef6630cff33fc2102109ec",
+      "records": 1180,
+      "calls": 649,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 234
+      },
+      "started": "2026-10-04T00:28:46.389",
+      "finished": "2026-10-04T00:32:28.359",
+      "sim_time": {
+        "from": "2023-02-13 17:13:30",
+        "to": "2023-02-13 17:46:30"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-32-6399-6599",
+      "index": 32,
+      "from": 6399,
+      "to": 6599,
+      "stage_seed": 495944806,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-32-6399-6599_2026-10-04_00-32-48.jsonl.gz",
+      "sha1": "18f62029ba8049aa271411879b97b8f562192174",
+      "records": 1073,
+      "calls": 591,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 208
+      },
+      "started": "2026-10-04T00:32:48.532",
+      "finished": "2026-10-04T00:36:21.751",
+      "sim_time": {
+        "from": "2023-02-13 17:46:40",
+        "to": "2023-02-13 18:19:40"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-33-6599-6799",
+      "index": 33,
+      "from": 6599,
+      "to": 6799,
+      "stage_seed": 434800207,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-33-6599-6799_2026-10-04_00-36-41.jsonl.gz",
+      "sha1": "082ac75f6f0c20cdac14fd5ffcfcf9f278d96e82",
+      "records": 623,
+      "calls": 344,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 139
+      },
+      "started": "2026-10-04T00:36:41.988",
+      "finished": "2026-10-04T00:38:33.072",
+      "sim_time": {
+        "from": "2023-02-13 18:20:00",
+        "to": "2023-02-13 18:52:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-34-6799-6999",
+      "index": 34,
+      "from": 6799,
+      "to": 6999,
+      "stage_seed": 2020260283,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-34-6799-6999_2026-10-04_00-38-56.jsonl.gz",
+      "sha1": "2e87e6e415815446af5cdf8dd794431689205b70",
+      "records": 1206,
+      "calls": 667,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 273
+      },
+      "started": "2026-10-04T00:38:56.536",
+      "finished": "2026-10-04T00:42:47.522",
+      "sim_time": {
+        "from": "2023-02-13 18:54:00",
+        "to": "2023-02-13 19:26:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-35-6999-7199",
+      "index": 35,
+      "from": 6999,
+      "to": 7199,
+      "stage_seed": 448873108,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-35-6999-7199_2026-10-04_00-43-10.jsonl.gz",
+      "sha1": "c9f7c8250053ef00126d58e0427f91ee542fc5a9",
+      "records": 868,
+      "calls": 476,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 187
+      },
+      "started": "2026-10-04T00:43:10.687",
+      "finished": "2026-10-04T00:45:51.423",
+      "sim_time": {
+        "from": "2023-02-13 19:26:50",
+        "to": "2023-02-13 19:59:50"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-36-7199-7399",
+      "index": 36,
+      "from": 7199,
+      "to": 7399,
+      "stage_seed": 1144651533,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-36-7199-7399_2026-10-04_00-46-14.jsonl.gz",
+      "sha1": "a8ba5d5d663a7ef001e19ae94f79e34ab767fa6d",
+      "records": 894,
+      "calls": 494,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 181
+      },
+      "started": "2026-10-04T00:46:14.202",
+      "finished": "2026-10-04T00:49:14.006",
+      "sim_time": {
+        "from": "2023-02-13 20:00:00",
+        "to": "2023-02-13 20:33:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-37-7399-7599",
+      "index": 37,
+      "from": 7399,
+      "to": 7599,
+      "stage_seed": 1126128386,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-37-7399-7599_2026-10-04_00-49-36.jsonl.gz",
+      "sha1": "f2aabcaf1247ce8a48a4d8bdaeef54f4ddff0e49",
+      "records": 744,
+      "calls": 403,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 154
+      },
+      "started": "2026-10-04T00:49:36.647",
+      "finished": "2026-10-04T00:51:59.735",
+      "sim_time": {
+        "from": "2023-02-13 20:33:30",
+        "to": "2023-02-13 21:06:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-38-7599-7799",
+      "index": 38,
+      "from": 7599,
+      "to": 7799,
+      "stage_seed": 353137197,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-38-7599-7799_2026-10-04_00-52-22.jsonl.gz",
+      "sha1": "708f9dc05dc6ab82c9fdd029fb4b22cb75f1dc91",
+      "records": 672,
+      "calls": 367,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 154
+      },
+      "started": "2026-10-04T00:52:22.742",
+      "finished": "2026-10-04T00:54:42.848",
+      "sim_time": {
+        "from": "2023-02-13 21:07:00",
+        "to": "2023-02-13 21:39:20"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-39-7799-7999",
+      "index": 39,
+      "from": 7799,
+      "to": 7999,
+      "stage_seed": 473532314,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-39-7799-7999_2026-10-04_00-55-03.jsonl.gz",
+      "sha1": "7588db7e6c45ef0b3f41a0ac0080b7b18d75870b",
+      "records": 688,
+      "calls": 371,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 161
+      },
+      "started": "2026-10-04T00:55:03.833",
+      "finished": "2026-10-04T00:57:41.399",
+      "sim_time": {
+        "from": "2023-02-13 21:40:00",
+        "to": "2023-02-13 22:13:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-40-7999-8199",
+      "index": 40,
+      "from": 7999,
+      "to": 8199,
+      "stage_seed": 1343619916,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-40-7999-8199_2026-10-04_00-58-05.jsonl.gz",
+      "sha1": "ed226ca8e62639502a2a93529faf7e15880ae28c",
+      "records": 399,
+      "calls": 210,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 96
+      },
+      "started": "2026-10-04T00:58:05.529",
+      "finished": "2026-10-04T00:59:31.379",
+      "sim_time": {
+        "from": "2023-02-13 22:14:20",
+        "to": "2023-02-13 22:46:30"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-41-8199-8399",
+      "index": 41,
+      "from": 8199,
+      "to": 8399,
+      "stage_seed": 507567238,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-41-8199-8399_2026-10-04_00-59-54.jsonl.gz",
+      "sha1": "4c0cfb503367d55bb8cf5553f0c0e99ad6dcb301",
+      "records": 386,
+      "calls": 204,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 90
+      },
+      "started": "2026-10-04T00:59:54.857",
+      "finished": "2026-10-04T01:01:13.867",
+      "sim_time": {
+        "from": "2023-02-13 22:48:00",
+        "to": "2023-02-13 23:18:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-42-8399-8599",
+      "index": 42,
+      "from": 8399,
+      "to": 8599,
+      "stage_seed": 1091223880,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-42-8399-8599_2026-10-04_01-01-38.jsonl.gz",
+      "sha1": "a64d5b0f106826ef2df5c9c3d2744d7b73319a09",
+      "records": 213,
+      "calls": 113,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 50
+      },
+      "started": "2026-10-04T01:01:38.386",
+      "finished": "2026-10-04T01:02:30.576",
+      "sim_time": {
+        "from": "2023-02-13 23:21:00",
+        "to": "2023-02-13 23:48:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-43-8599-8799",
+      "index": 43,
+      "from": 8599,
+      "to": 8799,
+      "stage_seed": 1164952417,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-43-8599-8799_2026-10-04_01-02-58.jsonl.gz",
+      "sha1": "9144b1649abc8d6e2b94429de5789849b7afa50c",
+      "records": 606,
+      "calls": 335,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 268
+      },
+      "started": "2026-10-04T01:02:58.589",
+      "finished": "2026-10-04T01:05:56.061",
+      "sim_time": {
+        "from": "2023-02-13 23:56:00",
+        "to": "2023-02-14 00:04:00"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-53-10398-10598",
+      "index": 53,
+      "from": 10398,
+      "to": 10598,
+      "stage_seed": 1542642,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-53-10398-10598_2026-10-04_01-16-03.jsonl.gz",
+      "sha1": "847b4be1edb0499bf02cd5124b8cb3c9b9ac2dc8",
+      "records": 197,
+      "calls": 103,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 47
+      },
+      "started": "2026-10-04T01:16:03.623",
+      "finished": "2026-10-04T01:16:55.060",
+      "sim_time": {
+        "from": "2023-02-14 05:01:00",
+        "to": "2023-02-14 05:26:20"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-54-10598-10798",
+      "index": 54,
+      "from": 10598,
+      "to": 10798,
+      "stage_seed": 234496590,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-54-10598-10798_2026-10-04_01-17-19.jsonl.gz",
+      "sha1": "c5f3b8b5b41a483247c624d2f590ddcadaad9fc6",
+      "records": 132,
+      "calls": 69,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 30
+      },
+      "started": "2026-10-04T01:17:19.056",
+      "finished": "2026-10-04T01:18:00.801",
+      "sim_time": {
+        "from": "2023-02-14 05:27:00",
+        "to": "2023-02-14 05:55:50"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-55-10798-10998",
+      "index": 55,
+      "from": 10798,
+      "to": 10998,
+      "stage_seed": 1946484295,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-55-10798-10998_2026-10-04_01-18-31.jsonl.gz",
+      "sha1": "d1fc0ca54c6a115139baf0ce2ecde42104f1a121",
+      "records": 446,
+      "calls": 240,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 105
+      },
+      "started": "2026-10-04T01:18:31.286",
+      "finished": "2026-10-04T01:20:18.716",
+      "sim_time": {
+        "from": "2023-02-14 06:01:00",
+        "to": "2023-02-14 06:33:00"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-56-10998-11198",
+      "index": 56,
+      "from": 10998,
+      "to": 11198,
+      "stage_seed": 933461958,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-56-10998-11198_2026-10-04_01-20-40.jsonl.gz",
+      "sha1": "c48093063eae75cdd2d4542100b1f4153eb8c722",
+      "records": 539,
+      "calls": 289,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 133
+      },
+      "started": "2026-10-04T01:20:40.842",
+      "finished": "2026-10-04T01:22:48.859",
+      "sim_time": {
+        "from": "2023-02-14 06:33:10",
+        "to": "2023-02-14 07:06:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-57-11198-11398",
+      "index": 57,
+      "from": 11198,
+      "to": 11398,
+      "stage_seed": 1034664715,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-57-11198-11398_2026-10-04_01-23-14.jsonl.gz",
+      "sha1": "ccf9e401da02618dd9c7c1146436ce2966156e4d",
+      "records": 755,
+      "calls": 398,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 165
+      },
+      "started": "2026-10-04T01:23:14.611",
+      "finished": "2026-10-04T01:25:47.434",
+      "sim_time": {
+        "from": "2023-02-14 07:07:00",
+        "to": "2023-02-14 07:39:30"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-58-11398-11598",
+      "index": 58,
+      "from": 11398,
+      "to": 11598,
+      "stage_seed": 815806986,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-58-11398-11598_2026-10-04_01-26-12.jsonl.gz",
+      "sha1": "2736e85151fd32789dd6dca2b87eb57d71e4def0",
+      "records": 882,
+      "calls": 476,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 192
+      },
+      "started": "2026-10-04T01:26:12.302",
+      "finished": "2026-10-04T01:29:11.593",
+      "sim_time": {
+        "from": "2023-02-14 07:40:00",
+        "to": "2023-02-14 08:13:00"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-59-11598-11798",
+      "index": 59,
+      "from": 11598,
+      "to": 11798,
+      "stage_seed": 497569387,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-59-11598-11798_2026-10-04_01-29-33.jsonl.gz",
+      "sha1": "578e108f4e81fa1e91579c789ec6a64db2c3c4f3",
+      "records": 871,
+      "calls": 488,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 200
+      },
+      "started": "2026-10-04T01:29:33.830",
+      "finished": "2026-10-04T01:32:45.007",
+      "sim_time": {
+        "from": "2023-02-14 08:13:10",
+        "to": "2023-02-14 08:43:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-60-11798-11998",
+      "index": 60,
+      "from": 11798,
+      "to": 11998,
+      "stage_seed": 1110729940,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-60-11798-11998_2026-10-04_01-33-12.jsonl.gz",
+      "sha1": "a1af233f586e13b39e6a91184ad9f0ae16230997",
+      "records": 830,
+      "calls": 454,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 181
+      },
+      "started": "2026-10-04T01:33:12.552",
+      "finished": "2026-10-04T01:36:04.066",
+      "sim_time": {
+        "from": "2023-02-14 08:47:00",
+        "to": "2023-02-14 09:19:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-61-11998-12198",
+      "index": 61,
+      "from": 11998,
+      "to": 12198,
+      "stage_seed": 1271306389,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-61-11998-12198_2026-10-04_01-36-29.jsonl.gz",
+      "sha1": "a88b02babad16b2bba8c416c813083e24cf4ea70",
+      "records": 561,
+      "calls": 308,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 124
+      },
+      "started": "2026-10-04T01:36:29.811",
+      "finished": "2026-10-04T01:38:41.091",
+      "sim_time": {
+        "from": "2023-02-14 09:21:00",
+        "to": "2023-02-14 09:52:50"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-62-12198-12398",
+      "index": 62,
+      "from": 12198,
+      "to": 12398,
+      "stage_seed": 627521838,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-62-12198-12398_2026-10-04_01-39-05.jsonl.gz",
+      "sha1": "3c965935e27b6b41b2e7dd36a585fffc5fe55b4b",
+      "records": 1446,
+      "calls": 816,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 272
+      },
+      "started": "2026-10-04T01:39:05.660",
+      "finished": "2026-10-04T01:44:53.775",
+      "sim_time": {
+        "from": "2023-02-14 09:53:40",
+        "to": "2023-02-14 10:26:20"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-63-12398-12598",
+      "index": 63,
+      "from": 12398,
+      "to": 12598,
+      "stage_seed": 1384821919,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-63-12398-12598_2026-10-04_01-45-16.jsonl.gz",
+      "sha1": "d4eb169be5b707bc86061cb76845a6357caeb909",
+      "records": 1524,
+      "calls": 861,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 268
+      },
+      "started": "2026-10-04T01:45:16.515",
+      "finished": "2026-10-04T01:50:34.522",
+      "sim_time": {
+        "from": "2023-02-14 10:26:30",
+        "to": "2023-02-14 10:59:40"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-64-12598-12798",
+      "index": 64,
+      "from": 12598,
+      "to": 12798,
+      "stage_seed": 1600593699,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-64-12598-12798_2026-10-04_01-51-00.jsonl.gz",
+      "sha1": "4b2b88f62172262a445ef281ecdf256f248c9994",
+      "records": 1991,
+      "calls": 1090,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 248
+      },
+      "started": "2026-10-04T01:51:00.461",
+      "finished": "2026-10-04T01:57:56.728",
+      "sim_time": {
+        "from": "2023-02-14 11:00:10",
+        "to": "2023-02-14 11:33:00"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-65-12798-12998",
+      "index": 65,
+      "from": 12798,
+      "to": 12998,
+      "stage_seed": 647611178,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-65-12798-12998_2026-10-04_01-58-21.jsonl.gz",
+      "sha1": "2d5b828a12117771ed105245bac819c24cfa42be",
+      "records": 1861,
+      "calls": 1029,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 277
+      },
+      "started": "2026-10-04T01:58:21.948",
+      "finished": "2026-10-04T02:05:04.131",
+      "sim_time": {
+        "from": "2023-02-14 11:33:20",
+        "to": "2023-02-14 12:06:20"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-66-12998-13198",
+      "index": 66,
+      "from": 12998,
+      "to": 13198,
+      "stage_seed": 1698579115,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-66-12998-13198_2026-10-04_02-05-29.jsonl.gz",
+      "sha1": "1f840f95fc3708462e3660858ac33b537710a58f",
+      "records": 2626,
+      "calls": 1468,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 354
+      },
+      "started": "2026-10-04T02:05:29.575",
+      "finished": "2026-10-04T02:14:32.408",
+      "sim_time": {
+        "from": "2023-02-14 12:06:50",
+        "to": "2023-02-14 12:39:40"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-67-13198-13398",
+      "index": 67,
+      "from": 13198,
+      "to": 13398,
+      "stage_seed": 1865844326,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-67-13198-13398_2026-10-04_02-14-56.jsonl.gz",
+      "sha1": "b100fcfdff502eb942c8cd1ce7c10fedb10080ec",
+      "records": 2019,
+      "calls": 1119,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 287
+      },
+      "started": "2026-10-04T02:14:56.157",
+      "finished": "2026-10-04T02:21:48.636",
+      "sim_time": {
+        "from": "2023-02-14 12:39:50",
+        "to": "2023-02-14 13:13:00"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-68-13398-13598",
+      "index": 68,
+      "from": 13398,
+      "to": 13598,
+      "stage_seed": 1648166759,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-68-13398-13598_2026-10-04_02-22-12.jsonl.gz",
+      "sha1": "4fde645be9d91155ac05defad6ce696e5bbf3bce",
+      "records": 3134,
+      "calls": 1747,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 397
+      },
+      "started": "2026-10-04T02:22:12.143",
+      "finished": "2026-10-04T02:32:54.731",
+      "sim_time": {
+        "from": "2023-02-14 13:13:10",
+        "to": "2023-02-14 13:46:20"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-69-13598-13798",
+      "index": 69,
+      "from": 13598,
+      "to": 13798,
+      "stage_seed": 1328902918,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-69-13598-13798_2026-10-04_02-33-18.jsonl.gz",
+      "sha1": "dd356d932f1d5885ad217ed563b38af729362ede",
+      "records": 1981,
+      "calls": 1103,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 309
+      },
+      "started": "2026-10-04T02:33:18.805",
+      "finished": "2026-10-04T02:39:47.576",
+      "sim_time": {
+        "from": "2023-02-14 13:46:30",
+        "to": "2023-02-14 14:18:20"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-70-13798-13998",
+      "index": 70,
+      "from": 13798,
+      "to": 13998,
+      "stage_seed": 1908907284,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-70-13798-13998_2026-10-04_02-40-14.jsonl.gz",
+      "sha1": "47be6b010678b72999b3c705357cf705acd8b116",
+      "records": 1377,
+      "calls": 784,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 255
+      },
+      "started": "2026-10-04T02:40:14.519",
+      "finished": "2026-10-04T02:45:27.912",
+      "sim_time": {
+        "from": "2023-02-14 14:20:00",
+        "to": "2023-02-14 14:53:00"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-71-13998-14198",
+      "index": 71,
+      "from": 13998,
+      "to": 14198,
+      "stage_seed": 2002253314,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-71-13998-14198_2026-10-04_02-45-52.jsonl.gz",
+      "sha1": "a535579a4dbb890709bf09b964c0543254fd4484",
+      "records": 1152,
+      "calls": 633,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 199
+      },
+      "started": "2026-10-04T02:45:52.138",
+      "finished": "2026-10-04T02:49:52.428",
+      "sim_time": {
+        "from": "2023-02-14 14:53:10",
+        "to": "2023-02-14 15:26:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-72-14198-14398",
+      "index": 72,
+      "from": 14198,
+      "to": 14398,
+      "stage_seed": 270399427,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-72-14198-14398_2026-10-04_02-50-16.jsonl.gz",
+      "sha1": "8764a15d33648b8bbbefedfd6da5501d72dba009",
+      "records": 1018,
+      "calls": 552,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 153
+      },
+      "started": "2026-10-04T02:50:16.841",
+      "finished": "2026-10-04T02:53:47.062",
+      "sim_time": {
+        "from": "2023-02-14 15:26:30",
+        "to": "2023-02-14 15:59:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-73-14398-14598",
+      "index": 73,
+      "from": 14398,
+      "to": 14598,
+      "stage_seed": 1743813234,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-73-14398-14598_2026-10-04_02-54-15.jsonl.gz",
+      "sha1": "7ff4df01ec0fadda96a43a7b8b16b852dc8b8fbe",
+      "records": 1114,
+      "calls": 612,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 218
+      },
+      "started": "2026-10-04T02:54:15.592",
+      "finished": "2026-10-04T02:58:34.073",
+      "sim_time": {
+        "from": "2023-02-14 16:00:00",
+        "to": "2023-02-14 16:32:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-74-14598-14798",
+      "index": 74,
+      "from": 14598,
+      "to": 14798,
+      "stage_seed": 1780339150,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-74-14598-14798_2026-10-04_02-59-02.jsonl.gz",
+      "sha1": "65c215c8aeff781d9a5093a8c124d6667735e523",
+      "records": 1269,
+      "calls": 708,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 280
+      },
+      "started": "2026-10-04T02:59:02.058",
+      "finished": "2026-10-04T03:03:15.939",
+      "sim_time": {
+        "from": "2023-02-14 16:34:00",
+        "to": "2023-02-14 17:05:50"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-75-14798-14998",
+      "index": 75,
+      "from": 14798,
+      "to": 14998,
+      "stage_seed": 333647303,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-75-14798-14998_2026-10-04_03-03-43.jsonl.gz",
+      "sha1": "c7d82925bd49a398cc8bf03d16d490e79f51a449",
+      "records": 1954,
+      "calls": 1124,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 344
+      },
+      "started": "2026-10-04T03:03:43.624",
+      "finished": "2026-10-04T03:11:10.420",
+      "sim_time": {
+        "from": "2023-02-14 17:07:00",
+        "to": "2023-02-14 17:39:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-76-14998-15198",
+      "index": 76,
+      "from": 14998,
+      "to": 15198,
+      "stage_seed": 1346669638,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-76-14998-15198_2026-10-04_03-11-37.jsonl.gz",
+      "sha1": "fafd067a742cd1e5a31a99a26b92dfb1139af445",
+      "records": 1983,
+      "calls": 1151,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 334
+      },
+      "started": "2026-10-04T03:11:37.525",
+      "finished": "2026-10-04T03:18:55.945",
+      "sim_time": {
+        "from": "2023-02-14 17:40:00",
+        "to": "2023-02-14 18:12:50"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-77-15198-15398",
+      "index": 77,
+      "from": 15198,
+      "to": 15398,
+      "stage_seed": 1514948747,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-77-15198-15398_2026-10-04_03-19-21.jsonl.gz",
+      "sha1": "22ccc120add8a7041febf8c0ea1a40fa7d80a960",
+      "records": 2429,
+      "calls": 1359,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 371
+      },
+      "started": "2026-10-04T03:19:21.308",
+      "finished": "2026-10-04T03:27:54.353",
+      "sim_time": {
+        "from": "2023-02-14 18:13:10",
+        "to": "2023-02-14 18:46:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-78-15398-15598",
+      "index": 78,
+      "from": 15398,
+      "to": 15598,
+      "stage_seed": 1464322442,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-78-15398-15598_2026-10-04_03-28-23.jsonl.gz",
+      "sha1": "49e3ce9dc4e0063f5147fe087823a88530c68ea0",
+      "records": 2936,
+      "calls": 1632,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 413
+      },
+      "started": "2026-10-04T03:28:23.312",
+      "finished": "2026-10-04T03:38:11.750",
+      "sim_time": {
+        "from": "2023-02-14 18:46:50",
+        "to": "2023-02-14 19:19:20"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-79-15598-15798",
+      "index": 79,
+      "from": 15598,
+      "to": 15798,
+      "stage_seed": 2052046315,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-79-15598-15798_2026-10-04_03-38-39.jsonl.gz",
+      "sha1": "cb811c65afd19226095fdb459957db0b9f2d09ea",
+      "records": 847,
+      "calls": 470,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 165
+      },
+      "started": "2026-10-04T03:38:39.931",
+      "finished": "2026-10-04T03:41:47.390",
+      "sim_time": {
+        "from": "2023-02-14 19:20:00",
+        "to": "2023-02-14 19:53:00"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-80-15798-15998",
+      "index": 80,
+      "from": 15798,
+      "to": 15998,
+      "stage_seed": 254150265,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-80-15798-15998_2026-10-04_03-42-14.jsonl.gz",
+      "sha1": "2df62a3927fc8f1e4a4cd721970cc2d81fb86e7f",
+      "records": 1003,
+      "calls": 546,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 188
+      },
+      "started": "2026-10-04T03:42:14.471",
+      "finished": "2026-10-04T03:45:47.363",
+      "sim_time": {
+        "from": "2023-02-14 19:53:10",
+        "to": "2023-02-14 20:26:20"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-81-15998-16198",
+      "index": 81,
+      "from": 15998,
+      "to": 16198,
+      "stage_seed": 114620984,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-81-15998-16198_2026-10-04_03-46-16.jsonl.gz",
+      "sha1": "9b1ed2fa27c7561675081a943316bba9daef5085",
+      "records": 929,
+      "calls": 514,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 215
+      },
+      "started": "2026-10-04T03:46:16.637",
+      "finished": "2026-10-04T03:49:47.005",
+      "sim_time": {
+        "from": "2023-02-14 20:26:40",
+        "to": "2023-02-14 20:58:20"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-82-16198-16398",
+      "index": 82,
+      "from": 16198,
+      "to": 16398,
+      "stage_seed": 1752521603,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-82-16198-16398_2026-10-04_03-50-16.jsonl.gz",
+      "sha1": "22e98f595f648569322f36fb5e6bb541ba4ba991",
+      "records": 892,
+      "calls": 478,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 213
+      },
+      "started": "2026-10-04T03:50:16.721",
+      "finished": "2026-10-04T03:53:33.941",
+      "sim_time": {
+        "from": "2023-02-14 21:00:00",
+        "to": "2023-02-14 21:33:00"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-83-16398-16598",
+      "index": 83,
+      "from": 16398,
+      "to": 16598,
+      "stage_seed": 530110002,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-83-16398-16598_2026-10-04_03-53-59.jsonl.gz",
+      "sha1": "b0d03bb9138852748c9825cd38d1449c78583d86",
+      "records": 882,
+      "calls": 482,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 201
+      },
+      "started": "2026-10-04T03:53:59.869",
+      "finished": "2026-10-04T03:57:24.515",
+      "sim_time": {
+        "from": "2023-02-14 21:33:10",
+        "to": "2023-02-14 22:06:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-84-16598-16798",
+      "index": 84,
+      "from": 16598,
+      "to": 16798,
+      "stage_seed": 309689742,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-84-16598-16798_2026-10-04_03-57-51.jsonl.gz",
+      "sha1": "e155249a02597805917413431fabd8f935c21286",
+      "records": 762,
+      "calls": 417,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 179
+      },
+      "started": "2026-10-04T03:57:51.001",
+      "finished": "2026-10-04T04:00:44.728",
+      "sim_time": {
+        "from": "2023-02-14 22:06:30",
+        "to": "2023-02-14 22:38:20"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-85-16798-16998",
+      "index": 85,
+      "from": 16798,
+      "to": 16998,
+      "stage_seed": 1804312967,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-85-16798-16998_2026-10-04_04-01-17.jsonl.gz",
+      "sha1": "5b3b04cdcd703cda54c906ccc34dd7303dc59069",
+      "records": 674,
+      "calls": 354,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 165
+      },
+      "started": "2026-10-04T04:01:17.875",
+      "finished": "2026-10-04T04:03:55.861",
+      "sim_time": {
+        "from": "2023-02-14 22:41:00",
+        "to": "2023-02-14 23:13:00"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-86-16998-17198",
+      "index": 86,
+      "from": 16998,
+      "to": 17198,
+      "stage_seed": 673980422,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-86-16998-17198_2026-10-04_04-04-27.jsonl.gz",
+      "sha1": "2829650fd5e935143b219aa64b50940df85b6e46",
+      "records": 466,
+      "calls": 243,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 110
+      },
+      "started": "2026-10-04T04:04:27.887",
+      "finished": "2026-10-04T04:06:15.540",
+      "sim_time": {
+        "from": "2023-02-14 23:13:10",
+        "to": "2023-02-14 23:46:10"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    },
+    {
+      "sim": "vp9-jev-s-87-17198-17280",
+      "index": 87,
+      "from": 17198,
+      "to": 17280,
+      "stage_seed": 874919823,
+      "decision_backend": "jev",
+      "sha": "6f442bd0e7a9c214b9009c7f87e63decb5e88a91",
+      "tree": "8e2074c4a10d30329900be7d1cfaa3da7032ba9e",
+      "trace": "trace/vp9-jev-s-87-17198-17280_2026-10-04_04-06-48.jsonl.gz",
+      "sha1": "fadb13d2c5eb7b21141cd52072835fb3dfc8a656",
+      "records": 730,
+      "calls": 405,
+      "backend_errors": 0,
+      "backend_errors_fatal": 0,
+      "providers": {
+        "Friendli": 291
+      },
+      "started": "2026-10-04T04:06:48.208",
+      "finished": "2026-10-04T04:10:52.003",
+      "sim_time": {
+        "from": "2023-02-14 23:46:30",
+        "to": "2023-02-15 00:00:00"
+      },
+      "public_sha": "41973e332a03ecb0eede0b02e15bf687515b7155"
+    }
+  ],
+  "started": "2026-10-03T22:32:31.726",
+  "finished": "2026-10-04T04:10:52.003",
+  "execution_time": "5:38:35.134633",
+  "outcome": "finished",
+  "backend_errors": 0,
+  "backend_errors_fatal": 0,
+  "providers": {
+    "Friendli": 14712
+  },
+  "log": "logs/vp9-jev_2026-10-03_22-32-29.txt",
+  "storage": "environment/frontend_server/storage/vp9-jev-s-<i>-<from>-<to>",
+  "notes": "Jev deciding (DECISION_BACKEND=jev) in the Valentine's Day story on the village of nine, from base_the_ville_n9 over the paper's two game days (steps 0-17280), seed 20260922, one config shared with vp9-llm (5f7da622f046), pinned to Friendli with novita, parasail and crusoe declared as fallbacks; D1-D13, D13 loading the paper's seed memories in stage 0 (95 phrases, each importance scored by Jev). Run beside vp9-llm and read side by side, never paired. A first launch at 21:44 on 2026-10-03 was stopped before any reading and set aside, unregistered. Ran in a second working copy of the repository, beside vp9-llm."
+}

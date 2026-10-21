@@ -19,7 +19,7 @@ The third claim is negative and matters as much: RUN_SEED=off records
 "seed": null rather than omitting the field, so an unseeded run cannot be
 mistaken for a seeded one when the tables are read back.
 
-Since 006-IP there is a fourth: a run that goes through a router records the
+Since the router there is a fourth: a run that goes through a router records the
 provider block it pinned, and every call records the provider that actually
 answered. They are two different facts -- what was asked for and what
 happened -- and the registrar in the lab invalidates a run where they ever
@@ -189,7 +189,7 @@ class RunManifest(unittest.TestCase):
     """The pin is half a routed run's identity. The same model name at two
     providers is two sets of weights, two quantizations and two serving
     stacks, so a run that does not record what it asked for cannot say what
-    it measured (RB-E)."""
+    it measured."""
     pin = {"order": ["deepinfra"], "allow_fallbacks": False,
            "quantizations": ["fp8"]}
     real = run_manifest._config
@@ -218,7 +218,7 @@ class RunManifest(unittest.TestCase):
     self.assertIn("provider_pin", manifest["model"])
     self.assertIsNone(manifest["model"]["provider_pin"])
 
-  # --- the world (010-IP LK-G, S1.2) -----------------------------------------
+  # --- the world -----------------------------------------
 
   def _apply_with(self, cfg):
     real = run_manifest._config
@@ -229,7 +229,7 @@ class RunManifest(unittest.TestCase):
       run_manifest._config = real
 
   def test_no_world_section_is_the_papers_world(self):
-    """Every run before 010-IP was the paper's Ville; the field says so
+    """Every run before the first designed world was the paper's Ville; the field says so
     rather than being absent."""
     manifest = self._apply_with({"run": {"seed": 20260922}})
     self.assertEqual("W1", manifest["world"])
@@ -286,7 +286,7 @@ class RunManifest(unittest.TestCase):
     self.assertEqual(pin, call["provider_pin"])
     self.assertEqual("stop", call["finish_reason"])
     # And the router's own number for what the call cost, which is what the
-    # ledger books rather than a price table (RB-B).
+    # ledger books rather than a price table.
     self.assertEqual(0.00000064,
                      llm_trace.response_facts(response)["cost"])
 

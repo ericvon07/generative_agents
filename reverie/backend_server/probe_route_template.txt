@@ -1,4 +1,4 @@
-probe_route_template.txt -- 015-IP RP-H, 012-ST JF-A.
+probe_route_template.txt
 
 The route decision in the shape of the paper's decide_to_react_v1.txt
 (three options, the answer after "Answer: Option"), for the generator's

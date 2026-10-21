@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
 File: probe_take.py
-Description: 015-IP step 2 -- the take grid of W3, read before any cited
-             day is simulated (RP-H; in probe_reveal.py's image, sharing
+Description: the take grid of W3, read before any cited
+             day is simulated (in probe_reveal.py's image, sharing
              probe_route.py's texts and loop).
 
 THE GRID. Constructed states in the register the fork produces, each the
-state of RP-F -- the route state's nine fields plus `object` and
+take state -- the route state's nine fields plus `object` and
 `opportunity` -- built by world.take_state, the function the sim's take
 decision will use from step 3, from the signed W3 texts:
 
@@ -25,7 +25,7 @@ grid's, over eleven fields.
 
 `object` says where the radio is, its state and whose it is; the refusal
 travels in `known` and `last_conversation` alone, so the two `known` cells
-differ by the refusal only (RP-F's "will not part with it" is `known`'s at
+differ by the refusal only (the take state's "will not part with it" is `known`'s at
 `refused`). The time is constant, an afternoon in which the owner is out.
 
 EACH STATE IS ASKED TWICE:

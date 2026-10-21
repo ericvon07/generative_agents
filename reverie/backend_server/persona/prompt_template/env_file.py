@@ -4,8 +4,7 @@ Description: Read the `.env` beside the fork, or beside the lab, into the
              process environment.
 
 The fork needs one secret it may not hold: the key for the routed remote
-model (RB-A of 006-IP -- the key lives in the environment, never in a config
-file). Nothing in the paper's code loads a `.env`, and the run scripts do not
+model (the key lives in the environment, never in a config file). Nothing in the paper's code loads a `.env`, and the run scripts do not
 either, so a key the author put in `<lab>/.env` never reached the process.
 This module is that one missing step, and it is deliberately smaller than
 python-dotenv: no interpolation, no `export` parsing, no multi-line values.

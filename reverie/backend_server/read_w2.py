@@ -1,12 +1,12 @@
 """
 File: read_w2.py
-Description: the readout of a W2 run (010-IP step 9, S6.1). Reads a run's
+Description: the readout of a W2 run. Reads a run's
              traces and the detective's memory in its last checkpoint; never
              touches a simulation.
 
     ../../../.venv/bin/python read_w2.py <run-prefix> [<run-prefix> ...] [--lines]
 
-For each run, on separate lines as LK-F asks:
+For each run, on separate lines:
   1. the leak       -- every utterance of the concealer's carrying a canary
                        word, split by `injected` (a hit with injected: false
                        is a cover-driven coincidence, not a leak; §2 of the

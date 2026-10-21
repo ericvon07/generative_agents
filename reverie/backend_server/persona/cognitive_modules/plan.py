@@ -908,7 +908,7 @@ def _chat_react(maze, persona, focused_event, reaction_mode, personas):
 
 
 def _take_react(persona, obj_name, spec):
-  """015-IP RP-F: the scripted take, spliced into the schedule through the
+  """The scripted take, spliced into the schedule through the
   same path a chat reaction takes (_create_react): a fixed description,
   address and duration, the event triple the tile carries -- so the act
   enters the taker's memory ungated by the paper's own perception, and the
@@ -923,10 +923,10 @@ def _take_react(persona, obj_name, spec):
 
 
 def _world_react(persona, maze, personas):
-  """015-IP step 3: the world's own decisions for the persona who may take
+  """The world's own decisions for the persona who may take
   an object (W3's Tomas) -- the discovery check, the route at the
-  discovery and the day-parts (RP-D), the take once per opportunity
-  episode (RP-F). With no world section, or for a persona who is nobody's
+  discovery and the day-parts, the take once per opportunity
+  episode. With no world section, or for a persona who is nobody's
   taker, nothing is asked and nothing is inserted: the fork is the paper's.
   Runs after the paper's own reactions of the step, so a chat that just
   started is not overwritten by a take; the take waits for the episode's
@@ -1036,7 +1036,7 @@ def plan(persona, maze, personas, new_day, retrieved):
       # elif reaction_mode == "do other things":
       #   _chat_react(persona, focused_event, reaction_mode, personas)
 
-  # 015-IP step 3: the world's decisions (the route, the take) for the
+  # The world's decisions (the route, the take) for the
   # persona who may take an object. Nothing with no world section.
   if world.enabled():
     _world_react(persona, maze, personas)

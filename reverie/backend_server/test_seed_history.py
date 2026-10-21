@@ -1,7 +1,7 @@
 """
 File: test_seed_history.py
 Description: D13, the paper's seed memories loaded at the start of a run
-             (016-IP). What has to hold: the kept rows are the paper's, in
+. What has to hold: the kept rows are the paper's, in
              the file's order, for the agents present and no one else; an
              empty phrase is not whispered; a persona's unset clock is lent
              for the load and handed back null, so its first step is still

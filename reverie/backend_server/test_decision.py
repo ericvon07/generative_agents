@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 File: test_decision.py
-Description: 011-IP's tests -- the composed state, the descriptive criteria,
+Description: the tests of the composed state, the descriptive criteria,
              and D8's repair of the target's sentence.
 
 Asks no backend and opens no socket: every case here is about what the fork
@@ -218,7 +218,7 @@ class DescriptiveCriteria(unittest.TestCase):
                       % (option, key))
 
   def test_the_location_pair_has_no_descriptive_form(self):
-    # Twelve options do not get a description each (TS-A).
+    # Twelve options do not get a description each.
     self.assertIsNone(jev_questions.descriptive_criteria("action_sector"))
     self.assertIsNone(jev_questions.descriptive_criteria("action_arena"))
     self.assertEqual(probe_questions.forms_for("action_sector"),
@@ -542,7 +542,7 @@ class D10TheAnswerIsReadTheWayItIsWritten(unittest.TestCase):
 
 
 class D9TheBudgetHasANumberBehindIt(unittest.TestCase):
-  """011-IP TS-E: the two social prompts get room to answer and the location
+  """The two social prompts get room to answer and the location
   trio does not. 160 is the 95th percentile of where the answer lands on
   google/gemma-4-31b-it -- 101 tokens on decide_to_talk, 104 on
   decide_to_react -- with a margin chosen to cover the longest response the
@@ -599,7 +599,7 @@ class D9TheBudgetHasANumberBehindIt(unittest.TestCase):
 
 
 class D12TheReflectionHasRoomAndANorth(unittest.TestCase):
-  """011-IP D12: the insight prompt gets 400 tokens and one sentence naming
+  """D12: the insight prompt gets 400 tokens and one sentence naming
   the length, placed before the trailing "1." the completion starts from."""
 
   def _prompt(self):
@@ -695,7 +695,7 @@ class TheWatcherSeesWhatItWasBuiltFor(unittest.TestCase):
     self.assertIn("TRUNCATED", kinds)
 
   def test_an_ordinary_validation_rejection_is_counted_not_flagged(self):
-    """Rejections are the 009-IP tally, not an interruption: a run that
+    """Rejections are the lenient parser's tally, not an interruption: a run that
     rejects and then succeeds is the paper's retry loop working."""
     kinds = self._kinds({"event": "reject", "step": 4000, "persona": "x",
                          "label": "run_gpt_prompt_action_sector",

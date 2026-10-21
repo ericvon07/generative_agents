@@ -108,7 +108,7 @@ class Condition(object):
       self.records.extend(records)
 
     self.calls = [r for r in self.records if r.get("event") == "call"]
-    # A trace written before 006-IP has no finish_reason on any call, so it
+    # A trace written before the router (2026-09-23) has no finish_reason on any call, so it
     # cannot say whether a rejection was a truncation. That is a question it
     # was never asked, and the answer is "unknown" -- printing zero would be
     # a finding about the model made out of a missing field.
@@ -201,7 +201,7 @@ def members_named(text, domain):
   refused, and it refused most of them for being a sentence -- "The common
   room in the Dorm for Oak Hill College." is a valid sector inside prose.
 
-  The cost of containment is the overcount 002-ST named as this measurement's
+  The cost of containment is the overcount named in advance as this measurement's
   main risk: a domain whose members nest ("Oak Hill College" inside "Dorm for
   Oak Hill College") matches twice on one name. So the members are returned
   rather than a boolean, the caller counts a multiple match once, and the
@@ -248,7 +248,7 @@ class Rejection(object):
 
 def rejections_by_decision(condition):
   """Pair every reject with the decision it belongs to, on (label, persona,
-  step) -- the triple 002-ST paired by hand.
+  step) -- the triple first paired by hand.
 
   A reject whose label is not one of the closed-set decisions is a generation
   rejection and is not here at all: the daily schedules and the conversations
@@ -598,7 +598,7 @@ def rejection_notes(conditions, stats):
   """Everything the three columns above cannot say inside a cell.
 
   All three are honesty, not decoration. The ambiguous total is the overcount
-  002-ST predicted, reported rather than assumed away. The unpaired total is
+  predicted in advance, reported rather than assumed away. The unpaired total is
   the only sign there would be that pairing on (label, persona, step) is
   wrong. The floor note is the same admission _backfill_gave_up already makes
   for an old trace: a figure read from a 200-character head is a lower bound,
@@ -637,7 +637,7 @@ def rejected_responses(conditions, label, limit=12):
   """What the retry loop actually threw away on one decision, and which
   member of the set each discarded response named.
 
-  This is where RA-D's "which member matched" lives: a count that says 126 of
+  This is where "which member matched" lives: a count that says 126 of
   126 rejections held a valid sector is only believable next to the sentences
   it counted."""
   print("REJECTED RESPONSES -- %s" % label)
@@ -687,7 +687,7 @@ def answers(conditions, label):
 
 
 class CrossWorldPair(Exception):
-  """Two conditions from two worlds. Raised, not warned (010-IP LK-G): the
+  """Two conditions from two worlds. Raised, not warned: the
   one provenance check that is not a caveat, because a W1 rate and a W2 rate
   are two experiments, and TR-1 says a table that sets them side by side is a
   bug."""
@@ -695,7 +695,7 @@ class CrossWorldPair(Exception):
 
 def world_of(condition):
   """The condition's world. A trace written before the field existed is the
-  paper's Ville by construction -- every run before 010-IP was -- so it reads
+  paper's Ville by construction -- every run before the first designed world was -- so it reads
   W1; a condition whose stages disagree reads MIXED."""
   if not condition.manifests:
     return "W1"
@@ -712,7 +712,7 @@ def check_worlds(conditions):
   if len(set(w for _, w in worlds)) > 1:
     raise CrossWorldPair("the conditions are in different worlds (%s): a "
                          "rate from one world is not compared with a rate "
-                         "from another (TR-1, 010-IP LK-G)"
+                         "from another (TR-1)"
                          % ", ".join("%s=%s" % pw for pw in worlds))
 
 
@@ -810,7 +810,7 @@ def main():
   print('  the model was answering and did not get to finish, which is not '
         'the same')
   print('  failure as answering something invalid. A trace written before '
-        '006-IP')
+        'the router')
   print('  recorded no finish_reason and reads "unknown" rather than 0.\n')
   if args.decision:
     rejected_responses(conditions, args.decision)
