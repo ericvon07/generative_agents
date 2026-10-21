@@ -1,3 +1,57 @@
+# Generative Agents, with a decision model for the quick decisions
+
+**This is a fork of [drudilorenzo/generative_agents](https://github.com/drudilorenzo/generative_agents)**
+(branch `fix-and-improve`), a maintained version of
+[joonspk-research/generative_agents](https://github.com/joonspk-research/generative_agents), the
+code published with Park et al., *Generative Agents: Interactive Simulacra of Human Behavior*
+(UIST 2023, [arXiv:2304.03442](https://arxiv.org/abs/2304.03442)). The earlier README follows,
+unchanged, below the line.
+
+The fork asks what changes when the simulation's quick decisions are made by a decision model
+instead of the language model. With `DECISION_BACKEND=jev`, [Jev](https://typesafe.ai),
+TypeSafe's decision model, chooses where a character goes (sector, arena and object), decides
+whether to talk to or react to someone, and scores how important a memory is, always over the
+options the paper's code already offers. With `DECISION_BACKEND=llm`, the paper's prompts make
+those decisions. In both settings the language model writes the plans, reflections and dialogue.
+
+## What changed
+
+All new code is in `reverie/backend_server/`. Changes to the paper's behaviour are numbered
+D0 to D13 in the code comments, each with its reason, and apply to both settings unless the
+comment says otherwise.
+
+| Files | What |
+|---|---|
+| `persona/prompt_template/decision.py`, `jev.py`, `jev_questions.py` | The decision seam and the Jev backend. Each decision declares its options, and both settings receive the same information. |
+| `persona/prompt_template/llm_trace.py`, `run_manifest.py` | A JSONL trace of every model call and decision, with the run's seed, code version and configuration. |
+| `persona/prompt_template/gpt_structure.py`, `run_gpt_prompt.py`, `domain_guard.py`, `lenient_parser.py`, `seed_history.py` | The numbered changes. Among them: the authors' guard for a location answer outside the list, which they had left commented out, is switched back on (D4); the social prompts get enough tokens to reach their answer, which is read where they state it (D9, D10); and the paper's seed memories are loaded at the start (D13). |
+| `automatic_execution.py`, `env_file.py`, `run_ollama.sh` | The runner: stages and checkpoints, keys from the environment, the language model through OpenRouter and embeddings on Ollama. |
+| `interview_ville.py`, `read_valentine.py`, `compare_backends.py`, `analyze_llm_trace.py` | The paper's end-of-run interview, and readers that turn traces into results without touching a simulation. |
+| `probe_*.py`, `world.py`, `build_w2.py`, `build_w3.py` | Questions asked offline on constructed states, and two additional worlds. |
+| `environment/frontend_server/storage/base_the_ville_n7`, `base_the_ville_n9` | Smaller versions of the paper's town, with 7 and 9 residents. |
+
+## Running it
+
+Set up the environment and the frontend as described in the README below. Then:
+
+```sh
+cp openai_config.example.vp9.json openai_config.json
+export OPEN_ROUTER_API=...       # the language model, Gemma 4 31B through OpenRouter
+export TYPESAFE_API_KEY=...      # only for DECISION_BACKEND=jev
+export DECISION_BACKEND=jev      # or llm
+./run_ollama.sh                  # embeddings
+./run_backend_automatic.sh --origin base_the_ville_n9 --target my-run --steps 17280
+```
+
+`openai_config.example.vp9.json` is the nine-resident Valentine's Day party: two simulated days,
+17,280 steps, from `base_the_ville_n9`. Checkpoints are written to
+`environment/frontend_server/storage/`, and the trace of each stage to `logs/llm_trace/`.
+
+This fork was developed in a private repository and published here on 2026-10-20 with its full
+commit history. Commit hashes differ from that private copy.
+
+---
+
 
 
 # Generative Agents: Interactive Simulacra of Human Behavior 
