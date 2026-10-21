@@ -14,6 +14,15 @@ whether to talk to or react to someone, and scores how important a memory is, al
 options the paper's code already offers. With `DECISION_BACKEND=llm`, the paper's prompts make
 those decisions. In both settings the language model writes the plans, reflections and dialogue.
 
+## The runs
+
+`runs/` holds the two runs behind the Smallville results in the System One essay: the
+Valentine's Day party on the village of nine, over the paper's two simulated days, once with the
+paper's prompts deciding (`vp9-llm`) and once with Jev deciding (`vp9-jev`). Each run has its
+manifest, the trace of every model call and decision, the end-of-run interviews and the part of
+the checkpoints the readers use. [runs/README.md](runs/README.md) says how to unpack them and
+which reader recomputes each of the essay's numbers.
+
 ## What changed
 
 All new code is in `reverie/backend_server/`. Changes to the paper's behaviour are numbered
@@ -26,7 +35,7 @@ comment says otherwise.
 | `persona/prompt_template/llm_trace.py`, `run_manifest.py` | A JSONL trace of every model call and decision, with the run's seed, code version and configuration. |
 | `persona/prompt_template/gpt_structure.py`, `run_gpt_prompt.py`, `domain_guard.py`, `lenient_parser.py`, `seed_history.py` | The numbered changes. Among them: the authors' guard for a location answer outside the list, which they had left commented out, is switched back on (D4); the social prompts get enough tokens to reach their answer, which is read where they state it (D9, D10); and the paper's seed memories are loaded at the start (D13). |
 | `automatic_execution.py`, `env_file.py`, `run_ollama.sh` | The runner: stages and checkpoints, keys from the environment, the language model through OpenRouter and embeddings on Ollama. |
-| `interview_ville.py`, `read_valentine.py`, `compare_backends.py`, `analyze_llm_trace.py` | The paper's end-of-run interview, and readers that turn traces into results without touching a simulation. |
+| `interview_ville.py`, `read_valentine.py`, `read_vp9_window.py`, `compare_backends.py`, `analyze_llm_trace.py` | The paper's end-of-run interview, and readers that turn traces into results without touching a simulation. |
 | `probe_*.py`, `world.py`, `build_w2.py`, `build_w3.py` | Questions asked offline on constructed states, and two additional worlds. |
 | `environment/frontend_server/storage/base_the_ville_n7`, `base_the_ville_n9` | Smaller versions of the paper's town, with 7 and 9 residents. |
 
@@ -46,9 +55,6 @@ export DECISION_BACKEND=jev      # or llm
 `openai_config.example.vp9.json` is the nine-resident Valentine's Day party: two simulated days,
 17,280 steps, from `base_the_ville_n9`. Checkpoints are written to
 `environment/frontend_server/storage/`, and the trace of each stage to `logs/llm_trace/`.
-
-The two runs behind the results in the System One essay, with what is needed to recompute
-them, are in `runs/`: see [runs/README.md](runs/README.md).
 
 This fork was developed in a private repository and published here on 2026-10-20 with its full
 commit history. Commit hashes differ from that private copy.
